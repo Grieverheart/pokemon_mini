@@ -1,0 +1,5 @@
+.DS_store
+*.swp
+verilator/obj_dir
+experiments/verilator/obj_dir
+*.vcd
