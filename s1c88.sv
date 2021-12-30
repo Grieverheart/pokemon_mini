@@ -58,8 +58,6 @@ module s1c88
                            STATE_EXECUTE:
                            STATE_OPCODE_READ;
 
-    assign address_out = reset? ~0: {9'b0, PC[14:0]};
-
     reg [15:0] PC;
 
     reg [7:0] opcode;
@@ -68,11 +66,6 @@ module s1c88
     reg [7:0] imm_high;
 
     reg [1:0] reset_counter;
-
-    assign bus_status =
-        (reset || reset_counter < 2)?  BUS_COMMAND_IDLE:
-        (next_state != STATE_EXECUTE)? BUS_COMMAND_MEM_READ:
-                                       BUS_COMMAND_MEM_WRITE;
 
     decode decode_inst
     (
@@ -89,6 +82,20 @@ module s1c88
 
         //.byte_word_field(byte_word_field)
     );
+
+    always_ff @ (negedge clk)
+    begin
+        if(reset)
+        begin
+            address_out <= ~0;
+            bus_status <= BUS_COMMAND_IDLE;
+        end
+        else if(reset_counter >= 2)
+        begin
+            address_out <= {9'b0, PC[14:0]};
+            bus_status <= (next_state != STATE_EXECUTE)? BUS_COMMAND_MEM_READ: BUS_COMMAND_MEM_WRITE;
+        end
+    end
 
     always_ff @ (posedge clk)
     begin
