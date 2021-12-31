@@ -5,6 +5,8 @@ module s1c88
     input reset,
     input [7:0] data_in,
     output [7:0] data_out,
+    output logic pk,
+    output logic pl,
 
     output logic [23:0] address_out,
     output logic [1:0]  bus_status,
@@ -13,6 +15,7 @@ module s1c88
 );
 
     // @todo:
+    // * Implement interrupt handling? Need to start with the reset interrupt.
     // * Implement decoder?
 
     enum [1:0]
@@ -83,22 +86,29 @@ module s1c88
         //.byte_word_field(byte_word_field)
     );
 
+    // @note: I don't know if we can do this. Check metastability?
+    // Perhaps we need to run on negedge clk, but check if pl is 0.
     always_ff @ (negedge clk)
     begin
-        if(reset)
+        pl <= ~pl;
+        if(pl == 1)
         begin
-            address_out <= ~0;
-            bus_status <= BUS_COMMAND_IDLE;
-        end
-        else if(reset_counter >= 2)
-        begin
-            address_out <= {9'b0, PC[14:0]};
-            bus_status <= (next_state != STATE_EXECUTE)? BUS_COMMAND_MEM_READ: BUS_COMMAND_MEM_WRITE;
+            if(reset)
+            begin
+                address_out <= ~0;
+                bus_status <= BUS_COMMAND_IDLE;
+            end
+            else if(reset_counter >= 2)
+            begin
+                address_out <= {9'b0, PC[14:0]};
+                bus_status <= (next_state != STATE_EXECUTE)? BUS_COMMAND_MEM_READ: BUS_COMMAND_MEM_WRITE;
+            end
         end
     end
 
     always_ff @ (posedge clk)
     begin
+        pk <= ~pk;
         if(reset)
         begin
             state <= STATE_IDLE;
