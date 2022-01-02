@@ -43,11 +43,11 @@ int main(int argc, char** argv, char** env)
     bool data_sent = false;
     while (timestamp < 100 && !Verilated::gotFinish())
     {
-        s1c88->clk = 1;
+        s1c88->clk = 0;
         s1c88->eval();
         tfp->dump(timestamp++);
 
-        s1c88->clk = 0;
+        s1c88->clk = 1;
         s1c88->eval();
         tfp->dump(timestamp++);
 
@@ -82,7 +82,6 @@ int main(int argc, char** argv, char** env)
 
             data_sent = true;
         }
-        s1c88->eval();
     }
 
     tfp->close();

@@ -137,16 +137,21 @@ module s1c88
                     if(exception != EXCEPTION_TYPE_NONE)
                     begin
                         iack <= 1;
+                        address_out <= 24'hDEFACE;
                     end
                     sync <= 1;
                 end
                 else if(state == STATE_EXC_PROCESS)
                 begin
-                    if(exception_process_step == 1)
+                    if(exception_process_step < 2)
+                    begin
+                        address_out <= 24'hDEFACE;
+                    end
+                    else if(exception_process_step == 2)
                     begin
                         address_out <= 0;
                     end
-                    else if(exception_process_step == 2)
+                    else if(exception_process_step == 3)
                     begin
                         address_out <= 1;
                         iack        <= 0;
@@ -154,7 +159,7 @@ module s1c88
                     end
                 end
 
-                bus_status <= (next_state != STATE_EXECUTE)? BUS_COMMAND_MEM_READ: BUS_COMMAND_MEM_WRITE;
+                bus_status <= (state != STATE_EXECUTE)? BUS_COMMAND_MEM_READ: BUS_COMMAND_MEM_WRITE;
             end
         end
     end
@@ -171,81 +176,102 @@ module s1c88
         begin
             pk <= ~pk;
             read <= 0;
-            if(pk == 0)
-            begin
-                // @note: When do we actually move to the next state?
-                // For read states we probably want to move once every
-                // bus cycle, but that's probably not required for the
-                // execute phase.
-                state <= next_state;
-                case(state)
-                    STATE_IDLE:
-                    begin
-                    end
 
-                    STATE_EXC_PROCESS:
+            // @note: When do we actually move to the next state?
+            // For read states we probably want to move once every
+            // bus cycle, but that's probably not required for the
+            // execute phase.
+            if(pk == 1)
+                state <= next_state;
+
+            case(state)
+                STATE_IDLE:
+                begin
+                end
+
+                STATE_EXC_PROCESS:
+                begin
+                    if(pk == 0)
                     begin
-                        state <= STATE_EXC_PROCESS;
-                        exception_process_step <= exception_process_step + 1;
-                        if(exception_process_step == 1)
+                        if(exception_process_step <= 3)
                         begin
                             read <= 1;
+                        end
+                    end
+                    else
+                    begin
+                        exception_process_step <= exception_process_step + 1;
+                        state <= STATE_EXC_PROCESS;
+                        if(exception_process_step == 2)
+                        begin
                             PC[7:0] <= data_in;
                         end
-                        else if(exception_process_step == 2)
+                        else if(exception_process_step == 3)
                         begin
-                            read <= 1;
                             PC[15:8] <= data_in;
                             state <= STATE_OPCODE_READ;
                         end
                     end
+                end
 
-                    STATE_OPCODE_READ:
+                STATE_OPCODE_READ:
+                begin
+                    if(pk == 0)
                     begin
+                        read <= 1;
+                        PC <= PC + 1;
+
                         if(exception == EXCEPTION_TYPE_RESET)
                         begin
                             state <= STATE_EXC_PROCESS;
                             exception_process_step <= 0;
                         end
-                        else
-                        begin
-                            opcode <= data_in;
-                            read   <= (next_state == STATE_EXECUTE)? 0: 1;
-                            PC <= PC + 1;
-                        end
                     end
+                    else
+                        opcode <= data_in;
+                end
 
-                    STATE_OPEXT_READ:
+                STATE_OPEXT_READ:
+                begin
+                    if(pk == 0)
                     begin
+                        read  <= 1;
+                        PC <= PC + 1;
+                    end
+                    else
                         opext <= data_in;
-                        read  <= (next_state == STATE_EXECUTE)? 0: 1;
-                        PC <= PC + 1;
-                    end
+                end
 
-                    STATE_IMM_LOW_READ:
-                    begin
-                        imm_low <= data_in;
-                        read    <= (next_state == STATE_EXECUTE)? 0: 1;
-                        PC <= PC + 1;
-                    end
-
-                    STATE_IMM_HIGH_READ:
-                    begin
-                        imm_high <= data_in;
-                        read     <= 0;
-                        PC <= PC + 1;
-                    end
-
-                    STATE_EXECUTE:
+                STATE_IMM_LOW_READ:
+                begin
+                    if(pk == 0)
                     begin
                         read <= 1;
+                        PC <= PC + 1;
                     end
+                    else
+                        imm_low <= data_in;
+                end
 
-                    default:
+                STATE_IMM_HIGH_READ:
+                begin
+                    if(pk == 0)
                     begin
+                        read <= 1;
+                        PC <= PC + 1;
                     end
-                endcase
-            end
+                    else
+                        imm_high <= data_in;
+                end
+
+                STATE_EXECUTE:
+                begin
+                end
+
+                default:
+                begin
+                end
+            endcase
         end
     end
 
