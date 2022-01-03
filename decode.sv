@@ -20,6 +20,13 @@ module decode
                 imm_size   <= 0;
             end
 
+            8'hCE, 8'hCF:
+            begin
+                need_opext <= 1;
+                need_imm   <= 0;
+                imm_size   <= 0;
+            end
+
             default:
             begin
                 need_opext <= 0;

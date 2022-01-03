@@ -12,7 +12,7 @@ module s1c88
     output logic [1:0]  bus_status,
     output logic read,
     output logic write,
-    output logic sync,
+    output wire sync,
     output logic iack
 );
 
@@ -100,12 +100,14 @@ module s1c88
         //.byte_word_field(byte_word_field)
     );
 
+    assign sync = (state == STATE_OPCODE_READ);
+
     always_ff @ (negedge clk, posedge reset)
     begin
         if(reset)
         begin
-            sync          <= 0;
             iack          <= 0;
+            state         <= STATE_IDLE;
             address_out   <= ~0;
             data_out      <= ~0;
             write         <= 0;
@@ -121,6 +123,8 @@ module s1c88
             begin
                 // Output dummy address
                 address_out <= 24'hDEFACE;
+                state <= STATE_OPCODE_READ;
+                iack <= 1;
             end
         end
         else
@@ -130,32 +134,37 @@ module s1c88
             if(pl == 1)
             begin
                 address_out <= {9'b0, PC[14:0]};
-                sync <= 0;
+                state <= next_state;
 
                 if(state == STATE_OPCODE_READ)
                 begin
                     if(exception != EXCEPTION_TYPE_NONE)
                     begin
-                        iack <= 1;
                         address_out <= 24'hDEFACE;
+                        state <= STATE_EXC_PROCESS;
                     end
-                    sync <= 1;
                 end
                 else if(state == STATE_EXC_PROCESS)
                 begin
-                    if(exception_process_step < 2)
+                    state <= STATE_EXC_PROCESS;
+
+                    if(exception_process_step < 1)
                     begin
                         address_out <= 24'hDEFACE;
                     end
-                    else if(exception_process_step == 2)
+                    else if(exception_process_step == 1)
                     begin
                         address_out <= 0;
                     end
-                    else if(exception_process_step == 3)
+                    else if(exception_process_step == 2)
                     begin
                         address_out <= 1;
-                        iack        <= 0;
                         exception   <= EXCEPTION_TYPE_NONE;
+                        iack <= 0;
+                    end
+                    else if(exception_process_step == 3)
+                    begin
+                        state       <= STATE_OPCODE_READ;
                     end
                 end
 
@@ -168,7 +177,6 @@ module s1c88
     begin
         if(reset)
         begin
-            state         <= STATE_IDLE;
             read          <= 0;
             pk            <= 0;
         end
@@ -176,13 +184,6 @@ module s1c88
         begin
             pk <= ~pk;
             read <= 0;
-
-            // @note: When do we actually move to the next state?
-            // For read states we probably want to move once every
-            // bus cycle, but that's probably not required for the
-            // execute phase.
-            if(pk == 1)
-                state <= next_state;
 
             case(state)
                 STATE_IDLE:
@@ -193,7 +194,7 @@ module s1c88
                 begin
                     if(pk == 0)
                     begin
-                        if(exception_process_step <= 3)
+                        if(exception_process_step <= 2)
                         begin
                             read <= 1;
                         end
@@ -201,15 +202,13 @@ module s1c88
                     else
                     begin
                         exception_process_step <= exception_process_step + 1;
-                        state <= STATE_EXC_PROCESS;
-                        if(exception_process_step == 2)
+                        if(exception_process_step == 1)
                         begin
                             PC[7:0] <= data_in;
                         end
-                        else if(exception_process_step == 3)
+                        else if(exception_process_step == 2)
                         begin
                             PC[15:8] <= data_in;
-                            state <= STATE_OPCODE_READ;
                         end
                     end
                 end
@@ -223,7 +222,6 @@ module s1c88
 
                         if(exception == EXCEPTION_TYPE_RESET)
                         begin
-                            state <= STATE_EXC_PROCESS;
                             exception_process_step <= 0;
                         end
                     end
