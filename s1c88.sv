@@ -56,9 +56,10 @@ module s1c88
             STATE_OPCODE_READ:
 
         (state == STATE_OPCODE_READ) ?
-            (need_opext  ? STATE_OPEXT_READ:
-            (need_imm    ? STATE_IMM_LOW_READ:
-                           STATE_EXECUTE)):
+            (need_opext                       ? STATE_OPEXT_READ:
+            (need_imm                         ? STATE_IMM_LOW_READ:
+            (exception != EXCEPTION_TYPE_NONE ? STATE_EXC_PROCESS:
+                                                STATE_EXECUTE))):
 
         (state == STATE_OPEXT_READ) ?
             (need_imm    ? STATE_IMM_LOW_READ:
@@ -123,8 +124,7 @@ module s1c88
             begin
                 // Output dummy address
                 address_out <= 24'hDEFACE;
-                state <= STATE_OPCODE_READ;
-                iack <= 1;
+                exception_process_step <= 0;
             end
         end
         else
@@ -136,35 +136,30 @@ module s1c88
                 address_out <= {9'b0, PC[14:0]};
                 state <= next_state;
 
-                if(state == STATE_OPCODE_READ)
+                if(exception != EXCEPTION_TYPE_NONE)
                 begin
-                    if(exception != EXCEPTION_TYPE_NONE)
-                    begin
-                        address_out <= 24'hDEFACE;
-                        state <= STATE_EXC_PROCESS;
-                    end
+                    iack <= 1;
+                    address_out <= 24'hDEFACE;
                 end
-                else if(state == STATE_EXC_PROCESS)
+
+                if(state == STATE_EXC_PROCESS)
                 begin
+                    exception_process_step <= exception_process_step + 1;
                     state <= STATE_EXC_PROCESS;
 
-                    if(exception_process_step < 1)
-                    begin
-                        address_out <= 24'hDEFACE;
-                    end
-                    else if(exception_process_step == 1)
+                    if(exception_process_step == 0)
                     begin
                         address_out <= 0;
                     end
-                    else if(exception_process_step == 2)
+                    else if(exception_process_step == 1)
                     begin
                         address_out <= 1;
                         exception   <= EXCEPTION_TYPE_NONE;
                         iack <= 0;
                     end
-                    else if(exception_process_step == 3)
+                    else if(exception_process_step == 2)
                     begin
-                        state       <= STATE_OPCODE_READ;
+                        state <= STATE_OPCODE_READ;
                     end
                 end
 
@@ -201,7 +196,6 @@ module s1c88
                     end
                     else
                     begin
-                        exception_process_step <= exception_process_step + 1;
                         if(exception_process_step == 1)
                         begin
                             PC[7:0] <= data_in;
@@ -219,11 +213,6 @@ module s1c88
                     begin
                         read <= 1;
                         PC <= PC + 1;
-
-                        if(exception == EXCEPTION_TYPE_RESET)
-                        begin
-                            exception_process_step <= 0;
-                        end
                     end
                     else
                         opcode <= data_in;
