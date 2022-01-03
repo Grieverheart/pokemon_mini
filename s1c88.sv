@@ -17,7 +17,7 @@ module s1c88
 );
 
     // @todo:
-    // * Implement decoder?
+    // * Start implementing some instructions?
 
     enum [1:0]
     {
@@ -159,6 +159,7 @@ module s1c88
                     end
                 end
 
+                // @todo: Set this correctly.
                 bus_status <= (state != STATE_EXECUTE)? BUS_COMMAND_MEM_READ: BUS_COMMAND_MEM_WRITE;
             end
         end
@@ -249,6 +250,14 @@ module s1c88
 
                 STATE_EXECUTE:
                 begin
+                    if(pk == 0)
+                    begin
+                        // Set read or write depending on op
+                    end
+                    else
+                    begin
+                        // Read or write data depending on op.
+                    end
                 end
 
                 default:
