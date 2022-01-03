@@ -47,10 +47,6 @@ module s1c88
 
     reg [2:0] state = STATE_IDLE;
 
-    reg imm_size = 0;
-    reg need_opext = 0;
-    reg need_imm = 0;
-
     wire [2:0] next_state =
         (state == STATE_IDLE || state == STATE_EXC_PROCESS) ?
             STATE_OPCODE_READ:
@@ -85,20 +81,20 @@ module s1c88
 
     reg [2:0] exception_process_step;
 
+    wire imm_size;
+    wire need_opext;
+    wire need_imm;
+    wire decode_error;
+
     decode decode_inst
     (
         .opcode,
         .opext,
 
         .need_opext,
-
         .need_imm,
-        .imm_size
-
-        //.src(src_operand),
-        //.dst(dst_operand),
-
-        //.byte_word_field(byte_word_field)
+        .imm_size,
+        .error(decode_error)
     );
 
     assign sync = (state == STATE_OPCODE_READ);
