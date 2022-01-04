@@ -65,7 +65,7 @@ int main(int argc, char** argv, char** env)
         {
             // memory read
             if(s1c88->address_out >= 0x2100)
-                s1c88->data_in = *(memory + (s1c88->address_out & 0x003FFF));
+                s1c88->data_in = 0xFA;//*(memory + (s1c88->address_out & 0x003FFF));
             else
                 s1c88->data_in = *(instructions + (s1c88->address_out & (file_size - 1)));
 
