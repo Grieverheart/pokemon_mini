@@ -31,12 +31,6 @@ module s1c88
     //rather than interposing an execute cycle after an
     //operand read cycle.
 
-    // @todo:
-    // * Need to overlap fetching with execution. Make fetching as a separate
-    //   signal, for exmaple set to active if it's the last microinstruction?
-    //   Try setting this signal in parallel with the current working before
-    //   making too big changes.
-
     enum [1:0]
     {
         BUS_COMMAND_IDLE      = 2'd0,
@@ -47,12 +41,11 @@ module s1c88
 
     localparam [2:0]
         STATE_IDLE          = 3'd0,
-        STATE_OPCODE_READ   = 3'd1,
-        STATE_OPEXT_READ    = 3'd2,
-        STATE_IMM_LOW_READ  = 3'd3,
-        STATE_IMM_HIGH_READ = 3'd4,
-        STATE_EXECUTE       = 3'd5,
-        STATE_EXC_PROCESS   = 3'd6;
+        STATE_OPEXT_READ    = 3'd1,
+        STATE_IMM_LOW_READ  = 3'd2,
+        STATE_IMM_HIGH_READ = 3'd3,
+        STATE_EXECUTE       = 3'd4,
+        STATE_EXC_PROCESS   = 3'd5;
 
     localparam [2:0]
         EXCEPTION_TYPE_RESET   = 3'd0,
@@ -218,10 +211,16 @@ module s1c88
     reg [2:0] state = STATE_IDLE;
 
     wire [2:0] next_state =
-        (state == STATE_IDLE || state == STATE_EXC_PROCESS) ?
-            STATE_OPCODE_READ:
+        (state == STATE_IDLE)?
+            (exception != EXCEPTION_TYPE_NONE ? STATE_EXC_PROCESS:
+                                                STATE_EXECUTE):
 
-        (state == STATE_OPCODE_READ) ?
+        (state == STATE_EXC_PROCESS) ?
+            (need_opext                       ? STATE_OPEXT_READ:
+            (need_imm                         ? STATE_IMM_LOW_READ:
+                                                STATE_EXECUTE)):
+
+        (state == STATE_EXECUTE) ?
             (need_opext                       ? STATE_OPEXT_READ:
             (need_imm                         ? STATE_IMM_LOW_READ:
             (exception != EXCEPTION_TYPE_NONE ? STATE_EXC_PROCESS:
@@ -234,10 +233,7 @@ module s1c88
         (state == STATE_IMM_LOW_READ) ?
             (imm_size    ? STATE_IMM_HIGH_READ:
                            STATE_EXECUTE):
-
-        (state == STATE_IMM_HIGH_READ) ?
-                           STATE_EXECUTE:
-                           STATE_OPCODE_READ;
+                           STATE_EXECUTE;
 
     reg [15:0] PC = 16'hFACE;
 
@@ -268,11 +264,30 @@ module s1c88
         .error(decode_error)
     );
 
-    assign sync = (state == STATE_OPCODE_READ);
+    // @todo: In a real system, we may need to align this to an edge.
+    assign sync = fetch_opcode;
+    reg fetch_opcode;
+    wire opcode_error = (microaddress == 0 && state == STATE_EXECUTE);
     wire [7:0] opcode_extension = opcode - 8'hCD;
     wire [9:0] extended_opcode = need_opext?
         {opcode_extension[1:0], opext}:
         {2'd0, opcode};
+
+    // @note: Perhaps I would be happier if we had a opcode fetcher. Whenever
+    // it's empty, request an opcode fetch. When done with an opcode, evacuate
+    // and request a new one. Anyway, just keep in mind that the code below
+    // could be a bit fragile.
+    always_comb
+    begin
+        // @todo: After a reset, fetch_opcode depends on microinstruction_done
+        // being set to 1, but there is no microinstruction loaded yet!
+        if(state == STATE_EXECUTE && microinstruction_done)
+            fetch_opcode = 1;
+        else if(exception_process_step == 0 && iack == 1)
+            fetch_opcode = 1;
+        else
+            fetch_opcode = 0;
+    end
 
     always_ff @ (negedge clk, posedge reset)
     begin
@@ -287,6 +302,7 @@ module s1c88
             bus_status    <= BUS_COMMAND_IDLE;
             reset_counter <= 0;
             exception     <= EXCEPTION_TYPE_RESET;
+            //fetch_opcode  <= 0;
 
             microprogram_counter <= 0;
             microaddress         <= 0;
@@ -309,6 +325,7 @@ module s1c88
             begin
                 address_out <= {9'b0, PC[14:0]};
                 state <= next_state;
+                bus_status <= BUS_COMMAND_MEM_READ;
 
                 if(exception != EXCEPTION_TYPE_NONE)
                 begin
@@ -316,9 +333,10 @@ module s1c88
                     address_out <= 24'hDEFACE;
                 end
 
-                // @todo: Set this correctly.
-                bus_status <= (state != STATE_EXECUTE)? BUS_COMMAND_MEM_READ: BUS_COMMAND_MEM_WRITE;
+                if(next_state == STATE_EXECUTE)
+                    microaddress <= translation_rom[extended_opcode];
             end
+
 
             case(state)
                 STATE_EXC_PROCESS:
@@ -328,29 +346,24 @@ module s1c88
                         exception_process_step <= exception_process_step + 1;
                         state <= STATE_EXC_PROCESS;
 
-                        if(exception_process_step == 0)
+                        if(exception_process_step == 1)
                         begin
                             address_out <= 0;
                         end
-                        else if(exception_process_step == 1)
+                        else if(exception_process_step == 2)
                         begin
                             address_out <= 1;
                             exception   <= EXCEPTION_TYPE_NONE;
-                            iack <= 0;
+                            iack        <= 0;
                         end
-                        else if(exception_process_step == 2)
+                        else if(exception_process_step == 3)
                         begin
-                            state <= STATE_OPCODE_READ;
+                            state <= next_state;
                         end
                     end
                 end
-                STATE_OPCODE_READ:
-                begin
-                    microaddress <= translation_rom[extended_opcode];
-                end
                 STATE_OPEXT_READ:
                 begin
-                    microaddress <= translation_rom[extended_opcode];
                 end
                 STATE_EXECUTE:
                 begin
@@ -411,6 +424,17 @@ module s1c88
             pk <= ~pk;
             read <= 0;
 
+            if(fetch_opcode)
+            begin
+                if(pk == 0)
+                begin
+                    read <= 1;
+                    PC <= PC + 1;
+                end
+                else
+                    opcode <= data_in;
+            end
+
             case(state)
                 STATE_IDLE:
                 begin
@@ -420,33 +444,22 @@ module s1c88
                 begin
                     if(pk == 0)
                     begin
-                        if(exception_process_step <= 2)
+                        if(exception_process_step <= 3)
                         begin
                             read <= 1;
                         end
                     end
                     else
                     begin
-                        if(exception_process_step == 1)
+                        if(exception_process_step == 2)
                         begin
                             PC[7:0] <= data_in;
                         end
-                        else if(exception_process_step == 2)
+                        else if(exception_process_step == 3)
                         begin
                             PC[15:8] <= data_in;
                         end
                     end
-                end
-
-                STATE_OPCODE_READ:
-                begin
-                    if(pk == 0)
-                    begin
-                        read <= 1;
-                        PC <= PC + 1;
-                    end
-                    else
-                        opcode <= data_in;
                 end
 
                 STATE_OPEXT_READ:
