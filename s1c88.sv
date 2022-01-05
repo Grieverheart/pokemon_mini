@@ -31,6 +31,12 @@ module s1c88
     //rather than interposing an execute cycle after an
     //operand read cycle.
 
+    // @todo: For writing it seems we need to use signals that are clocked on
+    // both the positive and negative edge of the clock. This is not
+    // synthesizable on modern FPGAs so we should probably resort to
+    // increasing clock frequency and have a positive clock edge for each of
+    // the four T-phases of a bus cycle.
+
     enum [1:0]
     {
         BUS_COMMAND_IDLE      = 2'd0,
@@ -68,32 +74,29 @@ module s1c88
         MICRO_BUS_MEM_WRITE = 1'd1;
 
     localparam [4:0]
-        MICRO_MOV_NONE  = 5'h00,
+        MICRO_MOV_NONE     = 5'h00,
 
-        // register specified by 3 lower bits of opcode.
-        MICRO_MOV_R     = 5'h01,
-        // memory specified by 3 lower bits of opcode.
-        MICRO_MOV_M     = 5'h02,
+        MICRO_MOV_IMM      = 5'h01,
+        MICRO_MOV_IMM_LOW  = 5'h02,
+        MICRO_MOV_IMM_HIGH = 5'h03,
 
-        MICRO_MOV_IMM   = 5'h03,
-
-        MICRO_MOV_A     = 5'h04,
-        MICRO_MOV_B     = 5'h05,
-        MICRO_MOV_BA    = 5'h06,
-        MICRO_MOV_H     = 5'h07,
-        MICRO_MOV_L     = 5'h08,
-        MICRO_MOV_HL    = 5'h09,
-        MICRO_MOV_IX    = 5'h0A,
-        MICRO_MOV_IY    = 5'h0B,
-        MICRO_MOV_SP    = 5'h0C,
-        MICRO_MOV_BR    = 5'h0D,
-        MICRO_MOV_PC    = 5'h0E,
-        MICRO_MOV_NB    = 5'h0F,
-        MICRO_MOV_CB    = 5'h10,
-        MICRO_MOV_EP    = 5'h11,
-        MICRO_MOV_XP    = 5'h11,
-        MICRO_MOV_YP    = 5'h12,
-        MICRO_MOV_ALU_R = 5'h13;
+        MICRO_MOV_A        = 5'h04,
+        MICRO_MOV_B        = 5'h05,
+        MICRO_MOV_BA       = 5'h06,
+        MICRO_MOV_H        = 5'h07,
+        MICRO_MOV_L        = 5'h08,
+        MICRO_MOV_HL       = 5'h09,
+        MICRO_MOV_IX       = 5'h0A,
+        MICRO_MOV_IY       = 5'h0B,
+        MICRO_MOV_SP       = 5'h0C,
+        MICRO_MOV_BR       = 5'h0D,
+        MICRO_MOV_PC       = 5'h0E,
+        MICRO_MOV_NB       = 5'h0F,
+        MICRO_MOV_CB       = 5'h10,
+        MICRO_MOV_EP       = 5'h11,
+        MICRO_MOV_XP       = 5'h11,
+        MICRO_MOV_YP       = 5'h12,
+        MICRO_MOV_ALU_R    = 5'h13;
 
     localparam [4:0]
         MICRO_ALU_OP_NONE = 5'h0,
@@ -109,7 +112,7 @@ module s1c88
 
     reg [8:0] translation_rom[0:767];
     //reg [8:0] jump_table[0:15];
-    reg [18:0] rom[0:511];
+    reg [19:0] rom[0:511];
 
     initial
     begin
@@ -119,39 +122,44 @@ module s1c88
         for (int i = 0; i < 512; i++)
             rom[i] = 0;
 
-        rom[0] = {MICRO_TYPE_BUS, 4'd0, MICRO_BUS_MEM_READ, 1'b1, MICRO_MOV_A, MICRO_MOV_BR};
-        rom[1] = {MICRO_TYPE_BUS, 4'd0, MICRO_BUS_MEM_READ, 1'b1, MICRO_MOV_A, MICRO_MOV_IMM};
-        rom[2] = {MICRO_TYPE_BUS, 4'd0, MICRO_BUS_MEM_READ, 1'b1, MICRO_MOV_A, MICRO_MOV_HL};
-        rom[3] = {MICRO_TYPE_BUS, 4'd0, MICRO_BUS_MEM_READ, 1'b1, MICRO_MOV_A, MICRO_MOV_IX};
-        rom[4] = {MICRO_TYPE_BUS, 4'd0, MICRO_BUS_MEM_READ, 1'b1, MICRO_MOV_A, MICRO_MOV_IY};
+        rom[0] = {MICRO_TYPE_MISC, 5'd0, 2'b01, MICRO_MOV_NONE, MICRO_MOV_NONE};
+        rom[1] = {MICRO_TYPE_BUS, 4'd0, MICRO_BUS_MEM_READ, 2'b01, MICRO_MOV_A, MICRO_MOV_BR};
+        rom[2] = {MICRO_TYPE_BUS, 4'd0, MICRO_BUS_MEM_READ, 2'b01, MICRO_MOV_A, MICRO_MOV_IMM};
+        rom[3] = {MICRO_TYPE_BUS, 4'd0, MICRO_BUS_MEM_READ, 2'b01, MICRO_MOV_A, MICRO_MOV_HL};
+        rom[4] = {MICRO_TYPE_BUS, 4'd0, MICRO_BUS_MEM_READ, 2'b01, MICRO_MOV_A, MICRO_MOV_IX};
+        rom[5] = {MICRO_TYPE_BUS, 4'd0, MICRO_BUS_MEM_READ, 2'b01, MICRO_MOV_A, MICRO_MOV_IY};
 
-        rom[5] = {MICRO_TYPE_ALU, MICRO_ALU_OP_ADD, 1'b0, MICRO_MOV_IX, MICRO_MOV_IMM};
-        rom[6] = {MICRO_TYPE_BUS, 4'd0, MICRO_BUS_MEM_READ, 1'b1, MICRO_MOV_A, MICRO_MOV_ALU_R};
+        rom[6] = {MICRO_TYPE_ALU, MICRO_ALU_OP_ADD, 2'b10, MICRO_MOV_IX, MICRO_MOV_IMM};
+        rom[7] = {MICRO_TYPE_BUS, 4'd0, MICRO_BUS_MEM_READ, 2'b01, MICRO_MOV_A, MICRO_MOV_ALU_R};
 
-        rom[7] = {MICRO_TYPE_ALU, MICRO_ALU_OP_ADD, 1'b0, MICRO_MOV_IY, MICRO_MOV_IMM};
-        rom[8] = {MICRO_TYPE_BUS, 4'd0, MICRO_BUS_MEM_READ, 1'b1, MICRO_MOV_A, MICRO_MOV_ALU_R};
+        rom[8] = {MICRO_TYPE_ALU, MICRO_ALU_OP_ADD, 2'b10, MICRO_MOV_IY, MICRO_MOV_IMM};
+        rom[9] = {MICRO_TYPE_BUS, 4'd0, MICRO_BUS_MEM_READ, 2'b01, MICRO_MOV_A, MICRO_MOV_ALU_R};
 
-        rom[9] = {MICRO_TYPE_ALU, MICRO_ALU_OP_ADD, 1'b0, MICRO_MOV_IX, MICRO_MOV_L};
-        rom[10] = {MICRO_TYPE_BUS, 4'd0, MICRO_BUS_MEM_READ, 1'b1, MICRO_MOV_A, MICRO_MOV_ALU_R};
+        rom[10] = {MICRO_TYPE_ALU, MICRO_ALU_OP_ADD, 2'b10, MICRO_MOV_IX, MICRO_MOV_L};
+        rom[11] = {MICRO_TYPE_BUS, 4'd0, MICRO_BUS_MEM_READ, 2'b01, MICRO_MOV_A, MICRO_MOV_ALU_R};
 
-        rom[11] = {MICRO_TYPE_ALU, MICRO_ALU_OP_ADD, 1'b0, MICRO_MOV_IY, MICRO_MOV_L};
-        rom[12] = {MICRO_TYPE_BUS, 4'd0, MICRO_BUS_MEM_READ, 1'b1, MICRO_MOV_A, MICRO_MOV_ALU_R};
+        rom[12] = {MICRO_TYPE_ALU, MICRO_ALU_OP_ADD, 2'b10, MICRO_MOV_IY, MICRO_MOV_L};
+        rom[13] = {MICRO_TYPE_BUS, 4'd0, MICRO_BUS_MEM_READ, 2'b01, MICRO_MOV_A, MICRO_MOV_ALU_R};
 
-        rom[13] = {MICRO_TYPE_MISC, 5'd0, 1'b1, MICRO_MOV_EP, MICRO_MOV_IMM};
-        rom[14] = {MICRO_TYPE_MISC, 5'd0, 1'b1, MICRO_MOV_BR, MICRO_MOV_IMM};
+        rom[14] = {MICRO_TYPE_MISC, 5'd0, 2'b01, MICRO_MOV_EP, MICRO_MOV_IMM};
+        rom[15] = {MICRO_TYPE_MISC, 5'd0, 2'b01, MICRO_MOV_BR, MICRO_MOV_IMM};
 
-        translation_rom[10'h044] = 0;
-        translation_rom[10'h1D0] = 1;
-        translation_rom[10'h045] = 2;
-        translation_rom[10'h046] = 3;
-        translation_rom[10'h047] = 4;
-        translation_rom[10'h140] = 5;
-        translation_rom[10'h141] = 7;
-        translation_rom[10'h142] = 9;
-        translation_rom[10'h143] = 11;
+        rom[16] = {MICRO_TYPE_BUS, 4'd0, MICRO_BUS_MEM_WRITE, 2'b10, MICRO_MOV_BR, MICRO_MOV_IMM_HIGH};
+        rom[17] = {MICRO_TYPE_MISC, 5'd0, 2'b01, MICRO_MOV_NONE, MICRO_MOV_NONE};
 
-        translation_rom[10'h1C5] = 13;
-        translation_rom[10'h0B4] = 14;
+        translation_rom[10'h044] = 1;
+        translation_rom[10'h1D0] = 2;
+        translation_rom[10'h045] = 3;
+        translation_rom[10'h046] = 4;
+        translation_rom[10'h047] = 5;
+        translation_rom[10'h140] = 6;
+        translation_rom[10'h141] = 8;
+        translation_rom[10'h142] = 10;
+        translation_rom[10'h143] = 12;
+
+        translation_rom[10'h1C5] = 14;
+        translation_rom[10'h0B4] = 15;
+        translation_rom[10'h0DD] = 16;
 
     end
 
@@ -161,12 +169,13 @@ module s1c88
     wire [7:0] A = BA[7:0];
     wire [7:0] B = BA[15:8];
 
-    wire [18:0] micro_op = rom[microaddress + {5'd0, microprogram_counter}];
+    wire [19:0] micro_op = rom[microaddress + {5'd0, microprogram_counter}];
     wire [4:0] micro_mov_src = micro_op[4:0];
     wire [4:0] micro_mov_dst = micro_op[9:5];
     wire microinstruction_done = micro_op[10];
-    wire [2:0] micro_op_type = micro_op[18:16];
-    wire micro_bus_op = micro_op[11];
+    wire microinstruction_nearly_done = micro_op[11];
+    wire [2:0] micro_op_type = micro_op[19:17];
+    wire micro_bus_op = micro_op[12];
 
     reg [3:0] microprogram_counter;
     reg [8:0] microaddress;
@@ -273,21 +282,6 @@ module s1c88
         {opcode_extension[1:0], opext}:
         {2'd0, opcode};
 
-    // @note: Perhaps I would be happier if we had a opcode fetcher. Whenever
-    // it's empty, request an opcode fetch. When done with an opcode, evacuate
-    // and request a new one. Anyway, just keep in mind that the code below
-    // could be a bit fragile.
-    always_comb
-    begin
-        // @todo: After a reset, fetch_opcode depends on microinstruction_done
-        // being set to 1, but there is no microinstruction loaded yet!
-        if(state == STATE_EXECUTE && microinstruction_done)
-            fetch_opcode = 1;
-        else if(exception_process_step == 0 && iack == 1)
-            fetch_opcode = 1;
-        else
-            fetch_opcode = 0;
-    end
 
     always_ff @ (negedge clk, posedge reset)
     begin
@@ -297,15 +291,12 @@ module s1c88
             state         <= STATE_IDLE;
             address_out   <= ~0;
             data_out      <= ~0;
-            write         <= 0;
             pl            <= 0;
             bus_status    <= BUS_COMMAND_IDLE;
             reset_counter <= 0;
             exception     <= EXCEPTION_TYPE_RESET;
-            //fetch_opcode  <= 0;
-
+            fetch_opcode  <= 0;
             microprogram_counter <= 0;
-            microaddress         <= 0;
         end
         else if(reset_counter < 2)
         begin
@@ -314,7 +305,6 @@ module s1c88
             begin
                 // Output dummy address
                 address_out <= 24'hDEFACE;
-                exception_process_step <= 0;
             end
         end
         else
@@ -326,71 +316,96 @@ module s1c88
                 address_out <= {9'b0, PC[14:0]};
                 state <= next_state;
                 bus_status <= BUS_COMMAND_MEM_READ;
-
-                if(exception != EXCEPTION_TYPE_NONE)
-                begin
-                    iack <= 1;
-                    address_out <= 24'hDEFACE;
-                end
+                fetch_opcode <= 0;
 
                 if(next_state == STATE_EXECUTE)
-                    microaddress <= translation_rom[extended_opcode];
+                begin
+                    microprogram_counter <= 0;
+                    if(microinstruction_done && exception == EXCEPTION_TYPE_NONE)
+                        fetch_opcode <= 1;
+                end
+
+                if(exception != EXCEPTION_TYPE_NONE && iack == 0)
+                begin
+                    iack                   <= 1;
+                    fetch_opcode           <= 1;
+                    address_out            <= 24'hDEFACE;
+                    exception_process_step <= 0;
+                end
             end
 
 
-            case(state)
-                STATE_EXC_PROCESS:
+            if(state == STATE_EXC_PROCESS)
+            begin
+                if(pl == 1)
                 begin
-                    if(pl == 1)
-                    begin
-                        exception_process_step <= exception_process_step + 1;
-                        state <= STATE_EXC_PROCESS;
+                    exception_process_step <= exception_process_step + 1;
+                    state <= STATE_EXC_PROCESS;
 
-                        if(exception_process_step == 1)
-                        begin
-                            address_out <= 0;
-                        end
-                        else if(exception_process_step == 2)
-                        begin
-                            address_out <= 1;
-                            exception   <= EXCEPTION_TYPE_NONE;
-                            iack        <= 0;
-                        end
-                        else if(exception_process_step == 3)
-                        begin
-                            state <= next_state;
-                        end
+                    if(exception_process_step == 1)
+                    begin
+                        address_out <= 0;
+                    end
+                    else if(exception_process_step == 2)
+                    begin
+                        address_out <= 1;
+                        exception   <= EXCEPTION_TYPE_NONE;
+                        iack        <= 0;
+                    end
+                    else if(exception_process_step == 3)
+                    begin
+                        state <= next_state;
+                        fetch_opcode <= 1;
                     end
                 end
-                STATE_OPEXT_READ:
+            end
+            else if(
+                state == STATE_EXECUTE ||
+                next_state == STATE_EXECUTE
+            )
+            begin
+                if(pl == 1)
                 begin
-                end
-                STATE_EXECUTE:
-                begin
-                    if(!microinstruction_done)
+                    if(!microinstruction_done && state == STATE_EXECUTE)
                     begin
                         state <= STATE_EXECUTE;
                         microprogram_counter <= microprogram_counter + 1;
+                        if(microinstruction_nearly_done)
+                            fetch_opcode <= 1;
                     end
 
-                    if(micro_op_type == MICRO_TYPE_BUS)
+                    // Don't do any bus ops on the last microinstruction
+                    // step.
+                    if(!microinstruction_nearly_done || state != STATE_EXECUTE)
                     begin
-                        if(pl == 1)
+                        if(micro_op_type == MICRO_TYPE_BUS)
                         begin
-                            case(micro_mov_src)
-                                MICRO_MOV_IMM:
-                                begin
-                                    address_out <= {8'b0, imm};
-                                end
-                                default:
-                                begin
-                                end
-                            endcase
+                            if(micro_bus_op == MICRO_BUS_MEM_READ)
+                            begin
+                                case(micro_mov_src)
+                                    MICRO_MOV_IMM:
+                                    begin
+                                        address_out <= {8'b0, imm};
+                                    end
+                                    default:
+                                    begin
+                                    end
+                                endcase
+                            end
+                            else // MICRO_BUS_MEM_WRITE
+                            begin
+                                case(micro_mov_dst)
+                                    MICRO_MOV_BR:
+                                    begin
+                                        address_out <= {8'b0, BR, imm_low};
+                                    end
+                                    default:
+                                    begin
+                                    end
+                                endcase
+                            end
                         end
-                    end
-                    else if(micro_op_type == MICRO_TYPE_MISC)
-                    begin
-                        if(pl == 1)
+                        else if(micro_op_type == MICRO_TYPE_MISC)
                         begin
                             case(micro_mov_dst)
                                 MICRO_MOV_EP:
@@ -404,10 +419,7 @@ module s1c88
                         end
                     end
                 end
-                default:
-                begin
-                end
-            endcase
+            end
 
         end
     end
@@ -417,12 +429,15 @@ module s1c88
         if(reset)
         begin
             read          <= 0;
+            write         <= 0;
             pk            <= 0;
+            microaddress  <= 0;
         end
         else if(reset_counter >= 2)
         begin
             pk <= ~pk;
             read <= 0;
+            write <= 0;
 
             if(fetch_opcode)
             begin
@@ -432,7 +447,19 @@ module s1c88
                     PC <= PC + 1;
                 end
                 else
+                begin
                     opcode <= data_in;
+                end
+            end
+
+            // @note: We need to set the microaddress here, because this is
+            // where the opcode and extension are read and it's the last edge
+            // of the bus cycle. Otherwise we need to make microaddress a wire
+            // which makes it difficult to perform jumps in the microaddress
+            // space.
+            if(next_state == STATE_EXECUTE && pk == 1)
+            begin
+                microaddress <= translation_rom[extended_opcode];
             end
 
             case(state)
@@ -497,13 +524,25 @@ module s1c88
 
                 STATE_EXECUTE:
                 begin
-                    if(pk == 0)
+                    if(micro_op_type == MICRO_TYPE_BUS)
                     begin
-                        // Set read or write depending on op
+                        if(micro_bus_op == MICRO_BUS_MEM_READ)
+                        begin
+                            if(pk == 0)
+                            begin
+                                read <= 1;
+                            end
+                        end
+                        else // MICRO_BUS_MEM_WRITE
+                        begin
+                            if(pk == 0)
+                            begin
+                                write <= 1;
+                            end
+                        end
                     end
-                    else
+                    else if(micro_op_type == MICRO_TYPE_MISC)
                     begin
-                        // Read or write data depending on op.
                     end
                 end
 
