@@ -11,7 +11,7 @@ module s1c88
     output logic [23:0] address_out,
     output logic [1:0]  bus_status,
     output logic read,
-    output logic write,
+    output wire write,
     output wire sync,
     output logic iack
 );
@@ -113,6 +113,12 @@ module s1c88
     reg [8:0] translation_rom[0:767];
     //reg [8:0] jump_table[0:15];
     reg [19:0] rom[0:511];
+
+    assign write = pl && pk &&
+        (state == STATE_EXECUTE) &&
+        (micro_op_type == MICRO_TYPE_BUS) &&
+        (micro_bus_op == MICRO_BUS_MEM_WRITE) &&
+        !microinstruction_done;
 
     initial
     begin
@@ -429,7 +435,6 @@ module s1c88
         if(reset)
         begin
             read          <= 0;
-            write         <= 0;
             pk            <= 0;
             microaddress  <= 0;
         end
@@ -437,7 +442,6 @@ module s1c88
         begin
             pk <= ~pk;
             read <= 0;
-            write <= 0;
 
             if(fetch_opcode)
             begin
@@ -537,7 +541,7 @@ module s1c88
                         begin
                             if(pk == 0)
                             begin
-                                write <= 1;
+                                //write <= 1;
                             end
                         end
                     end
