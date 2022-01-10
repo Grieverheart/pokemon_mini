@@ -1,0 +1,5 @@
+set_global_assignment -name VERILOG_FILE rtl/lfsr.v
+set_global_assignment -name SYSTEMVERILOG_FILE rtl/decode.sv
+set_global_assignment -name SYSTEMVERILOG_FILE rtl/s1c88.v
+set_global_assignment -name SDC_FILE pokemon_mini.sdc
+set_global_assignment -name SYSTEMVERILOG_FILE pokemon_mini.sv
