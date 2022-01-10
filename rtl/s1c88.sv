@@ -31,11 +31,13 @@ module s1c88
     //rather than interposing an execute cycle after an
     //operand read cycle.
 
-    // @todo: For writing it seems we need to use signals that are clocked on
-    // both the positive and negative edge of the clock. This is not
-    // synthesizable on modern FPGAs so we should probably resort to
-    // increasing clock frequency and have a positive clock edge for each of
-    // the four T-phases of a bus cycle.
+    // @todo:
+    //
+    // * Add some simple checkerboard video output from Tutorial 1.
+    // * Use bram with altsyncram module from another tutorial to load
+    //   a simple file (bios).
+    // * Compile core with Quartus.
+    // * Connect DE10-nano and see if we can ues SignalTap.
 
     enum [1:0]
     {
