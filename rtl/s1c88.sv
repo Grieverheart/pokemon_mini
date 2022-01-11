@@ -33,19 +33,13 @@ module s1c88
 
     // @todo:
     //
-    // * Add some simple checkerboard video output from Tutorial 1.
-    // * Use bram with altsyncram module from another tutorial to load
-    //   a simple file (bios).
-    // * Compile core with Quartus.
     // * Connect DE10-nano and see if we can ues SignalTap.
 
-    enum [1:0]
-    {
+    localparam [1:0]
         BUS_COMMAND_IDLE      = 2'd0,
         BUS_COMMAND_IRQ_READ  = 2'd1,
         BUS_COMMAND_MEM_WRITE = 2'd2,
-        BUS_COMMAND_MEM_READ  = 2'd3
-    } BusCommand;
+        BUS_COMMAND_MEM_READ  = 2'd3;
 
     localparam [2:0]
         STATE_IDLE          = 3'd0,
@@ -559,5 +553,5 @@ module s1c88
         end
     end
 
-endmodule;
+endmodule
 

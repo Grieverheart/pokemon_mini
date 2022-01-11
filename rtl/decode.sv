@@ -171,4 +171,4 @@ module decode
         endcase
     end
 
-endmodule;
+endmodule
