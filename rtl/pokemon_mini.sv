@@ -135,7 +135,7 @@ module pokemon_mini
     );
 
     dpram #(
-        .init_file("bios.min"),
+        .init_file("verilator/data/bios.hex"),
         .widthad_a(24),
         .width_a(8)
     ) vmem
