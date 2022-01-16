@@ -33,7 +33,8 @@ module s1c88
 
     // @todo:
     //
-    // * Connect DE10-nano and see if we can ues SignalTap.
+    // * Implement 0xD9.
+    // * Implement writing in simulation.
 
     localparam [1:0]
         BUS_COMMAND_IDLE      = 2'd0,
@@ -396,6 +397,7 @@ module s1c88
                             end
                             else // MICRO_BUS_MEM_WRITE
                             begin
+                                bus_status <= BUS_COMMAND_MEM_WRITE;
                                 case(micro_mov_dst)
                                     MICRO_MOV_BR:
                                     begin
