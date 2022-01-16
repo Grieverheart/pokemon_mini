@@ -93,19 +93,22 @@ module s1c88
         MICRO_MOV_EP       = 5'h11,
         MICRO_MOV_XP       = 5'h11,
         MICRO_MOV_YP       = 5'h12,
-        MICRO_MOV_ALU_R    = 5'h13;
+        MICRO_MOV_ALU_R    = 5'h13,
+        MICRO_MOV_ALU_A    = 5'h14,
+        MICRO_MOV_ALU_B    = 5'h15;
 
     localparam [4:0]
         MICRO_ALU_OP_NONE = 5'h0,
         MICRO_ALU_OP_XI   = 5'h1,
         MICRO_ALU_OP_AND  = 5'h2,
-        MICRO_ALU_OP_ADD  = 5'h3,
-        MICRO_ALU_OP_SUB  = 5'h4,
-        MICRO_ALU_OP_INC  = 5'h5,
-        MICRO_ALU_OP_DEC  = 5'h6,
-        MICRO_ALU_OP_NEG  = 5'h7,
-        MICRO_ALU_OP_ROL  = 5'h8,
-        MICRO_ALU_OP_ROR  = 5'h9;
+        MICRO_ALU_OP_OR   = 5'h3,
+        MICRO_ALU_OP_ADD  = 5'h4,
+        MICRO_ALU_OP_SUB  = 5'h5,
+        MICRO_ALU_OP_INC  = 5'h6,
+        MICRO_ALU_OP_DEC  = 5'h7,
+        MICRO_ALU_OP_NEG  = 5'h8,
+        MICRO_ALU_OP_ROL  = 5'h9,
+        MICRO_ALU_OP_ROR  = 5'h10;
 
     reg [8:0] translation_rom[0:767];
     //reg [8:0] jump_table[0:15];
@@ -147,8 +150,12 @@ module s1c88
         rom[14] = {MICRO_TYPE_MISC, 5'd0, 2'b01, MICRO_MOV_EP, MICRO_MOV_IMM};
         rom[15] = {MICRO_TYPE_MISC, 5'd0, 2'b01, MICRO_MOV_BR, MICRO_MOV_IMM};
 
-        rom[16] = {MICRO_TYPE_BUS, 4'd0, MICRO_BUS_MEM_WRITE, 2'b10, MICRO_MOV_BR, MICRO_MOV_IMM_HIGH};
+        rom[6] = {MICRO_TYPE_BUS, 4'd0, MICRO_BUS_MEM_WRITE, 2'b10, MICRO_MOV_BR, MICRO_MOV_IMM_HIGH};
         rom[17] = {MICRO_TYPE_MISC, 5'd0, 2'b01, MICRO_MOV_NONE, MICRO_MOV_NONE};
+
+        rom[18] = {MICRO_TYPE_BUS, 4'd0, MICRO_BUS_MEM_READ, 2'b01, MICRO_MOV_ALU_A, MICRO_MOV_BR};
+        rom[19] = {MICRO_TYPE_ALU, MICRO_ALU_OP_OR, 2'b10, MICRO_MOV_IX, MICRO_MOV_IMM};
+        rom[16] = {MICRO_TYPE_BUS, 4'd0, MICRO_BUS_MEM_WRITE, 2'b10, MICRO_MOV_ALU_R, MICRO_MOV_BR};
 
         translation_rom[10'h044] = 1;
         translation_rom[10'h1D0] = 2;
@@ -163,6 +170,8 @@ module s1c88
         translation_rom[10'h1C5] = 14;
         translation_rom[10'h0B4] = 15;
         translation_rom[10'h0DD] = 16;
+
+        translation_rom[10'h0D9] = 18;
 
     end
 
@@ -389,6 +398,10 @@ module s1c88
                                     MICRO_MOV_IMM:
                                     begin
                                         address_out <= {8'b0, imm};
+                                    end
+                                    MICRO_MOV_BR:
+                                    begin
+                                        address_out <= {8'b0, BR, imm_low};
                                     end
                                     default:
                                     begin
