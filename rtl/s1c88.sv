@@ -31,9 +31,15 @@ module s1c88
     //rather than interposing an execute cycle after an
     //operand read cycle.
 
+    // After having been stored in the 16-bit temporary
+    // register TEMP 2, the operation result is either
+    // stored in the register/memory or used as address
+    // data according to the operation instruction.
+
     // @todo:
     //
     // * Implement ALU.
+    //     o Implement micro read to alu register.
     // * Implement 0xD9.
     // * Implement writing in simulation.
 
@@ -126,7 +132,7 @@ module s1c88
 
     reg [8:0] translation_rom[0:767];
     //reg [8:0] jump_table[0:15];
-    reg [20:0] rom[0:511];
+    reg [21:0] rom[0:511];
 
     assign write = pl && pk &&
         (state == STATE_EXECUTE) &&
@@ -157,34 +163,34 @@ module s1c88
         // with a 0 offset, while the positive edge logic indexing with an
         // offset of +1.
 
-        rom[0] = {MICRO_TYPE_MISC, MICRO_ALU_OP_NONE, 1'd0, 2'b01, MICRO_MOV_NONE, MICRO_MOV_NONE};
-        rom[1] = {MICRO_TYPE_BUS, MICRO_ALU_OP_NONE, MICRO_BUS_MEM_READ, 2'b01, MICRO_ADD_BR,    MICRO_MOV_A};
-        rom[2] = {MICRO_TYPE_BUS, MICRO_ALU_OP_NONE, MICRO_BUS_MEM_READ, 2'b01, MICRO_ADD_HH_LL, MICRO_MOV_A};
-        rom[3] = {MICRO_TYPE_BUS, MICRO_ALU_OP_NONE, MICRO_BUS_MEM_READ, 2'b01, MICRO_ADD_HL,    MICRO_MOV_A};
-        rom[4] = {MICRO_TYPE_BUS, MICRO_ALU_OP_NONE, MICRO_BUS_MEM_READ, 2'b01, MICRO_ADD_IX,    MICRO_MOV_A};
-        rom[5] = {MICRO_TYPE_BUS, MICRO_ALU_OP_NONE, MICRO_BUS_MEM_READ, 2'b01, MICRO_ADD_IY,    MICRO_MOV_A};
+        rom[0] = {MICRO_TYPE_MISC, 1'b0, MICRO_ALU_OP_NONE, 1'd0, 2'b01, MICRO_MOV_NONE, MICRO_MOV_NONE};
+        rom[1] = {MICRO_TYPE_BUS, 1'b0, MICRO_ALU_OP_NONE, MICRO_BUS_MEM_READ, 2'b01, MICRO_ADD_BR,    MICRO_MOV_A};
+        rom[2] = {MICRO_TYPE_BUS, 1'b0, MICRO_ALU_OP_NONE, MICRO_BUS_MEM_READ, 2'b01, MICRO_ADD_HH_LL, MICRO_MOV_A};
+        rom[3] = {MICRO_TYPE_BUS, 1'b0, MICRO_ALU_OP_NONE, MICRO_BUS_MEM_READ, 2'b01, MICRO_ADD_HL,    MICRO_MOV_A};
+        rom[4] = {MICRO_TYPE_BUS, 1'b0, MICRO_ALU_OP_NONE, MICRO_BUS_MEM_READ, 2'b01, MICRO_ADD_IX,    MICRO_MOV_A};
+        rom[5] = {MICRO_TYPE_BUS, 1'b0, MICRO_ALU_OP_NONE, MICRO_BUS_MEM_READ, 2'b01, MICRO_ADD_IY,    MICRO_MOV_A};
 
-        rom[6] = {MICRO_TYPE_BUS, MICRO_ALU_OP_NONE, MICRO_BUS_MEM_READ, 2'b10, MICRO_ADD_IX_DD, MICRO_MOV_A};
-        rom[7] = {MICRO_TYPE_MISC, MICRO_ALU_OP_NONE, 1'd0, 2'b01, MICRO_MOV_NONE, MICRO_MOV_NONE};
+        rom[6] = {MICRO_TYPE_BUS, 1'b0, MICRO_ALU_OP_NONE, MICRO_BUS_MEM_READ, 2'b10, MICRO_ADD_IX_DD, MICRO_MOV_A};
+        rom[7] = {MICRO_TYPE_MISC, 1'b0, MICRO_ALU_OP_NONE, 1'd0, 2'b01, MICRO_MOV_NONE, MICRO_MOV_NONE};
 
-        rom[8] = {MICRO_TYPE_BUS, MICRO_ALU_OP_NONE, MICRO_BUS_MEM_READ, 2'b10, MICRO_ADD_IY_DD, MICRO_MOV_A};
-        rom[9] = {MICRO_TYPE_MISC, MICRO_ALU_OP_NONE, 1'd0, 2'b01, MICRO_MOV_NONE, MICRO_MOV_NONE};
+        rom[8] = {MICRO_TYPE_BUS, 1'b0, MICRO_ALU_OP_NONE, MICRO_BUS_MEM_READ, 2'b10, MICRO_ADD_IY_DD, MICRO_MOV_A};
+        rom[9] = {MICRO_TYPE_MISC, 1'b0, MICRO_ALU_OP_NONE, 1'd0, 2'b01, MICRO_MOV_NONE, MICRO_MOV_NONE};
 
-        rom[10] = {MICRO_TYPE_BUS, MICRO_ALU_OP_NONE, MICRO_BUS_MEM_READ, 2'b10, MICRO_ADD_IX_L, MICRO_MOV_A};
-        rom[11] = {MICRO_TYPE_MISC, MICRO_ALU_OP_NONE, 1'd0, 2'b01, MICRO_MOV_NONE, MICRO_MOV_NONE};
+        rom[10] = {MICRO_TYPE_BUS, 1'b0, MICRO_ALU_OP_NONE, MICRO_BUS_MEM_READ, 2'b10, MICRO_ADD_IX_L, MICRO_MOV_A};
+        rom[11] = {MICRO_TYPE_MISC, 1'b0, MICRO_ALU_OP_NONE, 1'd0, 2'b01, MICRO_MOV_NONE, MICRO_MOV_NONE};
 
-        rom[12] = {MICRO_TYPE_BUS, MICRO_ALU_OP_NONE, MICRO_BUS_MEM_READ, 2'b10, MICRO_ADD_IY_L, MICRO_MOV_A};
-        rom[13] = {MICRO_TYPE_MISC, MICRO_ALU_OP_NONE, 1'd0, 2'b01, MICRO_MOV_NONE, MICRO_MOV_NONE};
+        rom[12] = {MICRO_TYPE_BUS, 1'b0, MICRO_ALU_OP_NONE, MICRO_BUS_MEM_READ, 2'b10, MICRO_ADD_IY_L, MICRO_MOV_A};
+        rom[13] = {MICRO_TYPE_MISC, 1'b0, MICRO_ALU_OP_NONE, 1'd0, 2'b01, MICRO_MOV_NONE, MICRO_MOV_NONE};
 
-        rom[14] = {MICRO_TYPE_MISC, MICRO_ALU_OP_NONE, 1'd0, 2'b01, MICRO_MOV_EP, MICRO_MOV_IMM};
-        rom[15] = {MICRO_TYPE_MISC, MICRO_ALU_OP_NONE, 1'd0, 2'b01, MICRO_MOV_BR, MICRO_MOV_IMM};
+        rom[14] = {MICRO_TYPE_MISC, 1'b0, MICRO_ALU_OP_NONE, 1'd0, 2'b01, MICRO_MOV_EP, MICRO_MOV_IMM};
+        rom[15] = {MICRO_TYPE_MISC, 1'b0, MICRO_ALU_OP_NONE, 1'd0, 2'b01, MICRO_MOV_BR, MICRO_MOV_IMM};
 
-        rom[16] = {MICRO_TYPE_BUS, MICRO_ALU_OP_NONE, MICRO_BUS_MEM_WRITE, 2'b10, MICRO_ADD_BR, MICRO_MOV_IMM_HIGH};
-        rom[17] = {MICRO_TYPE_MISC, MICRO_ALU_OP_OR, 1'd0, 2'b01, MICRO_MOV_NONE, MICRO_MOV_NONE};
+        rom[16] = {MICRO_TYPE_BUS, 1'b0, MICRO_ALU_OP_NONE, MICRO_BUS_MEM_WRITE, 2'b10, MICRO_ADD_BR, MICRO_MOV_IMM_HIGH};
+        rom[17] = {MICRO_TYPE_MISC, 1'b0, MICRO_ALU_OP_OR, 1'd0, 2'b01, MICRO_MOV_NONE, MICRO_MOV_NONE};
 
-        rom[18] = {MICRO_TYPE_BUS, MICRO_ALU_OP_OR, MICRO_BUS_MEM_READ, 2'b00, MICRO_ADD_BR, MICRO_MOV_ALU_A};
-        rom[19] = {MICRO_TYPE_BUS, MICRO_ALU_OP_NONE, MICRO_BUS_MEM_WRITE, 2'b10, MICRO_ADD_BR, MICRO_MOV_ALU_R};
-        rom[20] = {MICRO_TYPE_MISC, MICRO_ALU_OP_NONE, 1'd0, 2'b01, MICRO_MOV_NONE, MICRO_MOV_NONE};
+        rom[18] = {MICRO_TYPE_BUS, 1'b0, MICRO_ALU_OP_OR, MICRO_BUS_MEM_READ, 2'b00, MICRO_ADD_BR, MICRO_MOV_ALU_A};
+        rom[19] = {MICRO_TYPE_BUS, 1'b0, MICRO_ALU_OP_NONE, MICRO_BUS_MEM_WRITE, 2'b10, MICRO_ADD_BR, MICRO_MOV_ALU_R};
+        rom[20] = {MICRO_TYPE_MISC, 1'b0, MICRO_ALU_OP_NONE, 1'd0, 2'b01, MICRO_MOV_NONE, MICRO_MOV_NONE};
 
         translation_rom[10'h044] = 1;
         translation_rom[10'h1D0] = 2;
@@ -210,14 +216,30 @@ module s1c88
     wire [7:0] A = BA[7:0];
     wire [7:0] B = BA[15:8];
 
-    wire [20:0] micro_op = rom[microaddress + {5'd0, microprogram_counter}];
+    reg [4:0] alu_op;
+    reg alu_size;
+    reg [15:0] alu_A;
+    reg [15:0] alu_B;
+    wire [15:0] alu_R;
+    wire [5:0] alu_flags;
+
+    alu alu
+    (
+        alu_op,
+        alu_size,
+        alu_A, alu_B, alu_R,
+        alu_flags
+    );
+
+    wire [21:0] micro_op = rom[microaddress + {5'd0, microprogram_counter}];
     wire [4:0] micro_mov_src = micro_op[4:0];
     wire [4:0] micro_mov_dst = micro_op[9:5];
 
     wire microinstruction_done = micro_op[10];
     wire microinstruction_nearly_done = micro_op[11];
-    wire [2:0] micro_op_type = micro_op[20:18];
+    wire [2:0] micro_op_type = micro_op[21:19];
     wire [4:0] micro_alu_op = micro_op[17:13];
+    wire micro_alu_size = micro_op[18];
     wire micro_bus_op = micro_op[12];
     wire [4:0] micro_bus_reg = micro_op[4:0];
     wire [4:0] micro_bus_add = micro_op[9:5];
@@ -240,6 +262,15 @@ module s1c88
 
             MICRO_MOV_BA:
                 src_reg = BA;
+
+            MICRO_MOV_ALU_A:
+                src_reg = alu_A;
+
+            MICRO_MOV_ALU_B:
+                src_reg = alu_B;
+
+            MICRO_MOV_ALU_R:
+                src_reg = alu_R;
 
             //MICRO_MOV_H     = 5'h07,
             //MICRO_MOV_L     = 5'h08,
@@ -327,6 +358,51 @@ module s1c88
         {opcode_extension[1:0], opext}:
         {2'd0, opcode};
 
+    always_ff @ (negedge clk, posedge reset)
+    begin
+        if(reset)
+        begin
+        end
+        else if(pl ==1)
+        begin
+            alu_size <= micro_alu_size;
+            // @todo: We probably need to add flag for updating flags
+            // or not.
+            //alu_flags_r <= alu_flags;
+
+            case(micro_alu_op)
+                MICRO_ALU_OP_AND:
+                    alu_op <= ALUOP_AND;
+
+                MICRO_ALU_OP_ADD:
+                    alu_op <= ALUOP_ADD;
+
+                MICRO_ALU_OP_SUB:
+                    alu_op <= ALUOP_SUB;
+
+                MICRO_ALU_OP_INC:
+                    alu_op <= ALUOP_INC;
+
+                MICRO_ALU_OP_DEC:
+                    alu_op <= ALUOP_DEC;
+
+                MICRO_ALU_OP_NEG:
+                    alu_op <= ALUOP_NEG;
+
+                MICRO_ALU_OP_ROL:
+                    alu_op <= ALUOP_ROL;
+
+                MICRO_ALU_OP_ROR:
+                    alu_op <= ALUOP_ROR;
+
+                default:
+                    alu_op <= 0;
+
+            endcase
+        end
+    end
+
+
 
     always_ff @ (negedge clk, posedge reset)
     begin
@@ -335,7 +411,6 @@ module s1c88
             iack          <= 0;
             state         <= STATE_IDLE;
             address_out   <= ~0;
-            data_out      <= ~0;
             pl            <= 0;
             bus_status    <= BUS_COMMAND_IDLE;
             reset_counter <= 0;
@@ -478,6 +553,7 @@ module s1c88
     begin
         if(reset)
         begin
+            data_out      <= ~0;
             read          <= 0;
             pk            <= 0;
             microaddress  <= 0;
@@ -499,6 +575,9 @@ module s1c88
                     opcode <= data_in;
                 end
             end
+
+            // @todo: Not sure if this is the best place for this assignment
+            alu_B <= imm;
 
             // @note: We need to set the microaddress here, because this is
             // where the opcode and extension are read and it's the last edge
@@ -556,7 +635,9 @@ module s1c88
                         PC <= PC + 1;
                     end
                     else
+                    begin
                         imm_low <= data_in;
+                    end
                 end
 
                 STATE_IMM_HIGH_READ:
@@ -567,7 +648,9 @@ module s1c88
                         PC <= PC + 1;
                     end
                     else
+                    begin
                         imm_high <= data_in;
+                    end
                 end
 
                 STATE_EXECUTE:
@@ -580,12 +663,44 @@ module s1c88
                             begin
                                 read <= 1;
                             end
+                            else
+                            begin
+                                case(micro_bus_reg)
+                                    MICRO_MOV_ALU_A:
+                                    begin
+                                        alu_A <= {8'd0, data_in};
+                                    end
+                                    MICRO_MOV_ALU_B:
+                                    begin
+                                        alu_B <= {8'd0, data_in};
+                                    end
+                                    default:
+                                    begin
+                                    end
+                                endcase
+                            end
                         end
                         else // MICRO_BUS_MEM_WRITE
                         begin
                             if(pk == 0)
                             begin
-                                //write <= 1;
+                                case(micro_bus_reg)
+                                    MICRO_MOV_ALU_A:
+                                    begin
+                                        data_out <= alu_A[7:0];
+                                    end
+                                    MICRO_MOV_ALU_B:
+                                    begin
+                                        data_out <= alu_B[7:0];
+                                    end
+                                    MICRO_MOV_ALU_R:
+                                    begin
+                                        data_out <= alu_R[7:0];
+                                    end
+                                    default:
+                                    begin
+                                    end
+                                endcase
                             end
                         end
                     end
