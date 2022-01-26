@@ -6,6 +6,8 @@ module decode
     output reg need_opext,
     output reg need_imm,
     output reg imm_size,
+    output reg alu_b_imm8,
+    output reg alu_b_imm16,
     output wire error
 );
     reg need_imm_ext;
@@ -14,6 +16,71 @@ module decode
     reg error_ext_temp;
 
     assign error = ((error_ext_temp && need_opext) || error_temp);
+
+    /* verilator lint_off COMBDLY  */
+    always_comb
+    begin
+        case(opcode)
+            8'h02, 8'h12, 8'h22, 8'h32, 8'h0A, 8'h1A, 8'h2A, 8'h3A,
+            8'h95, 8'h96, 8'h97, 8'h9C, 8'h9D, 8'h9E,
+            8'hD8, 8'hD9, 8'hDA, 8'hDB:
+            begin
+                alu_b_imm8 <= 1;
+            end
+
+            8'hCE:
+            begin
+                case(opext)
+                    8'h05, 8'h15, 8'h25, 8'h35, 8'h0D, 8'h1D, 8'h2D, 8'h3D,
+                    8'hB0, 8'hB1, 8'hB2, 8'hB4, 8'hB5, 8'hB6, 8'hB8, 8'hB9, 8'hBA, 8'hBC, 8'hBD, 8'hBE:
+                    begin
+                        alu_b_imm8 <= 1;
+                    end
+                    default:
+                    begin
+                        alu_b_imm8 <= 0;
+                    end
+                endcase
+            end
+
+            default:
+            begin
+                alu_b_imm8 <= 0;
+            end
+        endcase
+    end
+
+    /* verilator lint_off COMBDLY  */
+    always_comb
+    begin
+        case(opcode)
+            8'hC0, 8'hC1, 8'hC2, 8'hC3,
+            8'hD0, 8'hD1, 8'hD2, 8'hD3,
+            8'hD4, 8'hD5, 8'hD6, 8'hD7:
+            begin
+                alu_b_imm16 <= 1;
+            end
+
+            8'hCF:
+            begin
+                case(opext)
+                    8'h60, 8'h61, 8'h62, 8'h63, 8'h68, 8'h6A, 8'h6C:
+                    begin
+                        alu_b_imm16 <= 1;
+                    end
+                    default:
+                    begin
+                        alu_b_imm16 <= 0;
+                    end
+                endcase
+            end
+
+            default:
+            begin
+                alu_b_imm16 <= 0;
+            end
+        endcase
+    end
 
     /* verilator lint_off COMBDLY  */
     always_comb

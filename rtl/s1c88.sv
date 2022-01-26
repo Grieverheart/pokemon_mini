@@ -36,11 +36,13 @@ module s1c88
     // stored in the register/memory or used as address
     // data according to the operation instruction.
 
+    // @note: The original implementation would probably have implemented
+    // reading of the immediates in microcode, allowing it to put the
+    // immediates into the ALU registers at that stage already. It would
+    // probably also allow to calculate addresses for data operations.
+
     // @todo:
     //
-    // * Implement ALU.
-    //     o Implement micro read to alu register.
-    // * Implement 0xD9.
     // * Implement writing in simulation.
 
     localparam [1:0]
@@ -337,6 +339,8 @@ module s1c88
     wire need_opext;
     wire need_imm;
     wire decode_error;
+    wire alu_b_imm8;
+    wire alu_b_imm16;
 
     decode decode_inst
     (
@@ -346,6 +350,8 @@ module s1c88
         .need_opext,
         .need_imm,
         .imm_size,
+        .alu_b_imm8,
+        .alu_b_imm16,
         .error(decode_error)
     );
 
@@ -576,17 +582,30 @@ module s1c88
                 end
             end
 
-            // @todo: Not sure if this is the best place for this assignment
-            alu_B <= imm;
-
             // @note: We need to set the microaddress here, because this is
             // where the opcode and extension are read and it's the last edge
             // of the bus cycle. Otherwise we need to make microaddress a wire
             // which makes it difficult to perform jumps in the microaddress
             // space.
-            if(next_state == STATE_EXECUTE && pk == 1)
+            if(next_state == STATE_EXECUTE)
             begin
-                microaddress <= translation_rom[extended_opcode];
+                if(pk == 1)
+                begin
+                    microaddress <= translation_rom[extended_opcode];
+                end
+                else
+                begin
+                    if(alu_b_imm8)
+                    begin
+                        // Simply take the last requested byte. #nn is always
+                        // the last instruction byte.
+                        alu_B <= {8'h0, data_in};
+                    end
+                    if(alu_b_imm16)
+                    begin
+                        alu_B <= imm;
+                    end
+                end
             end
 
             case(state)
