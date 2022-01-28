@@ -20,8 +20,8 @@ int main(int argc, char** argv, char** env)
     size_t file_size = ftell(fp);
     fseek(fp, 0, SEEK_SET);  /* same as rewind(f); */
 
-    uint8_t* instructions = (uint8_t*) malloc(file_size);
-    fread(instructions, 1, file_size, fp);
+    uint8_t* bios = (uint8_t*) malloc(file_size);
+    fread(bios, 1, file_size, fp);
     fclose(fp);
 
     uint8_t* memory = (uint8_t*) malloc(4*1024);
@@ -64,20 +64,49 @@ int main(int argc, char** argv, char** env)
         if(s1c88->bus_status == BUS_MEM_READ)
         {
             // memory read
-            if(s1c88->address_out >= 0x2100)
-                s1c88->data_in = 0xFA;//*(memory + (s1c88->address_out & 0x003FFF));
+            if(s1c88->address_out < 0x1000)
+            {
+                // read from bios
+                s1c88->data_in = *(bios + (s1c88->address_out & (file_size - 1)));
+            }
+            else if(s1c88->address_out < 0x2000)
+            {
+                // read from ram
+                uint32_t address = s1c88->address_out & 0xFFF;
+                s1c88->data_in = *(uint8_t*)(memory + address);
+            }
+            else if(s1c88->address_out < 0x2100)
+            {
+                // read from hardware registers
+            }
             else
-                s1c88->data_in = *(instructions + (s1c88->address_out & (file_size - 1)));
+            {
+                // read from cartridge
+                s1c88->data_in = 0xFA;//*(memory + (s1c88->address_out & 0x003FFF));
+            }
 
             data_sent = true;
         }
         else if(s1c88->bus_status == BUS_MEM_WRITE)
         {
             // memory write
-            if(s1c88->address_out < 0x00FFFF)
+            if(s1c88->address_out < 0x1000)
             {
-                uint32_t address = s1c88->address_out & 0x003FFF;
+                printf("Program trying to write to bios!");
+            }
+            else if(s1c88->address_out < 0x2000)
+            {
+                // write to ram
+                uint32_t address = s1c88->address_out & 0x000FFF;
                 *(uint8_t*)(memory + address) = s1c88->data_out;
+            }
+            else if(s1c88->address_out < 0x2100)
+            {
+                // write to hardware registers
+            }
+            else
+            {
+                printf("Program trying to write to cartridge!");
             }
 
             data_sent = true;
