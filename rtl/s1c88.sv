@@ -43,10 +43,6 @@ module s1c88
 
     // @todo:
     //
-    // * Why is the instruction following 0xDD at 110ps starting while the
-    //   instruction is still writing? -- It is because the way we currently
-    //   handle instruction done / nearly done is a bit stupid and doesn't
-    //   always work correctly.
     // * Implement secound counter in sim?
 
     localparam [1:0]
@@ -342,7 +338,6 @@ module s1c88
     wire imm_size;
     wire need_opext;
     wire need_imm;
-    wire decode_error;
     wire alu_b_imm8;
     wire alu_b_imm16;
 
@@ -350,13 +345,11 @@ module s1c88
     (
         .opcode,
         .opext,
-
         .need_opext,
         .need_imm,
         .imm_size,
         .alu_b_imm8,
-        .alu_b_imm16,
-        .error(decode_error)
+        .alu_b_imm16
     );
 
     // @todo: In a real system, we may need to align this to an edge.
@@ -418,14 +411,15 @@ module s1c88
     begin
         if(reset)
         begin
-            iack          <= 0;
-            state         <= STATE_IDLE;
-            address_out   <= ~0;
-            pl            <= 0;
-            bus_status    <= BUS_COMMAND_IDLE;
-            reset_counter <= 0;
-            exception     <= EXCEPTION_TYPE_RESET;
-            fetch_opcode  <= 0;
+            iack                 <= 0;
+            state                <= STATE_IDLE;
+            address_out          <= ~0;
+            pl                   <= 0;
+            bus_status           <= BUS_COMMAND_IDLE;
+            reset_counter        <= 0;
+            exception            <= EXCEPTION_TYPE_RESET;
+            fetch_opcode         <= 0;
+            microaddress         <= 0;
             microprogram_counter <= 0;
         end
         else if(reset_counter < 2)
@@ -440,8 +434,15 @@ module s1c88
         else
         begin
             pl <= ~pl;
-
-            if(pl == 1)
+            if(pl == 0)
+            begin
+                if(next_state == STATE_EXECUTE)
+                begin
+                    microaddress <= translation_rom[extended_opcode];
+                    microprogram_counter <= 0;
+                end
+            end
+            else if(pl == 1)
             begin
                 address_out <= {9'b0, PC[14:0]};
                 state <= next_state;
@@ -450,7 +451,6 @@ module s1c88
 
                 if(next_state == STATE_EXECUTE)
                 begin
-                    microprogram_counter <= 0;
                     if(microinstruction_done && exception == EXCEPTION_TYPE_NONE)
                         fetch_opcode <= 1;
                 end
@@ -566,7 +566,6 @@ module s1c88
             data_out      <= ~0;
             read          <= 0;
             pk            <= 0;
-            microaddress  <= 0;
         end
         else if(reset_counter >= 2)
         begin
@@ -586,16 +585,10 @@ module s1c88
                 end
             end
 
-            // @note: We need to set the microaddress here, because this is
-            // where the opcode and extension are read and it's the last edge
-            // of the bus cycle. Otherwise we need to make microaddress a wire
-            // which makes it difficult to perform jumps in the microaddress
-            // space.
             if(next_state == STATE_EXECUTE)
             begin
                 if(pk == 1)
                 begin
-                    microaddress <= translation_rom[extended_opcode];
                 end
                 else
                 begin

@@ -7,15 +7,10 @@ module decode
     output reg need_imm,
     output reg imm_size,
     output reg alu_b_imm8,
-    output reg alu_b_imm16,
-    output wire error
+    output reg alu_b_imm16
 );
     reg need_imm_ext;
     reg imm_size_ext;
-    reg error_temp;
-    reg error_ext_temp;
-
-    assign error = ((error_ext_temp && need_opext) || error_temp);
 
     /* verilator lint_off COMBDLY  */
     always_comb
@@ -85,8 +80,6 @@ module decode
     /* verilator lint_off COMBDLY  */
     always_comb
     begin
-        error_ext_temp <= 0;
-
         case({opcode, opext})
             // One-byte opcodes:
             16'hCE02, 16'hCE03, 16'hCE04, 16'hCE06, 16'hCE07, 16'hCE0A, 16'hCE0B, 16'hCE0C, 16'hCE0E, 16'hCE0F,
@@ -151,7 +144,6 @@ module decode
 
             default:
             begin
-                error_ext_temp <= 1;
                 need_imm_ext <= 0;
                 imm_size_ext <= 0;
             end
@@ -161,8 +153,6 @@ module decode
     /* verilator lint_off COMBDLY  */
     always_comb
     begin
-        error_temp <= 0;
-
         case(opcode)
             // One-byte opcodes:
             8'h00, 8'h01, 8'h03, 8'h06, 8'h07, 8'h08, 8'h09, 8'h0B, 8'h0E, 8'h0F,
@@ -230,7 +220,6 @@ module decode
 
             default:
             begin
-                error_temp <= 1;
                 need_opext <= 0;
                 need_imm   <= 0;
                 imm_size   <= 0;
