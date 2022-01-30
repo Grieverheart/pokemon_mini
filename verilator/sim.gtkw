@@ -1,15 +1,15 @@
 [*]
 [*] GTKWave Analyzer v3.3.111 (w)1999-2020 BSI
-[*] Tue Jan 25 22:44:01 2022
+[*] Fri Jan 28 22:52:48 2022
 [*]
 [dumpfile] "/home/nicktasios/Programming/fpga/pokemon_mini/verilator/sim.vcd"
-[dumpfile_mtime] "Tue Jan 25 22:42:02 2022"
-[dumpfile_size] 11899
+[dumpfile_mtime] "Fri Jan 28 22:41:20 2022"
+[dumpfile_size] 16303
 [savefile] "/home/nicktasios/Programming/fpga/pokemon_mini/verilator/sim.gtkw"
-[timestart] 0
+[timestart] 46
 [size] 2560 1371
 [pos] -1 -1
-*-3.965784 55 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-3.965784 115 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] TOP.
 [sst_width] 227
 [signals_width] 408
@@ -24,16 +24,29 @@ s1c88.reset
 s1c88.address_out[23:0]
 @28
 s1c88.sync
+@800201
+-debug
+@29
+s1c88.microinstruction_nearly_done
+s1c88.microinstruction_done
+s1c88.fetch_opcode
+@23
+s1c88.microprogram_counter[3:0]
+s1c88.microaddress[8:0]
+@1000201
+-debug
+@28
 s1c88.iack
 s1c88.read
 s1c88.write
+@22
+s1c88.opcode[7:0]
 @24
 s1c88.state[2:0]
 s1c88.next_state[2:0]
 @22
 s1c88.data_in[7:0]
 s1c88.data_out[7:0]
-s1c88.opcode[7:0]
 s1c88.opext[7:0]
 s1c88.PC[15:0]
 s1c88.alu_A[15:0]
@@ -41,5 +54,6 @@ s1c88.alu_B[15:0]
 s1c88.alu_R[15:0]
 @28
 s1c88.alu_size
+s1c88.opcode_error
 [pattern_trace] 1
 [pattern_trace] 0

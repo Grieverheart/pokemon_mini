@@ -13,6 +13,24 @@ enum
     BUS_MEM_READ  = 0x3
 };
 
+uint32_t second_counter = 0;
+
+uint8_t read_hardware_register(uint32_t address)
+{
+    uint8_t data = 0;
+    switch(address)
+    {
+        case 0x8:
+        {
+        }
+        break;
+
+        default:
+        break;
+    }
+    return data;
+}
+
 int main(int argc, char** argv, char** env)
 {
     FILE* fp = fopen("data/bios.min", "rb");
@@ -41,7 +59,7 @@ int main(int argc, char** argv, char** env)
 
     int timestamp = 0;
     bool data_sent = false;
-    while (timestamp < 100 && !Verilated::gotFinish())
+    while (timestamp < 200 && !Verilated::gotFinish())
     {
         s1c88->clk = 1;
         s1c88->eval();
@@ -78,6 +96,7 @@ int main(int argc, char** argv, char** env)
             else if(s1c88->address_out < 0x2100)
             {
                 // read from hardware registers
+                s1c88->data_in = read_hardware_register(s1c88->address_out & 0x1FFF);
             }
             else
             {
@@ -97,7 +116,7 @@ int main(int argc, char** argv, char** env)
             else if(s1c88->address_out < 0x2000)
             {
                 // write to ram
-                uint32_t address = s1c88->address_out & 0x000FFF;
+                uint32_t address = s1c88->address_out & 0xFFF;
                 *(uint8_t*)(memory + address) = s1c88->data_out;
             }
             else if(s1c88->address_out < 0x2100)

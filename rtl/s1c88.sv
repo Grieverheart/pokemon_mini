@@ -43,7 +43,11 @@ module s1c88
 
     // @todo:
     //
-    // * Implement writing in simulation.
+    // * Why is the instruction following 0xDD at 110ps starting while the
+    //   instruction is still writing? -- It is because the way we currently
+    //   handle instruction done / nearly done is a bit stupid and doesn't
+    //   always work correctly.
+    // * Implement secound counter in sim?
 
     localparam [1:0]
         BUS_COMMAND_IDLE      = 2'd0,
@@ -188,7 +192,7 @@ module s1c88
         rom[15] = {MICRO_TYPE_MISC, 1'b0, MICRO_ALU_OP_NONE, 1'd0, 2'b01, MICRO_MOV_BR, MICRO_MOV_IMM};
 
         rom[16] = {MICRO_TYPE_BUS, 1'b0, MICRO_ALU_OP_NONE, MICRO_BUS_MEM_WRITE, 2'b10, MICRO_ADD_BR, MICRO_MOV_IMM_HIGH};
-        rom[17] = {MICRO_TYPE_MISC, 1'b0, MICRO_ALU_OP_OR, 1'd0, 2'b01, MICRO_MOV_NONE, MICRO_MOV_NONE};
+        rom[17] = {MICRO_TYPE_MISC, 1'b0, MICRO_ALU_OP_NONE, 1'd0, 2'b01, MICRO_MOV_NONE, MICRO_MOV_NONE};
 
         rom[18] = {MICRO_TYPE_BUS, 1'b0, MICRO_ALU_OP_OR, MICRO_BUS_MEM_READ, 2'b00, MICRO_ADD_BR, MICRO_MOV_ALU_A};
         rom[19] = {MICRO_TYPE_BUS, 1'b0, MICRO_ALU_OP_NONE, MICRO_BUS_MEM_WRITE, 2'b10, MICRO_ADD_BR, MICRO_MOV_ALU_R};
@@ -715,6 +719,14 @@ module s1c88
                                     MICRO_MOV_ALU_R:
                                     begin
                                         data_out <= alu_R[7:0];
+                                    end
+                                    MICRO_MOV_IMM_LOW:
+                                    begin
+                                        data_out <= imm_low;
+                                    end
+                                    MICRO_MOV_IMM_HIGH:
+                                    begin
+                                        data_out <= imm_high;
                                     end
                                     default:
                                     begin
