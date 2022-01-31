@@ -14,18 +14,100 @@ enum
 };
 
 uint32_t second_counter = 0;
+uint8_t second_counter_enable = 0;
+
+void write_hardware_register(uint32_t address, uint8_t data)
+{
+    switch(address)
+    {
+        case 0x0:
+        {
+            printf("Writing hardware register SYS_CTRL1\n");
+        }
+        break;
+
+        case 0x1:
+        {
+            printf("Writing hardware register SYS_CTRL2\n");
+        }
+        break;
+
+        case 0x2:
+        {
+            printf("Writing hardware register SYS_CTRL3\n");
+        }
+        break;
+
+        case 0x8:
+        {
+            printf("Writing hardware register SEC_CTRL\n");
+            data = second_counter;
+        }
+        break;
+
+        default:
+        {
+            printf("Writing to hardware register 0x%x\n", address);
+        }
+        break;
+    }
+}
 
 uint8_t read_hardware_register(uint32_t address)
 {
     uint8_t data = 0;
     switch(address)
     {
+        case 0x0:
+        {
+            printf("Reading hardware register SYS_CTRL1\n");
+        }
+        break;
+
+        case 0x1:
+        {
+            printf("Reading hardware register SYS_CTRL2\n");
+        }
+        break;
+
+        case 0x2:
+        {
+            printf("Reading hardware register SYS_CTRL3\n");
+        }
+        break;
+
         case 0x8:
         {
+            printf("Reading hardware register SEC_CTRL\n");
+            data = second_counter;
+        }
+        break;
+
+        case 0x9:
+        {
+            printf("Reading hardware register SEC_CNT_LO\n");
+            data = second_counter & 0xFF;
+        }
+        break;
+
+        case 0xA:
+        {
+            printf("Reading hardware register SEC_CNT_MID\n");
+            data = (second_counter >> 8) & 0xFF;
+        }
+        break;
+
+        case 0xB:
+        {
+            printf("Reading hardware register SEC_CNT_MID\n");
+            data = (second_counter >> 16) & 0xFF;
         }
         break;
 
         default:
+        {
+            printf("Reading hardware register 0x%x\n", address);
+        }
         break;
     }
     return data;
@@ -79,7 +161,7 @@ int main(int argc, char** argv, char** env)
         //s1c88->eval();
         //tfp->dump(timestamp++);
 
-        if(s1c88->bus_status == BUS_MEM_READ)
+        if(s1c88->bus_status == BUS_MEM_READ && s1c88->read)
         {
             // memory read
             if(s1c88->address_out < 0x1000)
@@ -106,7 +188,7 @@ int main(int argc, char** argv, char** env)
 
             data_sent = true;
         }
-        else if(s1c88->bus_status == BUS_MEM_WRITE)
+        else if(s1c88->bus_status == BUS_MEM_WRITE && s1c88->write)
         {
             // memory write
             if(s1c88->address_out < 0x1000)
@@ -122,6 +204,7 @@ int main(int argc, char** argv, char** env)
             else if(s1c88->address_out < 0x2100)
             {
                 // write to hardware registers
+                write_hardware_register(s1c88->address_out & 0x1FFF, s1c88->data_out);
             }
             else
             {

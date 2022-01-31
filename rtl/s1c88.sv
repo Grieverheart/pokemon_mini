@@ -43,6 +43,9 @@ module s1c88
 
     // @todo:
     //
+    // * During 0xD9, the bus status is not changed to write. This happens due
+    //   to the way the code is setup. microprogram_counter and microaddress
+    //   are reset at pl == 0, but the counter is incremented during pl == 1.
     // * Implement secound counter in sim?
 
     localparam [1:0]
