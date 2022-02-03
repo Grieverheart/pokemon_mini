@@ -43,10 +43,7 @@ module s1c88
 
     // @todo:
     //
-    // * During 0xD9, the bus status is not changed to write. This happens due
-    //   to the way the code is setup. microprogram_counter and microaddress
-    //   are reset at pl == 0, but the counter is incremented during pl == 1.
-    // * Implement secound counter in sim?
+    // * Implement 0x9F.
 
     localparam [1:0]
         BUS_COMMAND_IDLE      = 2'd0,
@@ -355,7 +352,6 @@ module s1c88
         .alu_b_imm16
     );
 
-    // @todo: In a real system, we may need to align this to an edge.
     assign sync = fetch_opcode;
     reg fetch_opcode;
     wire opcode_error = (microaddress == 0 && state == STATE_EXECUTE);
@@ -422,8 +418,6 @@ module s1c88
             reset_counter        <= 0;
             exception            <= EXCEPTION_TYPE_RESET;
             fetch_opcode         <= 0;
-            microaddress         <= 0;
-            microprogram_counter <= 0;
         end
         else if(reset_counter < 2)
         begin
@@ -441,8 +435,11 @@ module s1c88
             begin
                 if(next_state == STATE_EXECUTE)
                 begin
-                    microaddress <= translation_rom[extended_opcode];
-                    microprogram_counter <= 0;
+                end
+
+                if(fetch_opcode)
+                begin
+                    opcode <= data_in;
                 end
             end
             else if(pl == 1)
@@ -492,6 +489,11 @@ module s1c88
                     end
                 end
             end
+            else if(state == STATE_OPEXT_READ)
+            begin
+                if(pl == 0)
+                    opext <= data_in;
+            end
             else if(
                 state == STATE_EXECUTE ||
                 next_state == STATE_EXECUTE
@@ -499,17 +501,16 @@ module s1c88
             begin
                 if(pl == 1)
                 begin
-                    if(!microinstruction_done && state == STATE_EXECUTE)
+                    if(!fetch_opcode && state == STATE_EXECUTE)
                     begin
                         state <= STATE_EXECUTE;
-                        microprogram_counter <= microprogram_counter + 1;
-                        if(microinstruction_nearly_done)
+                        if(microinstruction_done)
                             fetch_opcode <= 1;
                     end
 
                     // Don't do any bus ops on the last microinstruction
                     // step.
-                    if(!microinstruction_nearly_done || state != STATE_EXECUTE)
+                    if(!microinstruction_done || state != STATE_EXECUTE)
                     begin
                         if(micro_op_type == MICRO_TYPE_BUS)
                         begin
@@ -569,6 +570,8 @@ module s1c88
             data_out      <= ~0;
             read          <= 0;
             pk            <= 0;
+            microaddress  <= 0;
+            microprogram_counter <= 0;
         end
         else if(reset_counter >= 2)
         begin
@@ -582,16 +585,14 @@ module s1c88
                     read <= 1;
                     PC <= PC + 1;
                 end
-                else
-                begin
-                    opcode <= data_in;
-                end
             end
 
             if(next_state == STATE_EXECUTE)
             begin
                 if(pk == 1)
                 begin
+                    microprogram_counter <= 0;
+                    microaddress <= translation_rom[extended_opcode];
                 end
                 else
                 begin
@@ -639,11 +640,9 @@ module s1c88
                 begin
                     if(pk == 0)
                     begin
-                        read  <= 1;
+                        read <= 1;
                         PC <= PC + 1;
                     end
-                    else
-                        opext <= data_in;
                 end
 
                 STATE_IMM_LOW_READ:
@@ -674,6 +673,11 @@ module s1c88
 
                 STATE_EXECUTE:
                 begin
+                    if(!microinstruction_done && pk == 1)
+                    begin
+                        microprogram_counter <= microprogram_counter + 1;
+                    end
+
                     if(micro_op_type == MICRO_TYPE_BUS)
                     begin
                         if(micro_bus_op == MICRO_BUS_MEM_READ)

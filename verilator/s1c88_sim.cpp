@@ -13,8 +13,8 @@ enum
     BUS_MEM_READ  = 0x3
 };
 
-uint32_t second_counter = 0;
-uint8_t second_counter_enable = 0;
+uint32_t sec_cnt = 0;
+uint8_t sec_ctrl = 0;
 
 void write_hardware_register(uint32_t address, uint8_t data)
 {
@@ -41,7 +41,7 @@ void write_hardware_register(uint32_t address, uint8_t data)
         case 0x8:
         {
             printf("Writing hardware register SEC_CTRL\n");
-            data = second_counter;
+            sec_ctrl = data & 3;
         }
         break;
 
@@ -79,28 +79,28 @@ uint8_t read_hardware_register(uint32_t address)
         case 0x8:
         {
             printf("Reading hardware register SEC_CTRL\n");
-            data = second_counter;
+            data = sec_ctrl;
         }
         break;
 
         case 0x9:
         {
             printf("Reading hardware register SEC_CNT_LO\n");
-            data = second_counter & 0xFF;
+            data = sec_cnt & 0xFF;
         }
         break;
 
         case 0xA:
         {
             printf("Reading hardware register SEC_CNT_MID\n");
-            data = (second_counter >> 8) & 0xFF;
+            data = (sec_cnt >> 8) & 0xFF;
         }
         break;
 
         case 0xB:
         {
             printf("Reading hardware register SEC_CNT_MID\n");
-            data = (second_counter >> 16) & 0xFF;
+            data = (sec_cnt >> 16) & 0xFF;
         }
         break;
 
@@ -158,10 +158,16 @@ int main(int argc, char** argv, char** env)
         if(data_sent)
             data_sent = false;
 
+        if(sec_ctrl & 2)
+            sec_cnt = 0;
+
+        if((sec_ctrl & 1) && (timestamp % 4000000 == 0))
+            ++sec_cnt;
+
         //s1c88->eval();
         //tfp->dump(timestamp++);
 
-        if(s1c88->bus_status == BUS_MEM_READ && s1c88->read)
+        if(s1c88->bus_status == BUS_MEM_READ)// && s1c88->read)
         {
             // memory read
             if(s1c88->address_out < 0x1000)
