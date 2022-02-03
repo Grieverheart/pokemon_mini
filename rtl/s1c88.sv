@@ -36,6 +36,10 @@ module s1c88
     // stored in the register/memory or used as address
     // data according to the operation instruction.
 
+    // It seems like SC is set only by the ALU on the manual. This means that
+    // if you want to set SC you have to go through the ALU. Perhaps
+    // there is a specific ALU operation for this.
+
     // @note: The original implementation would probably have implemented
     // reading of the immediates in microcode, allowing it to put the
     // immediates into the ALU registers at that stage already. It would
@@ -43,7 +47,7 @@ module s1c88
 
     // @todo:
     //
-    // * Implement 0x9F.
+    // * Implement unconditional branch instruction 0xF2, CARL qqrr (3 bytes / 6 cycles).
 
     localparam [1:0]
         BUS_COMMAND_IDLE      = 2'd0,
@@ -98,12 +102,13 @@ module s1c88
         MICRO_MOV_PC       = 5'h0E,
         MICRO_MOV_NB       = 5'h0F,
         MICRO_MOV_CB       = 5'h10,
-        MICRO_MOV_EP       = 5'h11,
-        MICRO_MOV_XP       = 5'h11,
-        MICRO_MOV_YP       = 5'h12,
-        MICRO_MOV_ALU_R    = 5'h13,
-        MICRO_MOV_ALU_A    = 5'h14,
-        MICRO_MOV_ALU_B    = 5'h15;
+        MICRO_MOV_SC       = 5'h11,
+        MICRO_MOV_EP       = 5'h12,
+        MICRO_MOV_XP       = 5'h12,
+        MICRO_MOV_YP       = 5'h13,
+        MICRO_MOV_ALU_R    = 5'h14,
+        MICRO_MOV_ALU_A    = 5'h15,
+        MICRO_MOV_ALU_B    = 5'h16;
 
     localparam [4:0]
         MICRO_ADD_HL    = 5'h00,
@@ -194,6 +199,21 @@ module s1c88
         rom[19] = {MICRO_TYPE_BUS, 1'b0, MICRO_ALU_OP_NONE, MICRO_BUS_MEM_WRITE, 2'b10, MICRO_ADD_BR, MICRO_MOV_ALU_R};
         rom[20] = {MICRO_TYPE_MISC, 1'b0, MICRO_ALU_OP_NONE, 1'd0, 2'b01, MICRO_MOV_NONE, MICRO_MOV_NONE};
 
+        rom[21] = {MICRO_TYPE_MISC, 1'b0, MICRO_ALU_OP_NONE, 1'd0, 2'b10, MICRO_MOV_SC, MICRO_MOV_IMM_LOW};
+        rom[22] = {MICRO_TYPE_MISC, 1'b0, MICRO_ALU_OP_NONE, 1'd0, 2'b01, MICRO_MOV_NONE, MICRO_MOV_NONE};
+
+        rom[23] = {MICRO_TYPE_MISC, 1'b0, MICRO_ALU_OP_NONE, 1'd0, 2'b01, MICRO_MOV_SP, MICRO_MOV_IMM};
+
+        // @todo: 3 bus write operations combined with decrementing of SP.
+        //        1 misc operation with ALU PC <- PC + qqrr + 2, and mov CB <- NB.
+        //
+        //  There are two questions, though. How do I make sure PC and qqnn
+        //  are in the ALU A and B registers, respectively, and 
+        rom[24] = {MICRO_TYPE_MISC, 1'b0, MICRO_ALU_OP_NONE, 1'd0, 2'b00, MICRO_MOV_NONE, MICRO_MOV_NONE};
+        rom[25] = {MICRO_TYPE_MISC, 1'b0, MICRO_ALU_OP_NONE, 1'd0, 2'b00, MICRO_MOV_NONE, MICRO_MOV_NONE};
+        rom[26] = {MICRO_TYPE_MISC, 1'b0, MICRO_ALU_OP_NONE, 1'd0, 2'b10, MICRO_MOV_NONE, MICRO_MOV_NONE};
+        rom[27] = {MICRO_TYPE_MISC, 1'b0, MICRO_ALU_OP_NONE, 1'd0, 2'b01, MICRO_MOV_NONE, MICRO_MOV_NONE};
+
         translation_rom[10'h044] = 1;
         translation_rom[10'h1D0] = 2;
         translation_rom[10'h045] = 3;
@@ -209,12 +229,19 @@ module s1c88
         translation_rom[10'h0DD] = 16;
 
         translation_rom[10'h0D9] = 18;
+        translation_rom[10'h09F] = 21;
+
+        translation_rom[10'h26E] = 23;
+
+        translation_rom[10'h0F2] = 24;
 
     end
 
     reg [15:0] BA;
     reg [7:0] EP;
     reg [7:0] BR;
+    reg [7:0] SC;
+    reg [15:0] SP;
     wire [7:0] A = BA[7:0];
     wire [7:0] B = BA[15:8];
 
@@ -256,6 +283,12 @@ module s1c88
             MICRO_MOV_IMM:
                 src_reg = imm;
 
+            MICRO_MOV_IMM_LOW:
+                src_reg = {8'd0, imm_low};
+
+            MICRO_MOV_IMM_HIGH:
+                src_reg = {8'd0, imm_high};
+
             MICRO_MOV_A:
                 src_reg = {8'd0, A};
 
@@ -280,7 +313,9 @@ module s1c88
             //MICRO_MOV_IX    = 5'h0A,
             //MICRO_MOV_IY    = 5'h0B,
             //MICRO_MOV_SP    = 5'h0C,
-            //MICRO_MOV_SC    = 5'h0C,
+            MICRO_MOV_SC:
+                src_reg = {8'd0, SC};
+
             MICRO_MOV_BR:
                 src_reg = {8'd0, BR};
             //MICRO_MOV_PC    = 5'h0E,
@@ -549,8 +584,16 @@ module s1c88
                             case(micro_mov_dst)
                                 MICRO_MOV_EP:
                                     EP <= src_reg[7:0];
+
                                 MICRO_MOV_BR:
                                     BR <= src_reg[7:0];
+
+                                MICRO_MOV_SC:
+                                    SC <= src_reg[7:0];
+
+                                MICRO_MOV_SP:
+                                    SP <= src_reg;
+
                                 default:
                                 begin
                                 end
