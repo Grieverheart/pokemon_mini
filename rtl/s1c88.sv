@@ -86,8 +86,8 @@ module s1c88
         MICRO_MOV_NONE     = 5'h00,
 
         MICRO_MOV_IMM      = 5'h01,
-        MICRO_MOV_IMM_LOW  = 5'h02,
-        MICRO_MOV_IMM_HIGH = 5'h03,
+        MICRO_MOV_IMML     = 5'h02,
+        MICRO_MOV_IMMH     = 5'h03,
 
         MICRO_MOV_A        = 5'h04,
         MICRO_MOV_B        = 5'h05,
@@ -100,15 +100,17 @@ module s1c88
         MICRO_MOV_SP       = 5'h0C,
         MICRO_MOV_BR       = 5'h0D,
         MICRO_MOV_PC       = 5'h0E,
-        MICRO_MOV_NB       = 5'h0F,
-        MICRO_MOV_CB       = 5'h10,
-        MICRO_MOV_SC       = 5'h11,
-        MICRO_MOV_EP       = 5'h12,
-        MICRO_MOV_XP       = 5'h12,
-        MICRO_MOV_YP       = 5'h13,
-        MICRO_MOV_ALU_R    = 5'h14,
-        MICRO_MOV_ALU_A    = 5'h15,
-        MICRO_MOV_ALU_B    = 5'h16;
+        MICRO_MOV_PCL      = 5'h0F,
+        MICRO_MOV_PCH      = 5'h10,
+        MICRO_MOV_NB       = 5'h11,
+        MICRO_MOV_CB       = 5'h12,
+        MICRO_MOV_SC       = 5'h13,
+        MICRO_MOV_EP       = 5'h14,
+        MICRO_MOV_XP       = 5'h14,
+        MICRO_MOV_YP       = 5'h15,
+        MICRO_MOV_ALU_R    = 5'h16,
+        MICRO_MOV_ALU_A    = 5'h17,
+        MICRO_MOV_ALU_B    = 5'h18;
 
     localparam [4:0]
         MICRO_ADD_HL    = 5'h00,
@@ -192,27 +194,30 @@ module s1c88
         rom[14] = {MICRO_TYPE_MISC, 1'b0, MICRO_ALU_OP_NONE, 1'd0, 2'b01, MICRO_MOV_EP, MICRO_MOV_IMM};
         rom[15] = {MICRO_TYPE_MISC, 1'b0, MICRO_ALU_OP_NONE, 1'd0, 2'b01, MICRO_MOV_BR, MICRO_MOV_IMM};
 
-        rom[16] = {MICRO_TYPE_BUS, 1'b0, MICRO_ALU_OP_NONE, MICRO_BUS_MEM_WRITE, 2'b10, MICRO_ADD_BR, MICRO_MOV_IMM_HIGH};
+        rom[16] = {MICRO_TYPE_BUS, 1'b0, MICRO_ALU_OP_NONE, MICRO_BUS_MEM_WRITE, 2'b10, MICRO_ADD_BR, MICRO_MOV_IMMH};
         rom[17] = {MICRO_TYPE_MISC, 1'b0, MICRO_ALU_OP_NONE, 1'd0, 2'b01, MICRO_MOV_NONE, MICRO_MOV_NONE};
 
         rom[18] = {MICRO_TYPE_BUS, 1'b0, MICRO_ALU_OP_OR, MICRO_BUS_MEM_READ, 2'b00, MICRO_ADD_BR, MICRO_MOV_ALU_A};
         rom[19] = {MICRO_TYPE_BUS, 1'b0, MICRO_ALU_OP_NONE, MICRO_BUS_MEM_WRITE, 2'b10, MICRO_ADD_BR, MICRO_MOV_ALU_R};
         rom[20] = {MICRO_TYPE_MISC, 1'b0, MICRO_ALU_OP_NONE, 1'd0, 2'b01, MICRO_MOV_NONE, MICRO_MOV_NONE};
 
-        rom[21] = {MICRO_TYPE_MISC, 1'b0, MICRO_ALU_OP_NONE, 1'd0, 2'b10, MICRO_MOV_SC, MICRO_MOV_IMM_LOW};
+        rom[21] = {MICRO_TYPE_MISC, 1'b0, MICRO_ALU_OP_NONE, 1'd0, 2'b10, MICRO_MOV_SC, MICRO_MOV_IMML};
         rom[22] = {MICRO_TYPE_MISC, 1'b0, MICRO_ALU_OP_NONE, 1'd0, 2'b01, MICRO_MOV_NONE, MICRO_MOV_NONE};
 
         rom[23] = {MICRO_TYPE_MISC, 1'b0, MICRO_ALU_OP_NONE, 1'd0, 2'b01, MICRO_MOV_SP, MICRO_MOV_IMM};
 
         // @todo: 3 bus write operations combined with decrementing of SP.
         //        1 misc operation with ALU PC <- PC + qqrr + 2, and mov CB <- NB.
+        //        @note: I think we might need another ALU operation to add
+        //        the 2?
         //
         //  There are two questions, though. How do I make sure PC and qqnn
-        //  are in the ALU A and B registers, respectively, and 
-        rom[24] = {MICRO_TYPE_MISC, 1'b0, MICRO_ALU_OP_NONE, 1'd0, 2'b00, MICRO_MOV_NONE, MICRO_MOV_NONE};
-        rom[25] = {MICRO_TYPE_MISC, 1'b0, MICRO_ALU_OP_NONE, 1'd0, 2'b00, MICRO_MOV_NONE, MICRO_MOV_NONE};
-        rom[26] = {MICRO_TYPE_MISC, 1'b0, MICRO_ALU_OP_NONE, 1'd0, 2'b10, MICRO_MOV_NONE, MICRO_MOV_NONE};
-        rom[27] = {MICRO_TYPE_MISC, 1'b0, MICRO_ALU_OP_NONE, 1'd0, 2'b01, MICRO_MOV_NONE, MICRO_MOV_NONE};
+        //  are in the ALU A and B registers, respectively, and how do we move
+        //  the ALU result back to PC.
+        rom[24] = {MICRO_TYPE_BUS, 1'b0, MICRO_ALU_OP_NONE, MICRO_BUS_MEM_WRITE, 2'b00, MICRO_ADD_SP, MICRO_MOV_CB};
+        rom[25] = {MICRO_TYPE_BUS, 1'b0, MICRO_ALU_OP_NONE, MICRO_BUS_MEM_WRITE, 2'b00, MICRO_ADD_SP, MICRO_MOV_PCH};
+        rom[26] = {MICRO_TYPE_BUS, 1'b0, MICRO_ALU_OP_NONE, MICRO_BUS_MEM_WRITE, 2'b10, MICRO_ADD_SP, MICRO_MOV_PCL};
+        rom[27] = {MICRO_TYPE_MISC, 1'b0, MICRO_ALU_OP_ADD, 1'd0, 2'b01, MICRO_MOV_PC, MICRO_MOV_ALU_R};
 
         translation_rom[10'h044] = 1;
         translation_rom[10'h1D0] = 2;
@@ -283,10 +288,10 @@ module s1c88
             MICRO_MOV_IMM:
                 src_reg = imm;
 
-            MICRO_MOV_IMM_LOW:
+            MICRO_MOV_IMML:
                 src_reg = {8'd0, imm_low};
 
-            MICRO_MOV_IMM_HIGH:
+            MICRO_MOV_IMMH:
                 src_reg = {8'd0, imm_high};
 
             MICRO_MOV_A:
@@ -549,35 +554,35 @@ module s1c88
                     begin
                         if(micro_op_type == MICRO_TYPE_BUS)
                         begin
-                            if(micro_bus_op == MICRO_BUS_MEM_READ)
-                            begin
-                                case(micro_bus_add)
-                                    MICRO_ADD_HH_LL:
-                                    begin
-                                        address_out <= {8'b0, imm};
-                                    end
-                                    MICRO_ADD_BR:
-                                    begin
-                                        address_out <= {8'b0, BR, imm_low};
-                                    end
-                                    default:
-                                    begin
-                                    end
-                                endcase
-                            end
-                            else // MICRO_BUS_MEM_WRITE
-                            begin
+                            if(micro_bus_op == MICRO_BUS_MEM_WRITE)
                                 bus_status <= BUS_COMMAND_MEM_WRITE;
-                                case(micro_bus_add)
-                                    MICRO_ADD_BR:
+
+                            case(micro_bus_add)
+                                MICRO_ADD_HH_LL:
+                                begin
+                                    address_out <= {8'b0, imm};
+                                end
+                                MICRO_ADD_SP:
+                                begin
+                                    if(micro_bus_op == MICRO_BUS_MEM_WRITE)
                                     begin
-                                        address_out <= {8'b0, BR, imm_low};
+                                        address_out <= {8'b0, SP-16'd1};
+                                        SP <= SP - 16'd1;
                                     end
-                                    default:
+                                    else
                                     begin
+                                        address_out <= {8'b0, SP};
+                                        SP <= SP + 16'd1;
                                     end
-                                endcase
-                            end
+                                end
+                                MICRO_ADD_BR:
+                                begin
+                                    address_out <= {8'b0, BR, imm_low};
+                                end
+                                default:
+                                begin
+                                end
+                            endcase
                         end
                         else if(micro_op_type == MICRO_TYPE_MISC)
                         begin
@@ -763,11 +768,11 @@ module s1c88
                                     begin
                                         data_out <= alu_R[7:0];
                                     end
-                                    MICRO_MOV_IMM_LOW:
+                                    MICRO_MOV_IMML:
                                     begin
                                         data_out <= imm_low;
                                     end
-                                    MICRO_MOV_IMM_HIGH:
+                                    MICRO_MOV_IMMH:
                                     begin
                                         data_out <= imm_high;
                                     end
