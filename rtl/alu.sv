@@ -19,8 +19,10 @@ enum [4:0]
     ALUOP_SHRA = 5'd15,
 
     ALUOP_INC  = 5'd16,
-    ALUOP_DEC  = 5'd17,
-    ALUOP_NEG  = 5'd18
+    ALUOP_INC2 = 5'd17,
+    ALUOP_DEC  = 5'd18,
+    ALUOP_DEC2 = 5'd19,
+    ALUOP_NEG  = 5'd20
 } AluOp;
 
 enum [2:0]
@@ -205,12 +207,15 @@ module alu
             end
 
             ALUOP_INC,
+            ALUOP_INC2,
             ALUOP_ADD:
             begin
                 if(alu_op == ALUOP_ADD)
                     {flags[ALU_FLAG_CY], R} = {1'b0, A} + {1'b0, B};
+                else if(alu_op == ALUOP_INC)
+                    R = A + 1;
                 else
-                    R = A + B;
+                    R = A + 2;
 
                 flags[ALU_FLAG_V] = (B[msb] == A[msb]) && (R[msb] != A[msb]);
                 // can we do this? flags[ALU_FLAG_V] = (R[msb] == flags[ALU_FLAG_CY]);
@@ -220,11 +225,16 @@ module alu
             end
 
             ALUOP_DEC,
+            ALUOP_DEC2,
             ALUOP_CMP,
             ALUOP_SUB:
             begin
-                R = A - B;
-                if(alu_op != ALUOP_DEC)
+                if(alu_op == ALUOP_DEC)
+                    R = A - 1;
+                else if(alu_op == ALUOP_DEC2)
+                    R = A - 2;
+                else
+                    R = A - B;
                     flags[ALU_FLAG_CY] = (A < B);
 
                 flags[ALU_FLAG_V] = (B[msb] != A[msb]) && (R[msb] != A[msb]);

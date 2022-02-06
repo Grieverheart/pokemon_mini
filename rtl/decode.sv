@@ -52,6 +52,9 @@ module decode
             8'hC0, 8'hC1, 8'hC2, 8'hC3,
             8'hD0, 8'hD1, 8'hD2, 8'hD3,
             8'hD4, 8'hD5, 8'hD6, 8'hD7:
+            // 8'hE8, 8'hE9, 8'hEA, 8'hEB,
+            // 8'hEC, 8'hED, 8'hEE, 8'hEF, 
+            // 8'hF2, 8'hF3:
             begin
                 alu_b_imm16 <= 1;
             end
