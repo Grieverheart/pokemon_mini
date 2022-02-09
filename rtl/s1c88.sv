@@ -657,11 +657,11 @@ module s1c88
                     end
                 end
             end
-
         end
     end
 
-    // @todo: Try moving PC assigments to negedge clk.
+    // @todo: Try moving PC assigments to negedge clk. Perhaps we need to also
+    // set address_out when we set PC.
     always_ff @ (posedge clk, posedge reset)
     begin
         if(reset)
