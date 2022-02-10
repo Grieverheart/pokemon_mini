@@ -47,7 +47,8 @@ module s1c88
 
     // @todo:
     //
-    // * Implement unconditional branch instruction 0xF2, CARL qqrr (3 bytes / 6 cycles).
+    // * Implement more instructions.
+    // * Use the correct page register depending on addressing mode.
 
     localparam [1:0]
         BUS_COMMAND_IDLE      = 2'd0,
@@ -207,18 +208,12 @@ module s1c88
 
         rom[23] = {MICRO_TYPE_MISC, 1'b0, MICRO_ALU_OP_NONE, 1'd0, MICRO_MOV_NONE, MICRO_MOV_NONE, 2'b01, MICRO_MOV_SP, MICRO_MOV_IMM};
 
-        // @todo: 3 bus write operations combined with decrementing of SP.
-        //        1 misc operation with ALU PC <- PC + qqrr + 2, and mov CB <- NB.
-        //        @note: I think we might need another ALU operation to add
-        //        the 2?
-        //
-        //  There are two questions, though. How do I make sure PC and qqnn
-        //  are in the ALU A and B registers, respectively, and how do we move
-        //  the ALU result back to PC.
         rom[24] = {MICRO_TYPE_BUS, 1'b0, MICRO_ALU_OP_NONE, MICRO_BUS_MEM_WRITE, MICRO_ADD_SP, MICRO_MOV_CB,  2'b00, MICRO_MOV_ALU_A, MICRO_MOV_IMM};
         rom[25] = {MICRO_TYPE_BUS, 1'b1, MICRO_ALU_OP_INC2, MICRO_BUS_MEM_WRITE, MICRO_ADD_SP, MICRO_MOV_PCH, 2'b00, MICRO_MOV_ALU_B, MICRO_MOV_ALU_R};
         rom[26] = {MICRO_TYPE_BUS, 1'b0, MICRO_ALU_OP_NONE, MICRO_BUS_MEM_WRITE, MICRO_ADD_SP, MICRO_MOV_PCL, 2'b10, MICRO_MOV_ALU_A, MICRO_MOV_PC};
         rom[27] = {MICRO_TYPE_MISC, 1'b1, MICRO_ALU_OP_ADD, 1'd0, MICRO_MOV_NONE, MICRO_MOV_NONE, 2'b01, MICRO_MOV_PC, MICRO_MOV_ALU_R};
+
+        rom[28] = {MICRO_TYPE_MISC, 1'b0, MICRO_ALU_OP_NONE, 1'd0, MICRO_MOV_NONE, MICRO_MOV_NONE, 2'b01, MICRO_MOV_B, MICRO_MOV_A};
 
         translation_rom[10'h044] = 1;
         translation_rom[10'h1D0] = 2;
@@ -240,6 +235,8 @@ module s1c88
         translation_rom[10'h26E] = 23;
 
         translation_rom[10'h0F2] = 24;
+
+        translation_rom[10'h048] = 28;
 
     end
 
@@ -456,7 +453,6 @@ module s1c88
 
 
 
-    // @todo: Try to move PC from pl == 0 to pl == 1?
     always_ff @ (negedge clk, posedge reset)
     begin
         if(reset)
@@ -604,14 +600,18 @@ module s1c88
                     if(micro_op_type == MICRO_TYPE_BUS && micro_bus_op == MICRO_BUS_MEM_READ)
                     begin
                         case(micro_bus_reg)
+                            MICRO_MOV_A:
+                                BA[7:0]  <= data_in;
+
+                            MICRO_MOV_B:
+                                BA[15:8] <= data_in;
+
                             MICRO_MOV_ALU_A:
-                            begin
                                 alu_A <= {8'd0, data_in};
-                            end
+
                             MICRO_MOV_ALU_B:
-                            begin
                                 alu_B <= {8'd0, data_in};
-                            end
+
                             default:
                             begin
                             end
@@ -632,6 +632,12 @@ module s1c88
 
                         MICRO_MOV_SP:
                             SP <= src_reg;
+
+                        MICRO_MOV_A:
+                            BA[7:0]  <= src_reg[7:0];
+
+                        MICRO_MOV_B:
+                            BA[15:8] <= src_reg[7:0];
 
                         MICRO_MOV_ALU_A:
                             alu_A <= src_reg;
@@ -687,8 +693,6 @@ module s1c88
         end
     end
 
-    // @todo: Try moving PC assigments to negedge clk. Perhaps we need to also
-    // set address_out when we set PC.
     always_ff @ (posedge clk, posedge reset)
     begin
         if(reset)
