@@ -584,119 +584,106 @@ module s1c88
                     address_out <= {9'd0, PC[14:0] + 15'd1};
                 end
             end
-
-            if(
-                state == STATE_EXECUTE ||
-                next_state == STATE_EXECUTE
-            )
+            else if(state == STATE_EXECUTE)
             begin
                 if(pl == 1)
                 begin
-
-                    if(state == STATE_EXECUTE)
+                    if(micro_mov_dst == MICRO_MOV_PC)
                     begin
-                        if(micro_mov_dst == MICRO_MOV_PC)
-                        begin
-                            PC <= src_reg;
-                            address_out <= {9'b0, src_reg[14:0]};
-                        end
-
-                        if(!fetch_opcode)
-                        begin
-                            state <= STATE_EXECUTE;
-                            if(microinstruction_done)
-                                fetch_opcode <= 1;
-                        end
-
-                        if(micro_op_type == MICRO_TYPE_BUS && micro_bus_op == MICRO_BUS_MEM_READ)
-                        begin
-                            case(micro_bus_reg)
-                                MICRO_MOV_ALU_A:
-                                begin
-                                    alu_A <= {8'd0, data_in};
-                                end
-                                MICRO_MOV_ALU_B:
-                                begin
-                                    alu_B <= {8'd0, data_in};
-                                end
-                                default:
-                                begin
-                                end
-                            endcase
-                        end
+                        PC <= src_reg;
+                        address_out <= {9'b0, src_reg[14:0]};
                     end
 
-                    // Don't do any bus ops on the last microinstruction
-                    // step.
-                    if(!microinstruction_done || state != STATE_EXECUTE)
+                    if(!fetch_opcode)
                     begin
-                        if(micro_op_type == MICRO_TYPE_BUS)
-                        begin
-                            if(micro_bus_op == MICRO_BUS_MEM_WRITE)
-                                bus_status <= BUS_COMMAND_MEM_WRITE;
-
-                            case(micro_bus_add)
-                                MICRO_ADD_HH_LL:
-                                begin
-                                    address_out <= {8'b0, imm};
-                                end
-                                MICRO_ADD_SP:
-                                begin
-                                    if(micro_bus_op == MICRO_BUS_MEM_WRITE)
-                                    begin
-                                        address_out <= {8'b0, SP-16'd1};
-                                        SP <= SP - 16'd1;
-                                    end
-                                    else
-                                    begin
-                                        address_out <= {8'b0, SP};
-                                        SP <= SP + 16'd1;
-                                    end
-                                end
-                                MICRO_ADD_BR:
-                                begin
-                                    address_out <= {8'b0, BR, imm_low};
-                                end
-                                default:
-                                begin
-                                end
-                            endcase
-                        end
+                        state <= STATE_EXECUTE;
+                        if(microinstruction_done)
+                            fetch_opcode <= 1;
                     end
-                end
-                else
-                begin
-                    if(state == STATE_EXECUTE)
+
+                    if(micro_op_type == MICRO_TYPE_BUS && micro_bus_op == MICRO_BUS_MEM_READ)
                     begin
-                        case(micro_mov_dst)
-                            MICRO_MOV_EP:
-                                EP <= src_reg[7:0];
-
-                            MICRO_MOV_BR:
-                                BR <= src_reg[7:0];
-
-                            MICRO_MOV_SC:
-                                SC <= src_reg[7:0];
-
-                            MICRO_MOV_SP:
-                                SP <= src_reg;
-
+                        case(micro_bus_reg)
                             MICRO_MOV_ALU_A:
-                                alu_A <= src_reg;
-
+                            begin
+                                alu_A <= {8'd0, data_in};
+                            end
                             MICRO_MOV_ALU_B:
-                                alu_B <= src_reg;
-
-                            //MICRO_MOV_PC:
-                            //    PC <= src_reg;
-
+                            begin
+                                alu_B <= {8'd0, data_in};
+                            end
                             default:
                             begin
                             end
                         endcase
                     end
                 end
+                else
+                begin
+                    case(micro_mov_dst)
+                        MICRO_MOV_EP:
+                            EP <= src_reg[7:0];
+
+                        MICRO_MOV_BR:
+                            BR <= src_reg[7:0];
+
+                        MICRO_MOV_SC:
+                            SC <= src_reg[7:0];
+
+                        MICRO_MOV_SP:
+                            SP <= src_reg;
+
+                        MICRO_MOV_ALU_A:
+                            alu_A <= src_reg;
+
+                        MICRO_MOV_ALU_B:
+                            alu_B <= src_reg;
+
+                        default:
+                        begin
+                        end
+                    endcase
+                end
             end
+
+            if(micro_op_type == MICRO_TYPE_BUS && pl == 1)
+            begin
+                if((state == STATE_EXECUTE && !microinstruction_done) || (next_state == STATE_EXECUTE))
+                begin
+                // Don't do any bus ops on the last microinstruction
+                // step.
+                    if(micro_bus_op == MICRO_BUS_MEM_WRITE)
+                        bus_status <= BUS_COMMAND_MEM_WRITE;
+
+                    case(micro_bus_add)
+                        MICRO_ADD_HH_LL:
+                        begin
+                            address_out <= {8'b0, imm};
+                        end
+                        MICRO_ADD_SP:
+                        begin
+                            if(micro_bus_op == MICRO_BUS_MEM_WRITE)
+                            begin
+                                address_out <= {8'b0, SP-16'd1};
+                                SP <= SP - 16'd1;
+                            end
+                            else
+                            begin
+                                address_out <= {8'b0, SP};
+                                SP <= SP + 16'd1;
+                            end
+                        end
+                        MICRO_ADD_BR:
+                        begin
+                            address_out <= {8'b0, BR, imm_low};
+                        end
+                        default:
+                        begin
+                        end
+                    endcase
+                end
+            end
+                
         end
     end
 
