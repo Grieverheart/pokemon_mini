@@ -456,6 +456,7 @@ module s1c88
 
 
 
+    // @todo: Try to move PC from pl == 0 to pl == 1?
     always_ff @ (negedge clk, posedge reset)
     begin
         if(reset)
@@ -504,7 +505,14 @@ module s1c88
             end
             else if(pl == 1)
             begin
-                address_out <= {9'b0, PC[14:0]};
+                address_out <= {9'd0, PC[14:0]};
+
+                if(fetch_opcode)
+                begin
+                    PC <= PC + 1;
+                    address_out <= {9'd0, PC[14:0] + 15'd1};
+                end
+
                 state <= next_state;
                 bus_status <= BUS_COMMAND_MEM_READ;
                 fetch_opcode <= 0;
@@ -527,10 +535,14 @@ module s1c88
 
             if(state == STATE_EXC_PROCESS)
             begin
-                if(pl == 1)
+                state <= STATE_EXC_PROCESS;
+
+                if(pl == 0)
+                begin
+                end
+                else
                 begin
                     exception_process_step <= exception_process_step + 1;
-                    state <= STATE_EXC_PROCESS;
 
                     if(exception_process_step == 1)
                     begin
@@ -538,23 +550,42 @@ module s1c88
                     end
                     else if(exception_process_step == 2)
                     begin
+                        PC[7:0]     <= data_in;
                         address_out <= 1;
-                        exception   <= EXCEPTION_TYPE_NONE;
                         iack        <= 0;
+                        exception   <= EXCEPTION_TYPE_NONE;
                     end
                     else if(exception_process_step == 3)
                     begin
-                        state <= next_state;
+                        PC[15:8]     <= data_in;
+                        address_out  <= {9'd0, data_in[6:0], PC[7:0]};
                         fetch_opcode <= 1;
+                        state        <= next_state;
                     end
                 end
             end
             else if(state == STATE_OPEXT_READ)
             begin
                 if(pl == 0)
+                begin
                     opext <= data_in;
+                end
+                else
+                begin
+                    PC <= PC + 1;
+                    address_out <= {9'd0, PC[14:0] + 15'd1};
+                end
             end
-            else if(
+            else if(state == STATE_IMM_LOW_READ || state == STATE_IMM_HIGH_READ)
+            begin
+                if(pl == 1)
+                begin
+                    PC <= PC + 1;
+                    address_out <= {9'd0, PC[14:0] + 15'd1};
+                end
+            end
+
+            if(
                 state == STATE_EXECUTE ||
                 next_state == STATE_EXECUTE
             )
@@ -564,6 +595,12 @@ module s1c88
 
                     if(state == STATE_EXECUTE)
                     begin
+                        if(micro_mov_dst == MICRO_MOV_PC)
+                        begin
+                            PC <= src_reg;
+                            address_out <= {9'b0, src_reg[14:0]};
+                        end
+
                         if(!fetch_opcode)
                         begin
                             state <= STATE_EXECUTE;
@@ -650,6 +687,9 @@ module s1c88
                             MICRO_MOV_ALU_B:
                                 alu_B <= src_reg;
 
+                            //MICRO_MOV_PC:
+                            //    PC <= src_reg;
+
                             default:
                             begin
                             end
@@ -682,7 +722,6 @@ module s1c88
                 if(pk == 0)
                 begin
                     read <= 1;
-                    PC <= PC + 1;
                 end
             end
 
@@ -714,14 +753,6 @@ module s1c88
                     end
                     else
                     begin
-                        if(exception_process_step == 2)
-                        begin
-                            PC[7:0] <= data_in;
-                        end
-                        else if(exception_process_step == 3)
-                        begin
-                            PC[15:8] <= data_in;
-                        end
                     end
                 end
 
@@ -730,7 +761,6 @@ module s1c88
                     if(pk == 0)
                     begin
                         read <= 1;
-                        PC <= PC + 1;
                     end
                 end
 
@@ -739,7 +769,6 @@ module s1c88
                     if(pk == 0)
                     begin
                         read <= 1;
-                        PC <= PC + 1;
                     end
                     else
                     begin
@@ -753,7 +782,6 @@ module s1c88
                     if(pk == 0)
                     begin
                         read <= 1;
-                        PC <= PC + 1;
                     end
                     else
                     begin
@@ -767,11 +795,6 @@ module s1c88
                     if(!microinstruction_done && pk == 1)
                     begin
                         microprogram_counter <= microprogram_counter + 1;
-                    end
-
-                    if(micro_mov_dst == MICRO_MOV_PC && pk == 0)
-                    begin
-                        PC <= src_reg;
                     end
 
                     if(micro_op_type == MICRO_TYPE_BUS)

@@ -199,7 +199,7 @@ int main(int argc, char** argv, char** env)
             // memory write
             if(s1c88->address_out < 0x1000)
             {
-                printf("Program trying to write to bios!");
+                printf("Program trying to write to bios!\n");
             }
             else if(s1c88->address_out < 0x2000)
             {
@@ -214,7 +214,7 @@ int main(int argc, char** argv, char** env)
             }
             else
             {
-                printf("Program trying to write to cartridge!");
+                printf("Program trying to write to cartridge!\n");
             }
 
             data_sent = true;
