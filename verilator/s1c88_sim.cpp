@@ -1,4 +1,5 @@
 #include "Vs1c88.h"
+#include "Vs1c88___024root.h"
 #include "verilated.h"
 #include "verilated_vcd_c.h"
 #include <cstdio>
@@ -166,6 +167,13 @@ int main(int argc, char** argv, char** env)
 
         //s1c88->eval();
         //tfp->dump(timestamp++);
+
+        // @todo: Translate instructions using instructions.csv.
+        if(s1c88->rootp->s1c88__DOT__state == 4 && s1c88->pl == 0)
+        {
+            if(s1c88->rootp->s1c88__DOT__microaddress == 0)
+                printf("Instruction 0x%x not implemented\n", s1c88->rootp->s1c88__DOT__extended_opcode);
+        }
 
         if(s1c88->bus_status == BUS_MEM_READ)// && s1c88->read)
         {

@@ -47,7 +47,7 @@ module s1c88
 
     // @todo:
     //
-    // * Implement more instructions.
+    // * Implement transfer instructions.
     // * Use the correct page register depending on addressing mode.
 
     localparam [1:0]
@@ -107,11 +107,11 @@ module s1c88
         MICRO_MOV_CB       = 5'h12,
         MICRO_MOV_SC       = 5'h13,
         MICRO_MOV_EP       = 5'h14,
-        MICRO_MOV_XP       = 5'h14,
-        MICRO_MOV_YP       = 5'h15,
-        MICRO_MOV_ALU_R    = 5'h16,
-        MICRO_MOV_ALU_A    = 5'h17,
-        MICRO_MOV_ALU_B    = 5'h18;
+        MICRO_MOV_XP       = 5'h15,
+        MICRO_MOV_YP       = 5'h16,
+        MICRO_MOV_ALU_R    = 5'h17,
+        MICRO_MOV_ALU_A    = 5'h18,
+        MICRO_MOV_ALU_B    = 5'h19;
 
     localparam [4:0]
         MICRO_ADD_HL    = 5'h00,
@@ -210,10 +210,13 @@ module s1c88
 
         rom[24] = {MICRO_TYPE_BUS, 1'b0, MICRO_ALU_OP_NONE, MICRO_BUS_MEM_WRITE, MICRO_ADD_SP, MICRO_MOV_CB,  2'b00, MICRO_MOV_ALU_A, MICRO_MOV_IMM};
         rom[25] = {MICRO_TYPE_BUS, 1'b1, MICRO_ALU_OP_INC2, MICRO_BUS_MEM_WRITE, MICRO_ADD_SP, MICRO_MOV_PCH, 2'b00, MICRO_MOV_ALU_B, MICRO_MOV_ALU_R};
-        rom[26] = {MICRO_TYPE_BUS, 1'b0, MICRO_ALU_OP_NONE, MICRO_BUS_MEM_WRITE, MICRO_ADD_SP, MICRO_MOV_PCL, 2'b10, MICRO_MOV_ALU_A, MICRO_MOV_PC};
-        rom[27] = {MICRO_TYPE_MISC, 1'b1, MICRO_ALU_OP_ADD, 1'd0, MICRO_MOV_NONE, MICRO_MOV_NONE, 2'b01, MICRO_MOV_PC, MICRO_MOV_ALU_R};
+        rom[26] = {MICRO_TYPE_BUS, 1'b1, MICRO_ALU_OP_ADD, MICRO_BUS_MEM_WRITE, MICRO_ADD_SP, MICRO_MOV_PCL, 2'b10, MICRO_MOV_ALU_A, MICRO_MOV_PC};
+        rom[27] = {MICRO_TYPE_MISC, 1'b0, MICRO_ALU_OP_NONE, 1'd0, MICRO_MOV_NONE, MICRO_MOV_NONE, 2'b01, MICRO_MOV_PC, MICRO_MOV_ALU_R};
 
         rom[28] = {MICRO_TYPE_MISC, 1'b0, MICRO_ALU_OP_NONE, 1'd0, MICRO_MOV_NONE, MICRO_MOV_NONE, 2'b01, MICRO_MOV_B, MICRO_MOV_A};
+        rom[29] = {MICRO_TYPE_MISC, 1'b0, MICRO_ALU_OP_NONE, 1'd0, MICRO_MOV_NONE, MICRO_MOV_NONE, 2'b01, MICRO_MOV_EP, MICRO_MOV_A};
+        rom[30] = {MICRO_TYPE_MISC, 1'b0, MICRO_ALU_OP_NONE, 1'd0, MICRO_MOV_NONE, MICRO_MOV_NONE, 2'b01, MICRO_MOV_XP, MICRO_MOV_A};
+        rom[31] = {MICRO_TYPE_MISC, 1'b0, MICRO_ALU_OP_NONE, 1'd0, MICRO_MOV_NONE, MICRO_MOV_NONE, 2'b01, MICRO_MOV_YP, MICRO_MOV_A};
 
         translation_rom[10'h044] = 1;
         translation_rom[10'h1D0] = 2;
@@ -237,11 +240,16 @@ module s1c88
         translation_rom[10'h0F2] = 24;
 
         translation_rom[10'h048] = 28;
+        translation_rom[10'h1CD] = 29;
+        translation_rom[10'h1CE] = 30;
+        translation_rom[10'h1CF] = 31;
 
     end
 
     reg [15:0] BA;
     reg [7:0] EP;
+    reg [7:0] XP;
+    reg [7:0] YP;
     reg [7:0] BR;
     reg [7:0] SC;
     reg [15:0] SP;
@@ -332,8 +340,13 @@ module s1c88
             //MICRO_MOV_CB    = 5'h10,
             MICRO_MOV_EP:
                 src_reg = {8'd0, EP};
-            //MICRO_MOV_XP    = 5'h11,
-            //MICRO_MOV_YP    = 5'h12,
+
+            MICRO_MOV_XP:
+                src_reg = {8'd0, XP};
+
+            MICRO_MOV_YP:
+                src_reg = {8'd0, YP};
+
             default:
                 src_reg = 0;
         endcase
@@ -445,7 +458,7 @@ module s1c88
                     alu_op <= ALUOP_ROR;
 
                 default:
-                    alu_op <= 0;
+                    alu_op <= ALUOP_ADD;
 
             endcase
         end
@@ -600,6 +613,24 @@ module s1c88
                     if(micro_op_type == MICRO_TYPE_BUS && micro_bus_op == MICRO_BUS_MEM_READ)
                     begin
                         case(micro_bus_reg)
+                            MICRO_MOV_EP:
+                                EP <= data_in;
+
+                            MICRO_MOV_XP:
+                                XP <= data_in;
+
+                            MICRO_MOV_YP:
+                                YP <= data_in;
+
+                            MICRO_MOV_BR:
+                                BR <= data_in;
+
+                            MICRO_MOV_SC:
+                                SC <= data_in;
+
+                            MICRO_MOV_SP:
+                                SP <= {8'd0, data_in};
+
                             MICRO_MOV_A:
                                 BA[7:0]  <= data_in;
 
@@ -623,6 +654,12 @@ module s1c88
                     case(micro_mov_dst)
                         MICRO_MOV_EP:
                             EP <= src_reg[7:0];
+
+                        MICRO_MOV_XP:
+                            XP <= src_reg[7:0];
+
+                        MICRO_MOV_YP:
+                            YP <= src_reg[7:0];
 
                         MICRO_MOV_BR:
                             BR <= src_reg[7:0];
