@@ -45,6 +45,39 @@ module s1c88
     // immediates into the ALU registers at that stage already. It would
     // probably also allow to calculate addresses for data operations.
 
+    // Microinstruction Design Notes:
+    // 
+    // Currently we allow all microinstructions to set the alu operation.
+    // Perhaps it would be better to have microinstructions for the
+    // reading of the immediate values too, then you can write the
+    // immediate straight where you need it in the next microinstructions.
+    // Alternatively, we could have convert bus micros into simple move
+    // micros with MICRO_MOV_MEM, but where would we put the addressing
+    // mode? In 8086, the address is explicitly set by the
+    // microinstructions. Perhaps this could also be a possibility here,
+    // but we would need to run the microinstructions on both positive and
+    // negative edges, with the negative edge logic indexing into the rom
+    // with a 0 offset, while the positive edge logic indexing with an
+    // offset of +1.
+
+    // @note: If we moved IMM automatically into alu A (i.e. during
+    // decoding), then we could have moved performed all alu operations
+    // one micro earlier, meaning that we could have modified PC one micro
+    // earlier. See example microprogram:
+    //
+    // rom[24] = {MICRO_TYPE_BUS, 1'b1, MICRO_ALU_OP_ADD, MICRO_BUS_MEM_WRITE, MICRO_ADD_SP, MICRO_MOV_CB,  2'b00, MICRO_MOV_ALU_A, MICRO_MOV_PC};
+    // rom[25] = {MICRO_TYPE_BUS, 1'b1, MICRO_ALU_OP_INC2, MICRO_BUS_MEM_WRITE, MICRO_ADD_SP, MICRO_MOV_PCH, 2'b00, MICRO_MOV_ALU_A, MICRO_MOV_ALU_R};
+    // rom[26] = {MICRO_TYPE_BUS, 1'b0, MICRO_ALU_OP_NONE MICRO_BUS_MEM_WRITE, MICRO_ADD_SP, MICRO_MOV_PCL, 2'b10, MICRO_MOV_NONE, MICRO_MOV_NONE};
+    // rom[27] = {MICRO_TYPE_MISC, 1'b0, MICRO_ALU_OP_NONE, 1'd0, MICRO_MOV_NONE, MICRO_MOV_NONE, 2'b01, MICRO_MOV_PC, MICRO_MOV_ALU_R};
+    //
+    // I guess we will see at a later point if we need to change where PC
+    // is being set again. Note, though that we still have to set PC in
+    // the last micro, and since we want to overlap instructions, the
+    // window that is left for PC to change on time for an opcode fetch is
+    // narrow, leaving (I think) only the possibility of updating PC at
+    // PL == 1.
+    //
+
     // @todo:
     //
     // * Implement instructions using python. Also use python to scan for
@@ -83,6 +116,11 @@ module s1c88
         MICRO_TYPE_BUS  = 3'd1,
         MICRO_TYPE_JMP  = 3'd2,
         MICRO_TYPE_SJMP = 3'd3;
+
+    localparam [2:0]
+        MICRO_NOT_DONE    = 3'b00,
+        MICRO_DONE        = 3'b01,
+        MICRO_NEARLY_DONE = 3'b10;
 
     localparam
         MICRO_BUS_MEM_READ  = 1'd0,
@@ -158,182 +196,8 @@ module s1c88
 
     initial
     begin
-        for (int i = 0; i < 768; i++)
-            translation_rom[i] = 0;
-
-        for (int i = 0; i < 512; i++)
-            rom[i] = 0;
-
-        // Microinstruction Design Notes:
-        // 
-        // Currently we allow all microinstructions to set the alu operation.
-        // Perhaps it would be better to have microinstructions for the
-        // reading of the immediate values too, then you can write the
-        // immediate straight where you need it in the next microinstructions.
-        // Alternatively, we could have convert bus micros into simple move
-        // micros with MICRO_MOV_MEM, but where would we put the addressing
-        // mode? In 8086, the address is explicitly set by the
-        // microinstructions. Perhaps this could also be a possibility here,
-        // but we would need to run the microinstructions on both positive and
-        // negative edges, with the negative edge logic indexing into the rom
-        // with a 0 offset, while the positive edge logic indexing with an
-        // offset of +1.
-
-        // @todo: Implemented the instructions in some text file and convert
-        // to some binary blob for loading into rom using Python.
-        rom[0] = {MICRO_TYPE_MISC, 1'b0, MICRO_ALU_OP_NONE, 1'd0, MICRO_MOV_NONE, MICRO_MOV_NONE, 2'b01, MICRO_MOV_NONE, MICRO_MOV_NONE};
-
-        translation_rom[10'h140] = 6;
-        rom[6] = {MICRO_TYPE_BUS, 1'b0, MICRO_ALU_OP_NONE, MICRO_BUS_MEM_READ, MICRO_ADD_IX_DD, MICRO_MOV_A, 2'b10, MICRO_MOV_NONE, MICRO_MOV_NONE};
-        rom[7] = {MICRO_TYPE_MISC, 1'b0, MICRO_ALU_OP_NONE, 1'd0, MICRO_MOV_NONE, MICRO_MOV_NONE, 2'b01, MICRO_MOV_NONE, MICRO_MOV_NONE};
-
-        translation_rom[10'h141] = 8;
-        rom[8] = {MICRO_TYPE_BUS, 1'b0, MICRO_ALU_OP_NONE, MICRO_BUS_MEM_READ, MICRO_ADD_IY_DD, MICRO_MOV_A, 2'b10, MICRO_MOV_NONE, MICRO_MOV_NONE};
-        rom[9] = {MICRO_TYPE_MISC, 1'b0, MICRO_ALU_OP_NONE, 1'd0, MICRO_MOV_NONE, MICRO_MOV_NONE, 2'b01, MICRO_MOV_NONE, MICRO_MOV_NONE};
-
-        translation_rom[10'h142] = 10;
-        rom[10] = {MICRO_TYPE_BUS, 1'b0, MICRO_ALU_OP_NONE, MICRO_BUS_MEM_READ, MICRO_ADD_IX_L, MICRO_MOV_A, 2'b10, MICRO_MOV_NONE, MICRO_MOV_NONE};
-        rom[11] = {MICRO_TYPE_MISC, 1'b0, MICRO_ALU_OP_NONE, 1'd0, MICRO_MOV_NONE, MICRO_MOV_NONE, 2'b01, MICRO_MOV_NONE, MICRO_MOV_NONE};
-
-        translation_rom[10'h143] = 12;
-        rom[12] = {MICRO_TYPE_BUS, 1'b0, MICRO_ALU_OP_NONE, MICRO_BUS_MEM_READ, MICRO_ADD_IY_L, MICRO_MOV_A, 2'b10, MICRO_MOV_NONE, MICRO_MOV_NONE};
-        rom[13] = {MICRO_TYPE_MISC, 1'b0, MICRO_ALU_OP_NONE, 1'd0, MICRO_MOV_NONE, MICRO_MOV_NONE, 2'b01, MICRO_MOV_NONE, MICRO_MOV_NONE};
-
-        translation_rom[10'h1C5] = 14;
-        rom[14] = {MICRO_TYPE_MISC, 1'b0, MICRO_ALU_OP_NONE, 1'd0, MICRO_MOV_NONE, MICRO_MOV_NONE, 2'b01, MICRO_MOV_EP, MICRO_MOV_IMM};
-
-        translation_rom[10'h0B4] = 15;
-        rom[15] = {MICRO_TYPE_MISC, 1'b0, MICRO_ALU_OP_NONE, 1'd0, MICRO_MOV_NONE, MICRO_MOV_NONE, 2'b01, MICRO_MOV_BR, MICRO_MOV_IMM};
-
-        translation_rom[10'h0DD] = 16;
-        rom[16] = {MICRO_TYPE_BUS, 1'b0, MICRO_ALU_OP_NONE, MICRO_BUS_MEM_WRITE, MICRO_ADD_BR, MICRO_MOV_IMMH, 2'b10, MICRO_MOV_NONE, MICRO_MOV_NONE};
-        rom[17] = {MICRO_TYPE_MISC, 1'b0, MICRO_ALU_OP_NONE, 1'd0, MICRO_MOV_NONE, MICRO_MOV_NONE, 2'b01, MICRO_MOV_NONE, MICRO_MOV_NONE};
-
-        translation_rom[10'h0D9] = 18;
-        rom[18] = {MICRO_TYPE_BUS, 1'b0, MICRO_ALU_OP_OR, MICRO_BUS_MEM_READ, MICRO_ADD_BR, MICRO_MOV_ALU_A, 2'b00, MICRO_MOV_NONE, MICRO_MOV_NONE};
-        rom[19] = {MICRO_TYPE_BUS, 1'b0, MICRO_ALU_OP_NONE, MICRO_BUS_MEM_WRITE, MICRO_ADD_BR, MICRO_MOV_ALU_R, 2'b10, MICRO_MOV_NONE, MICRO_MOV_NONE};
-        rom[20] = {MICRO_TYPE_MISC, 1'b0, MICRO_ALU_OP_NONE, 1'd0, MICRO_MOV_NONE, MICRO_MOV_NONE, 2'b01, MICRO_MOV_NONE, MICRO_MOV_NONE};
-
-        translation_rom[10'h09F] = 21;
-        rom[21] = {MICRO_TYPE_MISC, 1'b0, MICRO_ALU_OP_NONE, 1'd0, MICRO_MOV_NONE, MICRO_MOV_NONE, 2'b10, MICRO_MOV_SC, MICRO_MOV_IMML};
-        rom[22] = {MICRO_TYPE_MISC, 1'b0, MICRO_ALU_OP_NONE, 1'd0, MICRO_MOV_NONE, MICRO_MOV_NONE, 2'b01, MICRO_MOV_NONE, MICRO_MOV_NONE};
-
-        translation_rom[10'h26E] = 23;
-        rom[23] = {MICRO_TYPE_MISC, 1'b0, MICRO_ALU_OP_NONE, 1'd0, MICRO_MOV_NONE, MICRO_MOV_NONE, 2'b01, MICRO_MOV_SP, MICRO_MOV_IMM};
-
-        // @note: If we moved IMM automatically into alu A (i.e. during
-        // decoding), then we could have moved performed all alu operations
-        // one micro earlier, meaning that we could have modified PC one micro
-        // earlier. See example microprogram:
-        //
-        // rom[24] = {MICRO_TYPE_BUS, 1'b1, MICRO_ALU_OP_ADD, MICRO_BUS_MEM_WRITE, MICRO_ADD_SP, MICRO_MOV_CB,  2'b00, MICRO_MOV_ALU_A, MICRO_MOV_PC};
-        // rom[25] = {MICRO_TYPE_BUS, 1'b1, MICRO_ALU_OP_INC2, MICRO_BUS_MEM_WRITE, MICRO_ADD_SP, MICRO_MOV_PCH, 2'b00, MICRO_MOV_ALU_A, MICRO_MOV_ALU_R};
-        // rom[26] = {MICRO_TYPE_BUS, 1'b0, MICRO_ALU_OP_NONE MICRO_BUS_MEM_WRITE, MICRO_ADD_SP, MICRO_MOV_PCL, 2'b10, MICRO_MOV_NONE, MICRO_MOV_NONE};
-        // rom[27] = {MICRO_TYPE_MISC, 1'b0, MICRO_ALU_OP_NONE, 1'd0, MICRO_MOV_NONE, MICRO_MOV_NONE, 2'b01, MICRO_MOV_PC, MICRO_MOV_ALU_R};
-        //
-        // I guess we will see at a later point if we need to change where PC
-        // is being set again. Note, though that we still have to set PC in
-        // the last micro, and since we want to overlap instructions, the
-        // window that is left for PC to change on time for an opcode fetch is
-        // narrow, leaving (I think) only the possibility of updating PC at
-        // PL == 1.
-        //
-        translation_rom[10'h0F2] = 24;
-        rom[24] = {MICRO_TYPE_BUS, 1'b0, MICRO_ALU_OP_NONE, MICRO_BUS_MEM_WRITE, MICRO_ADD_SP, MICRO_MOV_CB,  2'b00, MICRO_MOV_ALU_A, MICRO_MOV_IMM};
-        rom[25] = {MICRO_TYPE_BUS, 1'b1, MICRO_ALU_OP_INC2, MICRO_BUS_MEM_WRITE, MICRO_ADD_SP, MICRO_MOV_PCH, 2'b00, MICRO_MOV_ALU_B, MICRO_MOV_ALU_R};
-        rom[26] = {MICRO_TYPE_BUS, 1'b1, MICRO_ALU_OP_ADD, MICRO_BUS_MEM_WRITE, MICRO_ADD_SP, MICRO_MOV_PCL, 2'b10, MICRO_MOV_ALU_A, MICRO_MOV_PC};
-        rom[27] = {MICRO_TYPE_MISC, 1'b0, MICRO_ALU_OP_NONE, 1'd0, MICRO_MOV_NONE, MICRO_MOV_NONE, 2'b01, MICRO_MOV_PC, MICRO_MOV_ALU_R};
-
-        translation_rom[10'h048] = 28;
-        rom[28] = {MICRO_TYPE_MISC, 1'b0, MICRO_ALU_OP_NONE, 1'd0, MICRO_MOV_NONE, MICRO_MOV_NONE, 2'b01, MICRO_MOV_B, MICRO_MOV_A};
-
-        translation_rom[10'h1CD] = 29;
-        rom[29] = {MICRO_TYPE_MISC, 1'b0, MICRO_ALU_OP_NONE, 1'd0, MICRO_MOV_NONE, MICRO_MOV_NONE, 2'b01, MICRO_MOV_EP, MICRO_MOV_A};
-
-        translation_rom[10'h1CE] = 30;
-        rom[30] = {MICRO_TYPE_MISC, 1'b0, MICRO_ALU_OP_NONE, 1'd0, MICRO_MOV_NONE, MICRO_MOV_NONE, 2'b01, MICRO_MOV_XP, MICRO_MOV_A};
-
-        translation_rom[10'h1CF] = 31;
-        rom[31] = {MICRO_TYPE_MISC, 1'b0, MICRO_ALU_OP_NONE, 1'd0, MICRO_MOV_NONE, MICRO_MOV_NONE, 2'b01, MICRO_MOV_YP, MICRO_MOV_A};
-
-        // 8-bit Load to A
-        translation_rom[10'h040] = 32;
-        rom[32] = {MICRO_TYPE_MISC, 1'b0, MICRO_ALU_OP_NONE, 1'd0, MICRO_MOV_NONE, MICRO_MOV_NONE, 2'b01, MICRO_MOV_A, MICRO_MOV_A};
-        translation_rom[10'h041] = 33;
-        rom[33] = {MICRO_TYPE_MISC, 1'b0, MICRO_ALU_OP_NONE, 1'd0, MICRO_MOV_NONE, MICRO_MOV_NONE, 2'b01, MICRO_MOV_A, MICRO_MOV_B};
-        translation_rom[10'h042] = 34;
-        rom[34] = {MICRO_TYPE_MISC, 1'b0, MICRO_ALU_OP_NONE, 1'd0, MICRO_MOV_NONE, MICRO_MOV_NONE, 2'b01, MICRO_MOV_A, MICRO_MOV_L};
-        translation_rom[10'h043] = 35;
-        rom[35] = {MICRO_TYPE_MISC, 1'b0, MICRO_ALU_OP_NONE, 1'd0, MICRO_MOV_NONE, MICRO_MOV_NONE, 2'b01, MICRO_MOV_A, MICRO_MOV_H};
-        translation_rom[10'h1C0] = 36;
-        rom[36] = {MICRO_TYPE_MISC, 1'b0, MICRO_ALU_OP_NONE, 1'd0, MICRO_MOV_NONE, MICRO_MOV_NONE, 2'b01, MICRO_MOV_A, MICRO_MOV_BR};
-        translation_rom[10'h1C1] = 37;
-        rom[37] = {MICRO_TYPE_MISC, 1'b0, MICRO_ALU_OP_NONE, 1'd0, MICRO_MOV_NONE, MICRO_MOV_NONE, 2'b01, MICRO_MOV_A, MICRO_MOV_SC};
-        translation_rom[10'h0B0] = 38;
-        rom[38] = {MICRO_TYPE_MISC, 1'b0, MICRO_ALU_OP_NONE, 1'd0, MICRO_MOV_NONE, MICRO_MOV_NONE, 2'b01, MICRO_MOV_A, MICRO_MOV_IMML};
-        translation_rom[10'h044] = 39;
-        rom[39] = {MICRO_TYPE_BUS, 1'b0, MICRO_ALU_OP_NONE, MICRO_BUS_MEM_READ, MICRO_ADD_BR,    MICRO_MOV_A, 2'b01, MICRO_MOV_NONE, MICRO_MOV_NONE};
-        rom[40] = {MICRO_TYPE_MISC, 1'b0, MICRO_ALU_OP_NONE, 1'd0, MICRO_MOV_NONE, MICRO_MOV_NONE, 2'b01, MICRO_MOV_NONE, MICRO_MOV_NONE};
-        translation_rom[10'h1D0] = 41;
-        rom[41] = {MICRO_TYPE_BUS, 1'b0, MICRO_ALU_OP_NONE, MICRO_BUS_MEM_READ, MICRO_ADD_HH_LL, MICRO_MOV_A, 2'b01, MICRO_MOV_NONE, MICRO_MOV_NONE};
-        rom[42] = {MICRO_TYPE_MISC, 1'b0, MICRO_ALU_OP_NONE, 1'd0, MICRO_MOV_NONE, MICRO_MOV_NONE, 2'b01, MICRO_MOV_NONE, MICRO_MOV_NONE};
-        translation_rom[10'h045] = 43;
-        rom[43] = {MICRO_TYPE_BUS, 1'b0, MICRO_ALU_OP_NONE, MICRO_BUS_MEM_READ, MICRO_ADD_HL,    MICRO_MOV_A, 2'b01, MICRO_MOV_NONE, MICRO_MOV_NONE};
-        rom[44] = {MICRO_TYPE_MISC, 1'b0, MICRO_ALU_OP_NONE, 1'd0, MICRO_MOV_NONE, MICRO_MOV_NONE, 2'b01, MICRO_MOV_NONE, MICRO_MOV_NONE};
-        translation_rom[10'h046] = 45;
-        rom[45] = {MICRO_TYPE_BUS, 1'b0, MICRO_ALU_OP_NONE, MICRO_BUS_MEM_READ, MICRO_ADD_IX,    MICRO_MOV_A, 2'b01, MICRO_MOV_NONE, MICRO_MOV_NONE};
-        rom[46] = {MICRO_TYPE_MISC, 1'b0, MICRO_ALU_OP_NONE, 1'd0, MICRO_MOV_NONE, MICRO_MOV_NONE, 2'b01, MICRO_MOV_NONE, MICRO_MOV_NONE};
-        translation_rom[10'h047] = 47;
-        rom[47] = {MICRO_TYPE_BUS, 1'b0, MICRO_ALU_OP_NONE, MICRO_BUS_MEM_READ, MICRO_ADD_IY,    MICRO_MOV_A, 2'b01, MICRO_MOV_NONE, MICRO_MOV_NONE};
-        rom[48] = {MICRO_TYPE_MISC, 1'b0, MICRO_ALU_OP_NONE, 1'd0, MICRO_MOV_NONE, MICRO_MOV_NONE, 2'b01, MICRO_MOV_NONE, MICRO_MOV_NONE};
-        translation_rom[10'h140] = 49;
-        rom[49] = {MICRO_TYPE_BUS, 1'b0, MICRO_ALU_OP_NONE, MICRO_BUS_MEM_READ, MICRO_ADD_IX_DD,    MICRO_MOV_A, 2'b01, MICRO_MOV_NONE, MICRO_MOV_NONE};
-        rom[50] = {MICRO_TYPE_MISC, 1'b0, MICRO_ALU_OP_NONE, 1'd0, MICRO_MOV_NONE, MICRO_MOV_NONE, 2'b01, MICRO_MOV_NONE, MICRO_MOV_NONE};
-        translation_rom[10'h141] = 51;
-        rom[51] = {MICRO_TYPE_BUS, 1'b0, MICRO_ALU_OP_NONE, MICRO_BUS_MEM_READ, MICRO_ADD_IY_DD,    MICRO_MOV_A, 2'b01, MICRO_MOV_NONE, MICRO_MOV_NONE};
-        rom[52] = {MICRO_TYPE_MISC, 1'b0, MICRO_ALU_OP_NONE, 1'd0, MICRO_MOV_NONE, MICRO_MOV_NONE, 2'b01, MICRO_MOV_NONE, MICRO_MOV_NONE};
-        translation_rom[10'h142] = 53;
-        rom[53] = {MICRO_TYPE_BUS, 1'b0, MICRO_ALU_OP_NONE, MICRO_BUS_MEM_READ, MICRO_ADD_IX_L,    MICRO_MOV_A, 2'b01, MICRO_MOV_NONE, MICRO_MOV_NONE};
-        rom[54] = {MICRO_TYPE_MISC, 1'b0, MICRO_ALU_OP_NONE, 1'd0, MICRO_MOV_NONE, MICRO_MOV_NONE, 2'b01, MICRO_MOV_NONE, MICRO_MOV_NONE};
-        translation_rom[10'h143] = 55;
-        rom[55] = {MICRO_TYPE_BUS, 1'b0, MICRO_ALU_OP_NONE, MICRO_BUS_MEM_READ, MICRO_ADD_IY_L,    MICRO_MOV_A, 2'b01, MICRO_MOV_NONE, MICRO_MOV_NONE};
-        rom[56] = {MICRO_TYPE_MISC, 1'b0, MICRO_ALU_OP_NONE, 1'd0, MICRO_MOV_NONE, MICRO_MOV_NONE, 2'b01, MICRO_MOV_NONE, MICRO_MOV_NONE};
-        translation_rom[10'h1C8] = 57;
-        rom[57] = {MICRO_TYPE_MISC, 1'b0, MICRO_ALU_OP_NONE, 1'd0, MICRO_MOV_NONE, MICRO_MOV_NONE, 2'b01, MICRO_MOV_A, MICRO_MOV_NB};
-        translation_rom[10'h1C9] = 58;
-        rom[58] = {MICRO_TYPE_MISC, 1'b0, MICRO_ALU_OP_NONE, 1'd0, MICRO_MOV_NONE, MICRO_MOV_NONE, 2'b01, MICRO_MOV_A, MICRO_MOV_EP};
-        translation_rom[10'h1CA] = 59;
-        rom[59] = {MICRO_TYPE_MISC, 1'b0, MICRO_ALU_OP_NONE, 1'd0, MICRO_MOV_NONE, MICRO_MOV_NONE, 2'b01, MICRO_MOV_A, MICRO_MOV_XP};
-        translation_rom[10'h1CB] = 60;
-        rom[60] = {MICRO_TYPE_MISC, 1'b0, MICRO_ALU_OP_NONE, 1'd0, MICRO_MOV_NONE, MICRO_MOV_NONE, 2'b01, MICRO_MOV_A, MICRO_MOV_YP};
-
-        //translation_rom[10'h048] = 36;
-        //rom[36] = {MICRO_TYPE_MISC, 1'b0, MICRO_ALU_OP_NONE, 1'd0, MICRO_MOV_NONE, MICRO_MOV_NONE, 2'b01, MICRO_MOV_B, MICRO_MOV_A};
-        //translation_rom[10'h049] = 37;
-        //rom[37] = {MICRO_TYPE_MISC, 1'b0, MICRO_ALU_OP_NONE, 1'd0, MICRO_MOV_NONE, MICRO_MOV_NONE, 2'b01, MICRO_MOV_B, MICRO_MOV_B};
-        //translation_rom[10'h04A] = 38;
-        //rom[38] = {MICRO_TYPE_MISC, 1'b0, MICRO_ALU_OP_NONE, 1'd0, MICRO_MOV_NONE, MICRO_MOV_NONE, 2'b01, MICRO_MOV_B, MICRO_MOV_L};
-        //translation_rom[10'h04B] = 39;
-        //rom[39] = {MICRO_TYPE_MISC, 1'b0, MICRO_ALU_OP_NONE, 1'd0, MICRO_MOV_NONE, MICRO_MOV_NONE, 2'b01, MICRO_MOV_B, MICRO_MOV_H};
-
-        //translation_rom[10'h050] = 40;
-        //rom[40] = {MICRO_TYPE_MISC, 1'b0, MICRO_ALU_OP_NONE, 1'd0, MICRO_MOV_NONE, MICRO_MOV_NONE, 2'b01, MICRO_MOV_L, MICRO_MOV_A};
-        //translation_rom[10'h051] = 41;
-        //rom[41] = {MICRO_TYPE_MISC, 1'b0, MICRO_ALU_OP_NONE, 1'd0, MICRO_MOV_NONE, MICRO_MOV_NONE, 2'b01, MICRO_MOV_L, MICRO_MOV_B};
-        //translation_rom[10'h052] = 42;
-        //rom[42] = {MICRO_TYPE_MISC, 1'b0, MICRO_ALU_OP_NONE, 1'd0, MICRO_MOV_NONE, MICRO_MOV_NONE, 2'b01, MICRO_MOV_L, MICRO_MOV_L};
-        //translation_rom[10'h053] = 43;
-        //rom[43] = {MICRO_TYPE_MISC, 1'b0, MICRO_ALU_OP_NONE, 1'd0, MICRO_MOV_NONE, MICRO_MOV_NONE, 2'b01, MICRO_MOV_L, MICRO_MOV_H};
-
-        //translation_rom[10'h058] = 44;
-        //rom[44] = {MICRO_TYPE_MISC, 1'b0, MICRO_ALU_OP_NONE, 1'd0, MICRO_MOV_NONE, MICRO_MOV_NONE, 2'b01, MICRO_MOV_H, MICRO_MOV_A};
-        //translation_rom[10'h059] = 45;
-        //rom[45] = {MICRO_TYPE_MISC, 1'b0, MICRO_ALU_OP_NONE, 1'd0, MICRO_MOV_NONE, MICRO_MOV_NONE, 2'b01, MICRO_MOV_H, MICRO_MOV_B};
-        //translation_rom[10'h05A] = 46;
-        //rom[46] = {MICRO_TYPE_MISC, 1'b0, MICRO_ALU_OP_NONE, 1'd0, MICRO_MOV_NONE, MICRO_MOV_NONE, 2'b01, MICRO_MOV_H, MICRO_MOV_L};
-        //translation_rom[10'h05B] = 47;
-        //rom[47] = {MICRO_TYPE_MISC, 1'b0, MICRO_ALU_OP_NONE, 1'd0, MICRO_MOV_NONE, MICRO_MOV_NONE, 2'b01, MICRO_MOV_H, MICRO_MOV_H};
-
+        $readmemh("translation_rom.mem", translation_rom);
+        $readmemh("rom.mem", rom);
     end
 
     reg [15:0] BA;

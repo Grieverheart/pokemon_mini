@@ -3,6 +3,7 @@
 verilator/obj_dir
 experiments/verilator/obj_dir
 *.vcd
+verilator/*.mem
 
 db
 greybox_tmp
