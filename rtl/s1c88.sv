@@ -246,9 +246,14 @@ module s1c88
     reg [8:0] microaddress;
 
     reg [15:0] src_reg;
+    reg not_implemented_mov_src_error;
     always_comb
     begin
+        not_implemented_mov_src_error = 0;
         case(micro_mov_src)
+            MICRO_MOV_NONE:
+                src_reg = 0;
+
             MICRO_MOV_IMM:
                 src_reg = imm;
 
@@ -310,7 +315,10 @@ module s1c88
 
             // @todo: set error flag.
             default:
+            begin
+                not_implemented_mov_src_error = 1;
                 src_reg = 0;
+            end
         endcase
     end
 
@@ -429,6 +437,8 @@ module s1c88
 
 
 
+    reg not_implemented_mov_dst_error;
+    reg not_implemented_bus_reg_error;
     always_ff @ (negedge clk, posedge reset)
     begin
         if(reset)
@@ -441,6 +451,7 @@ module s1c88
             reset_counter        <= 0;
             exception            <= EXCEPTION_TYPE_RESET;
             fetch_opcode         <= 0;
+            not_implemented_mov_dst_error <= 0;
         end
         else if(reset_counter < 2)
         begin
@@ -456,6 +467,9 @@ module s1c88
             pl <= ~pl;
             if(pl == 0)
             begin
+                not_implemented_mov_dst_error <= 0;
+                not_implemented_bus_reg_error <= 0;
+
                 if(next_state == STATE_EXECUTE)
                 begin
                     if(alu_b_imm8)
@@ -610,6 +624,8 @@ module s1c88
                             // @todo: set error flag.
                             default:
                             begin
+                                if(micro_bus_reg != MICRO_MOV_NONE)
+                                    not_implemented_bus_reg_error <= 1;
                             end
                         endcase
                     end
@@ -662,6 +678,8 @@ module s1c88
                         // @todo: set error flag.
                         default:
                         begin
+                            if(micro_mov_dst != MICRO_MOV_NONE && micro_mov_dst != MICRO_MOV_PC)
+                                not_implemented_mov_dst_error <= 1;
                         end
                     endcase
                 end

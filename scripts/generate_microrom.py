@@ -76,18 +76,24 @@ if __name__ == '__main__':
 
     lines = open(os.path.join(root, 'rom/microinstructions.txt'), 'r').readlines()
 
-    addresses = [0] * 768
+    addresses = [-1] * 768
     rom = []
     microinstruction_address = 0
     for line in lines:
         line = line.strip()
 
-        if len(line) == 0 or line.startswith('//'):
+        comment_start = line.find('//')
+        if comment_start > -1:
+            line = line[:comment_start].strip()
+
+        if len(line) == 0:
             continue
 
         if line[0] == '#':
             if line[1:] == 'default':
-                opcode = 0
+                for i in range(len(addresses)):
+                    if addresses[i] == -1:
+                        addresses[i] = microinstruction_address
             else:
                 opcode = int(line[1:], base=16)
                 if opcode >= 0xCF00:
@@ -95,7 +101,7 @@ if __name__ == '__main__':
                 elif opcode >= 0xCE00:
                     opcode = 0x100 | opcode & 0xFF
 
-            addresses[opcode] = microinstruction_address
+                addresses[opcode] = microinstruction_address
         else:
             microcommands = line.split(' ')
             microcommands = [localparam_dict[x] if x in localparam_dict else x for x in microcommands]
