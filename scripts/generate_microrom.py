@@ -79,6 +79,7 @@ if __name__ == '__main__':
     addresses = [-1] * 768
     rom = []
     microinstruction_address = 0
+    num_opcodes_implemented = 0
     for line in lines:
         line = line.strip()
 
@@ -95,6 +96,7 @@ if __name__ == '__main__':
                     if addresses[i] == -1:
                         addresses[i] = microinstruction_address
             else:
+                num_opcodes_implemented += 1
                 opcode = int(line[1:], base=16)
                 if opcode >= 0xCF00:
                     opcode = 0x200 | opcode & 0xFF
@@ -109,6 +111,8 @@ if __name__ == '__main__':
             assert(len(command) == microinstruction_width)
             rom.append(command)
             microinstruction_address += 1
+
+    print('%d/608 opcodes implemented.' % num_opcodes_implemented)
 
     rom = '\n'.join([hex(int(x, base=2))[2:] for x in rom])
     addresses = '\n'.join([hex(int(bin(x)[2:].zfill(rom_bits)[:9], base=2))[2:] for x in addresses])

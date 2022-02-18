@@ -80,13 +80,12 @@ module s1c88
 
     // @todo:
     //
-    // * Implement instructions using python. Also use python to scan for
-    //   localparam definitions so that we don't have to change them every
-    //   time we edit them in the verilog source file.
-    // * Check if we still need to add NOP after bus operation if it's the
-    //   last micro.
-    // * Implement transfer instructions.
+    // * Implement RET instruction 0xF8.
     // * Use the correct page register depending on addressing mode.
+    // * Check if we still need to add NOP after bus operation if it's the
+    //   last micro. -- We can probably think of ways to implement this, but
+    //   for now we will continue using the nops. It's easy to remove them in
+    //   the future if we decide to do this.
 
     localparam [1:0]
         BUS_COMMAND_IDLE      = 2'd0,
@@ -146,29 +145,39 @@ module s1c88
         MICRO_MOV_PC       = 5'h0E,
         MICRO_MOV_PCL      = 5'h0F,
         MICRO_MOV_PCH      = 5'h10,
-        MICRO_MOV_NB       = 5'h11,
-        MICRO_MOV_CB       = 5'h12,
-        MICRO_MOV_SC       = 5'h13,
-        MICRO_MOV_EP       = 5'h14,
-        MICRO_MOV_XP       = 5'h15,
-        MICRO_MOV_YP       = 5'h16,
-        MICRO_MOV_ALU_R    = 5'h17,
-        MICRO_MOV_ALU_A    = 5'h18,
-        MICRO_MOV_ALU_B    = 5'h19;
+        MICRO_MOV_PC2      = 5'h11,
+        MICRO_MOV_PC3      = 5'h12,
+        MICRO_MOV_NB       = 5'h13,
+        MICRO_MOV_CB       = 5'h14,
+        MICRO_MOV_SC       = 5'h15,
+        MICRO_MOV_EP       = 5'h16,
+        MICRO_MOV_XP       = 5'h17,
+        MICRO_MOV_YP       = 5'h18,
+        MICRO_MOV_ALU_R    = 5'h19,
+        MICRO_MOV_ALU_A    = 5'h1A,
+        MICRO_MOV_ALU_B    = 5'h1B;
 
+    // @note: Can probably reduce some resource usage by making all *1 address
+    // micros be at an odd address.
     localparam [4:0]
-        MICRO_ADD_HL    = 5'h00,
-        MICRO_ADD_IX    = 5'h01,
-        MICRO_ADD_IX_DD = 5'h02,
-        MICRO_ADD_IX_L  = 5'h03,
-        MICRO_ADD_IY    = 5'h04,
-        MICRO_ADD_IY_DD = 5'h05,
-        MICRO_ADD_IY_L  = 5'h06,
-        MICRO_ADD_BR    = 5'h07,
-        MICRO_ADD_HH_LL = 5'h08,
-        MICRO_ADD_KK    = 5'h09,
-        MICRO_ADD_SP    = 5'h0A,
-        MICRO_ADD_SP_DD = 5'h0B;
+        MICRO_ADD_HL     = 5'h00,
+        MICRO_ADD_HL1    = 5'h01,
+        MICRO_ADD_IX     = 5'h02,
+        MICRO_ADD_IX1    = 5'h03,
+        MICRO_ADD_IX_DD  = 5'h04,
+        MICRO_ADD_IX_L   = 5'h05,
+        MICRO_ADD_IY     = 5'h06,
+        MICRO_ADD_IY1    = 5'h07,
+        MICRO_ADD_IY_DD  = 5'h08,
+        MICRO_ADD_IY_L   = 5'h09,
+        MICRO_ADD_BR     = 5'h0A,
+        MICRO_ADD_BR1    = 5'h0B,
+        MICRO_ADD_HH_LL  = 5'h0C,
+        MICRO_ADD_HH_LL1 = 5'h0D,
+        MICRO_ADD_KK     = 5'h0E,
+        MICRO_ADD_SP     = 5'h0F,
+        MICRO_ADD_SP_DD  = 5'h10,
+        MICRO_ADD_SP_DD1 = 5'h11;
 
     localparam [4:0]
         MICRO_ALU_OP_NONE = 5'h0,
@@ -208,6 +217,8 @@ module s1c88
     reg [7:0] SC;
     reg [15:0] SP;
     reg [15:0] HL;
+    reg [15:0] IX;
+    reg [15:0] IY;
     wire [7:0] A = BA[7:0];
     wire [7:0] B = BA[15:8];
 
@@ -272,6 +283,12 @@ module s1c88
             MICRO_MOV_BA:
                 src_reg = BA;
 
+            MICRO_MOV_IX:
+                src_reg = IX;
+
+            MICRO_MOV_IY:
+                src_reg = IY;
+
             MICRO_MOV_ALU_A:
                 src_reg = alu_A;
 
@@ -302,6 +319,12 @@ module s1c88
             MICRO_MOV_PC:
                 src_reg = PC;
 
+            MICRO_MOV_PC2:
+                src_reg = PC + 16'd2;
+
+            MICRO_MOV_PC3:
+                src_reg = PC + 16'd3;
+
             //MICRO_MOV_NB    = 5'h0F,
             //MICRO_MOV_CB    = 5'h10,
             MICRO_MOV_EP:
@@ -313,7 +336,6 @@ module s1c88
             MICRO_MOV_YP:
                 src_reg = {8'd0, YP};
 
-            // @todo: set error flag.
             default:
             begin
                 not_implemented_mov_src_error = 1;
@@ -427,7 +449,6 @@ module s1c88
                 MICRO_ALU_OP_ROR:
                     alu_op <= ALUOP_ROR;
 
-                // @todo: set error flag.
                 default:
                     alu_op <= ALUOP_ADD;
 
@@ -621,7 +642,6 @@ module s1c88
                             MICRO_MOV_ALU_B:
                                 alu_B <= {8'd0, data_in};
 
-                            // @todo: set error flag.
                             default:
                             begin
                                 if(micro_bus_reg != MICRO_MOV_NONE)
@@ -633,6 +653,12 @@ module s1c88
                 else
                 begin
                     case(micro_mov_dst)
+                        MICRO_MOV_IX:
+                            IX <= src_reg;
+
+                        MICRO_MOV_IY:
+                            IY <= src_reg;
+
                         MICRO_MOV_EP:
                             EP <= src_reg[7:0];
 
@@ -675,7 +701,6 @@ module s1c88
                         MICRO_MOV_ALU_B:
                             alu_B <= src_reg;
 
-                        // @todo: set error flag.
                         default:
                         begin
                             if(micro_mov_dst != MICRO_MOV_NONE && micro_mov_dst != MICRO_MOV_PC)
@@ -695,10 +720,26 @@ module s1c88
                         bus_status <= BUS_COMMAND_MEM_WRITE;
 
                     case(micro_bus_add)
+                        MICRO_ADD_HL:
+                        begin
+                            address_out <= {8'b0, HL};
+                        end
+
+                        MICRO_ADD_HL1:
+                        begin
+                            address_out <= {8'b0, HL+16'd1};
+                        end
+
                         MICRO_ADD_HH_LL:
                         begin
                             address_out <= {8'b0, imm};
                         end
+
+                        MICRO_ADD_HH_LL1:
+                        begin
+                            address_out <= {8'b0, imm+16'd1};
+                        end
+
                         MICRO_ADD_SP:
                         begin
                             if(micro_bus_op == MICRO_BUS_MEM_WRITE)
@@ -712,6 +753,7 @@ module s1c88
                                 SP <= SP + 16'd1;
                             end
                         end
+
                         MICRO_ADD_BR:
                         begin
                             address_out <= {8'b0, BR, imm_low};
