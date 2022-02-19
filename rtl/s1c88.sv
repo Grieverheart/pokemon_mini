@@ -80,7 +80,9 @@ module s1c88
 
     // @todo:
     //
-    // * Implement RET instruction 0xF8.
+    // * I think we need to remove the imm reading from the decoder and move
+    //   that to the microinstructions. that will allow us to run more
+    //   operations. This seems to be required for some ops like AND A, #nn.
     // * Use the correct page register depending on addressing mode.
     // * Check if we still need to add NOP after bus operation if it's the
     //   last micro. -- We can probably think of ways to implement this, but
@@ -145,8 +147,8 @@ module s1c88
         MICRO_MOV_PC       = 5'h0E,
         MICRO_MOV_PCL      = 5'h0F,
         MICRO_MOV_PCH      = 5'h10,
-        MICRO_MOV_PC2      = 5'h11,
-        MICRO_MOV_PC3      = 5'h12,
+        MICRO_MOV_TA1      = 5'h11,
+        MICRO_MOV_TA2      = 5'h12,
         MICRO_MOV_NB       = 5'h13,
         MICRO_MOV_CB       = 5'h14,
         MICRO_MOV_SC       = 5'h15,
@@ -215,6 +217,8 @@ module s1c88
     reg [7:0] YP;
     reg [7:0] BR;
     reg [7:0] SC;
+    reg [7:0] CB;
+    reg [7:0] NB;
     reg [15:0] SP;
     reg [15:0] HL;
     reg [15:0] IX;
@@ -240,6 +244,8 @@ module s1c88
     wire [31:0] micro_op = rom[microaddress + {5'd0, microprogram_counter}];
     wire [4:0] micro_mov_src = micro_op[4:0];
     wire [4:0] micro_mov_dst = micro_op[9:5];
+    wire [4:0] micro_mov_src_sec = micro_op[16:12];
+    wire [4:0] micro_mov_dst_sec = micro_op[21:17];
 
     wire microinstruction_done = micro_op[10];
     wire microinstruction_nearly_done = micro_op[11];
@@ -256,93 +262,105 @@ module s1c88
     reg [3:0] microprogram_counter;
     reg [8:0] microaddress;
 
-    reg [15:0] src_reg;
-    reg not_implemented_mov_src_error;
-    always_comb
-    begin
-        not_implemented_mov_src_error = 0;
-        case(micro_mov_src)
+    task map_microinstruction_register(input [4:0] reg_id, output logic [15:0] register, output logic not_implemented_error);
+        not_implemented_error = 0;
+        case(reg_id)
             MICRO_MOV_NONE:
-                src_reg = 0;
+                register = 0;
 
             MICRO_MOV_IMM:
-                src_reg = imm;
+                register = s1c88.imm;
 
             MICRO_MOV_IMML:
-                src_reg = {8'd0, imm_low};
+                register = {8'd0, s1c88.imm_low};
 
             MICRO_MOV_IMMH:
-                src_reg = {8'd0, imm_high};
+                register = {8'd0, s1c88.imm_high};
 
             MICRO_MOV_A:
-                src_reg = {8'd0, A};
+                register = {8'd0, s1c88.A};
 
             MICRO_MOV_B:
-                src_reg = {8'd0, B};
+                register = {8'd0, s1c88.B};
 
             MICRO_MOV_BA:
-                src_reg = BA;
+                register = s1c88.BA;
 
             MICRO_MOV_IX:
-                src_reg = IX;
+                register = s1c88.IX;
 
             MICRO_MOV_IY:
-                src_reg = IY;
+                register = s1c88.IY;
 
             MICRO_MOV_ALU_A:
-                src_reg = alu_A;
+                register = s1c88.alu_A;
 
             MICRO_MOV_ALU_B:
-                src_reg = alu_B;
+                register = s1c88.alu_B;
 
             MICRO_MOV_ALU_R:
-                src_reg = alu_R;
+                register = s1c88.alu_R;
 
             MICRO_MOV_H:
-                src_reg = {8'd0, HL[15:8]};
+                register = {8'd0, s1c88.HL[15:8]};
 
             MICRO_MOV_L:
-                src_reg = {8'd0, HL[7:0]};
+                register = {8'd0, s1c88.HL[7:0]};
 
             MICRO_MOV_HL:
-                src_reg = HL;
+                register = s1c88.HL;
 
-            //MICRO_MOV_IX    = 5'h0A,
-            //MICRO_MOV_IY    = 5'h0B,
-            //MICRO_MOV_SP    = 5'h0C,
+            MICRO_MOV_SP:
+                register = s1c88.SP;
+
             MICRO_MOV_SC:
-                src_reg = {8'd0, SC};
+                register = {8'd0, s1c88.SC};
 
             MICRO_MOV_BR:
-                src_reg = {8'd0, BR};
+                register = {8'd0, s1c88.BR};
 
             MICRO_MOV_PC:
-                src_reg = PC;
+                register = s1c88.PC;
 
-            MICRO_MOV_PC2:
-                src_reg = PC + 16'd2;
+            MICRO_MOV_TA1:
+                register = s1c88.top_address + 16'd1;
 
-            MICRO_MOV_PC3:
-                src_reg = PC + 16'd3;
+            MICRO_MOV_TA2:
+                register = s1c88.top_address + 16'd2;
 
-            //MICRO_MOV_NB    = 5'h0F,
-            //MICRO_MOV_CB    = 5'h10,
+            MICRO_MOV_NB:
+                register = {8'd0, s1c88.NB};
+
+            MICRO_MOV_CB:
+                register = {8'd0, s1c88.CB};
+
             MICRO_MOV_EP:
-                src_reg = {8'd0, EP};
+                register = {8'd0, s1c88.EP};
 
             MICRO_MOV_XP:
-                src_reg = {8'd0, XP};
+                register = {8'd0, s1c88.XP};
 
             MICRO_MOV_YP:
-                src_reg = {8'd0, YP};
+                register = {8'd0, s1c88.YP};
 
             default:
             begin
-                not_implemented_mov_src_error = 1;
-                src_reg = 0;
+                not_implemented_error = 1;
+                register = 0;
             end
         endcase
+    endtask
+
+    reg [15:0] src_reg;
+    reg [15:0] src_reg_sec;
+    reg not_implemented_mov_src_error;
+    reg not_implemented_mov_src_sec_error;
+    always_comb
+    begin
+        map_microinstruction_register(micro_mov_src, src_reg, not_implemented_mov_src_error);
+        map_microinstruction_register(micro_mov_src_sec, src_reg_sec, not_implemented_mov_src_sec_error);
     end
+
 
     reg [2:0] state = STATE_IDLE;
 
@@ -372,6 +390,7 @@ module s1c88
                            STATE_EXECUTE;
 
     reg [15:0] PC = 16'hFACE;
+    reg [15:0] top_address;
 
     reg [7:0] opcode;
     reg [7:0] opext;
@@ -457,9 +476,74 @@ module s1c88
     end
 
 
+    reg not_implemented_write_error;
+    task write_data_to_register(input [4:0] reg_id, input [15:0] data);
+        case(reg_id)
+            MICRO_MOV_IX:
+                IX <= data;
 
-    reg not_implemented_mov_dst_error;
-    reg not_implemented_bus_reg_error;
+            MICRO_MOV_IY:
+                IY <= data;
+
+            MICRO_MOV_EP:
+                EP <= data[7:0];
+
+            MICRO_MOV_XP:
+                XP <= data[7:0];
+
+            MICRO_MOV_YP:
+                YP <= data[7:0];
+
+            MICRO_MOV_BR:
+                BR <= data[7:0];
+
+            MICRO_MOV_SC:
+                SC <= data[7:0];
+
+            MICRO_MOV_SP:
+                SP <= data;
+
+            MICRO_MOV_H:
+                HL[7:0]  <= data[7:0];
+
+            MICRO_MOV_L:
+                HL[15:8] <= data[7:0];
+
+            MICRO_MOV_HL:
+                HL <= data;
+
+            MICRO_MOV_PCL:
+                PC[7:0] <= data[7:0];
+
+            MICRO_MOV_PCH:
+                PC[15:8] <= data[7:0];
+
+            MICRO_MOV_CB:
+                CB <= data[7:0];
+
+            MICRO_MOV_A:
+                BA[7:0] <= data[7:0];
+
+            MICRO_MOV_B:
+                BA[15:8] <= data[7:0];
+
+            MICRO_MOV_BA:
+                BA <= data;
+
+            MICRO_MOV_ALU_A:
+                alu_A <= data;
+
+            MICRO_MOV_ALU_B:
+                alu_B <= data;
+
+            default:
+            begin
+                if(reg_id != MICRO_MOV_NONE && reg_id != MICRO_MOV_PC)
+                    not_implemented_write_error <= 1;
+            end
+        endcase
+    endtask
+
     always_ff @ (negedge clk, posedge reset)
     begin
         if(reset)
@@ -472,7 +556,8 @@ module s1c88
             reset_counter        <= 0;
             exception            <= EXCEPTION_TYPE_RESET;
             fetch_opcode         <= 0;
-            not_implemented_mov_dst_error <= 0;
+            top_address          <= 0;
+            not_implemented_write_error <= 0;
         end
         else if(reset_counter < 2)
         begin
@@ -488,8 +573,7 @@ module s1c88
             pl <= ~pl;
             if(pl == 0)
             begin
-                not_implemented_mov_dst_error <= 0;
-                not_implemented_bus_reg_error <= 0;
+                not_implemented_write_error <= 0;
 
                 if(next_state == STATE_EXECUTE)
                 begin
@@ -508,6 +592,7 @@ module s1c88
                 if(fetch_opcode)
                 begin
                     opcode <= data_in;
+                    top_address <= PC;
                 end
             end
             else if(pl == 1)
@@ -607,106 +692,19 @@ module s1c88
                         if(microinstruction_done)
                             fetch_opcode <= 1;
                     end
-
-                    // @todo: Can we merge these cases?
-                    if(micro_op_type == MICRO_TYPE_BUS && micro_bus_op == MICRO_BUS_MEM_READ)
-                    begin
-                        case(micro_bus_reg)
-                            MICRO_MOV_EP:
-                                EP <= data_in;
-
-                            MICRO_MOV_XP:
-                                XP <= data_in;
-
-                            MICRO_MOV_YP:
-                                YP <= data_in;
-
-                            MICRO_MOV_BR:
-                                BR <= data_in;
-
-                            MICRO_MOV_SC:
-                                SC <= data_in;
-
-                            MICRO_MOV_SP:
-                                SP <= {8'd0, data_in};
-
-                            MICRO_MOV_A:
-                                BA[7:0]  <= data_in;
-
-                            MICRO_MOV_B:
-                                BA[15:8] <= data_in;
-
-                            MICRO_MOV_ALU_A:
-                                alu_A <= {8'd0, data_in};
-
-                            MICRO_MOV_ALU_B:
-                                alu_B <= {8'd0, data_in};
-
-                            default:
-                            begin
-                                if(micro_bus_reg != MICRO_MOV_NONE)
-                                    not_implemented_bus_reg_error <= 1;
-                            end
-                        endcase
-                    end
                 end
                 else
                 begin
-                    case(micro_mov_dst)
-                        MICRO_MOV_IX:
-                            IX <= src_reg;
-
-                        MICRO_MOV_IY:
-                            IY <= src_reg;
-
-                        MICRO_MOV_EP:
-                            EP <= src_reg[7:0];
-
-                        MICRO_MOV_XP:
-                            XP <= src_reg[7:0];
-
-                        MICRO_MOV_YP:
-                            YP <= src_reg[7:0];
-
-                        MICRO_MOV_BR:
-                            BR <= src_reg[7:0];
-
-                        MICRO_MOV_SC:
-                            SC <= src_reg[7:0];
-
-                        MICRO_MOV_SP:
-                            SP <= src_reg;
-
-                        MICRO_MOV_H:
-                            HL[7:0]  <= src_reg[7:0];
-
-                        MICRO_MOV_L:
-                            HL[15:8] <= src_reg[7:0];
-
-                        MICRO_MOV_HL:
-                            HL <= src_reg;
-
-                        MICRO_MOV_A:
-                            BA[7:0]  <= src_reg[7:0];
-
-                        MICRO_MOV_B:
-                            BA[15:8] <= src_reg[7:0];
-
-                        MICRO_MOV_BA:
-                            BA <= src_reg;
-
-                        MICRO_MOV_ALU_A:
-                            alu_A <= src_reg;
-
-                        MICRO_MOV_ALU_B:
-                            alu_B <= src_reg;
-
-                        default:
-                        begin
-                            if(micro_mov_dst != MICRO_MOV_NONE && micro_mov_dst != MICRO_MOV_PC)
-                                not_implemented_mov_dst_error <= 1;
-                        end
-                    endcase
+                    // @todo: Can we merge these cases?
+                    if(micro_op_type == MICRO_TYPE_BUS && micro_bus_op == MICRO_BUS_MEM_READ)
+                    begin
+                        write_data_to_register(micro_bus_reg, {8'd0, data_in});
+                    end
+                    else if(micro_op_type == MICRO_TYPE_MISC)
+                    begin
+                        write_data_to_register(micro_mov_dst_sec, src_reg_sec);
+                    end
+                    write_data_to_register(micro_mov_dst, src_reg);
                 end
             end
 
@@ -770,6 +768,7 @@ module s1c88
         end
     end
 
+    reg not_implemented_data_out_error;
     always_ff @ (posedge clk, posedge reset)
     begin
         if(reset)
@@ -779,11 +778,13 @@ module s1c88
             pk            <= 0;
             microaddress  <= 0;
             microprogram_counter <= 0;
+            not_implemented_data_out_error <= 0;
         end
         else if(reset_counter >= 2)
         begin
             pk <= ~pk;
             read <= 0;
+            not_implemented_data_out_error <= 0;
 
             if(fetch_opcode)
             begin
@@ -879,6 +880,14 @@ module s1c88
                             if(pk == 0)
                             begin
                                 case(micro_bus_reg)
+                                    MICRO_MOV_A:
+                                    begin
+                                        data_out <= BA[7:0];
+                                    end
+                                    MICRO_MOV_B:
+                                    begin
+                                        data_out <= BA[15:8];
+                                    end
                                     MICRO_MOV_ALU_A:
                                     begin
                                         data_out <= alu_A[7:0];
@@ -899,10 +908,22 @@ module s1c88
                                     begin
                                         data_out <= imm_high;
                                     end
+                                    MICRO_MOV_PCL:
+                                    begin
+                                        data_out <= PC[7:0];
+                                    end
+                                    MICRO_MOV_PCH:
+                                    begin
+                                        data_out <= PC[15:8];
+                                    end
+                                    MICRO_MOV_CB:
+                                    begin
+                                        data_out <= CB;
+                                    end
 
-                                    // @todo: set error flag.
                                     default:
                                     begin
+                                        not_implemented_data_out_error <= 1;
                                     end
                                 endcase
                             end
@@ -918,4 +939,3 @@ module s1c88
     end
 
 endmodule
-

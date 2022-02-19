@@ -46,6 +46,12 @@ void write_hardware_register(uint32_t address, uint8_t data)
         }
         break;
 
+        case 0x80:
+        {
+            printf("Writing hardware register PRC_MODE\n");
+        }
+        break;
+
         default:
         {
             printf("Writing to hardware register 0x%x\n", address);

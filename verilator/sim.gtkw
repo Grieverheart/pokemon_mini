@@ -1,16 +1,15 @@
 [*]
 [*] GTKWave Analyzer v3.3.111 (w)1999-2020 BSI
-[*] Thu Feb 10 22:28:32 2022
+[*] Sat Feb 19 18:50:03 2022
 [*]
 [dumpfile] "/home/nicktasios/Programming/fpga/pokemon_mini/verilator/sim.vcd"
-[dumpfile_mtime] "Thu Feb 10 22:28:23 2022"
-[dumpfile_size] 21271
+[dumpfile_mtime] "Sat Feb 19 18:42:44 2022"
+[dumpfile_size] 23913
 [savefile] "/home/nicktasios/Programming/fpga/pokemon_mini/verilator/sim.gtkw"
-[timestart] 70
+[timestart] 140
 [size] 2560 1371
 [pos] -1 -1
-*-3.965784 176 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
-[treeopen] s1c88.
+*-3.965784 187 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [sst_width] 227
 [signals_width] 408
 [sst_expanded] 1
@@ -64,6 +63,7 @@ s1c88.microinstruction_nearly_done
 s1c88.microinstruction_done
 @22
 s1c88.microaddress[8:0]
+s1c88.micro_op[31:0]
 s1c88.microprogram_counter[3:0]
 s1c88.extended_opcode[9:0]
 s1c88.opcode[7:0]
@@ -71,24 +71,111 @@ s1c88.opcode[7:0]
 s1c88.state[2:0]
 s1c88.next_state[2:0]
 @22
-s1c88.imm_low[7:0]
-s1c88.imm_high[7:0]
+s1c88.imm[15:0]
 s1c88.data_in[7:0]
+@c00022
 s1c88.data_out[7:0]
+@28
+(0)s1c88.data_out[7:0]
+(1)s1c88.data_out[7:0]
+(2)s1c88.data_out[7:0]
+(3)s1c88.data_out[7:0]
+(4)s1c88.data_out[7:0]
+(5)s1c88.data_out[7:0]
+(6)s1c88.data_out[7:0]
+(7)s1c88.data_out[7:0]
+@1401200
+-group_end
+@c00022
+s1c88.top_address[15:0]
+@28
+(0)s1c88.top_address[15:0]
+(1)s1c88.top_address[15:0]
+(2)s1c88.top_address[15:0]
+(3)s1c88.top_address[15:0]
+(4)s1c88.top_address[15:0]
+(5)s1c88.top_address[15:0]
+(6)s1c88.top_address[15:0]
+(7)s1c88.top_address[15:0]
+(8)s1c88.top_address[15:0]
+(9)s1c88.top_address[15:0]
+(10)s1c88.top_address[15:0]
+(11)s1c88.top_address[15:0]
+(12)s1c88.top_address[15:0]
+(13)s1c88.top_address[15:0]
+(14)s1c88.top_address[15:0]
+(15)s1c88.top_address[15:0]
+@1401200
+-group_end
+@c00200
+-registers
+@c00022
 s1c88.PC[15:0]
+@28
+(0)s1c88.PC[15:0]
+(1)s1c88.PC[15:0]
+(2)s1c88.PC[15:0]
+(3)s1c88.PC[15:0]
+(4)s1c88.PC[15:0]
+(5)s1c88.PC[15:0]
+(6)s1c88.PC[15:0]
+(7)s1c88.PC[15:0]
+(8)s1c88.PC[15:0]
+(9)s1c88.PC[15:0]
+(10)s1c88.PC[15:0]
+(11)s1c88.PC[15:0]
+(12)s1c88.PC[15:0]
+(13)s1c88.PC[15:0]
+(14)s1c88.PC[15:0]
+(15)s1c88.PC[15:0]
+@1401200
+-group_end
+@c00022
 s1c88.BR[7:0]
+@28
+(0)s1c88.BR[7:0]
+(1)s1c88.BR[7:0]
+(2)s1c88.BR[7:0]
+(3)s1c88.BR[7:0]
+(4)s1c88.BR[7:0]
+(5)s1c88.BR[7:0]
+(6)s1c88.BR[7:0]
+(7)s1c88.BR[7:0]
+@1401200
+-group_end
+@22
 s1c88.SC[7:0]
 s1c88.SP[15:0]
 s1c88.EP[7:0]
-s1c88.A[7:0]
+s1c88.BA[15:0]
+s1c88.CB[7:0]
+s1c88.NB[7:0]
+@1401200
+-registers
+@800200
+-alu
+@22
 s1c88.alu_A[15:0]
 s1c88.alu_B[15:0]
 s1c88.alu_R[15:0]
-@24
+@28
+s1c88.alu_flags[5:0]
+@25
 s1c88.alu_op[4:0]
+@24
 s1c88.micro_alu_op[4:0]
 @28
 s1c88.alu_size
+@1000200
+-alu
+@c00028
+#{error} s1c88.opcode_error s1c88.not_implemented_data_out_error s1c88.not_implemented_mov_src_error s1c88.not_implemented_write_error
+@28
 s1c88.opcode_error
+s1c88.not_implemented_data_out_error
+s1c88.not_implemented_mov_src_error
+s1c88.not_implemented_write_error
+@1401200
+-group_end
 [pattern_trace] 1
 [pattern_trace] 0
