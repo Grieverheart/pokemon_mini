@@ -80,6 +80,7 @@ module s1c88
 
     // @todo:
     //
+    // * Implement jump instructions (JRS NZ 0xE7).
     // * I think we need to remove the imm reading from the decoder and move
     //   that to the microinstructions. that will allow us to run more
     //   operations. This seems to be required for some ops like AND A, #nn.
@@ -141,23 +142,27 @@ module s1c88
         MICRO_MOV_L        = 5'h08,
         MICRO_MOV_HL       = 5'h09,
         MICRO_MOV_IX       = 5'h0A,
-        MICRO_MOV_IY       = 5'h0B,
-        MICRO_MOV_SP       = 5'h0C,
-        MICRO_MOV_BR       = 5'h0D,
-        MICRO_MOV_PC       = 5'h0E,
-        MICRO_MOV_PCL      = 5'h0F,
-        MICRO_MOV_PCH      = 5'h10,
-        MICRO_MOV_TA1      = 5'h11,
-        MICRO_MOV_TA2      = 5'h12,
-        MICRO_MOV_NB       = 5'h13,
-        MICRO_MOV_CB       = 5'h14,
-        MICRO_MOV_SC       = 5'h15,
-        MICRO_MOV_EP       = 5'h16,
-        MICRO_MOV_XP       = 5'h17,
-        MICRO_MOV_YP       = 5'h18,
-        MICRO_MOV_ALU_R    = 5'h19,
-        MICRO_MOV_ALU_A    = 5'h1A,
-        MICRO_MOV_ALU_B    = 5'h1B;
+        MICRO_MOV_IXH      = 5'h0B,
+        MICRO_MOV_IXL      = 5'h0C,
+        MICRO_MOV_IY       = 5'h0D,
+        MICRO_MOV_IYH      = 5'h0E,
+        MICRO_MOV_IYL      = 5'h0F,
+        MICRO_MOV_SP       = 5'h10,
+        MICRO_MOV_BR       = 5'h11,
+        MICRO_MOV_PC       = 5'h12,
+        MICRO_MOV_PCL      = 5'h13,
+        MICRO_MOV_PCH      = 5'h14,
+        MICRO_MOV_TA1      = 5'h15,
+        MICRO_MOV_TA2      = 5'h16,
+        MICRO_MOV_NB       = 5'h17,
+        MICRO_MOV_CB       = 5'h18,
+        MICRO_MOV_SC       = 5'h19,
+        MICRO_MOV_EP       = 5'h1A,
+        MICRO_MOV_XP       = 5'h1B,
+        MICRO_MOV_YP       = 5'h1C,
+        MICRO_MOV_ALU_R    = 5'h1D,
+        MICRO_MOV_ALU_A    = 5'h1E,
+        MICRO_MOV_ALU_B    = 5'h1F;
 
     // @note: Can probably reduce some resource usage by making all *1 address
     // micros be at an odd address.
@@ -183,7 +188,7 @@ module s1c88
 
     localparam [4:0]
         MICRO_ALU_OP_NONE = 5'h0,
-        MICRO_ALU_OP_XI   = 5'h1,
+        MICRO_ALU_OP_XOR  = 5'h1,
         MICRO_ALU_OP_AND  = 5'h2,
         MICRO_ALU_OP_OR   = 5'h3,
         MICRO_ALU_OP_ADD  = 5'h4,
@@ -444,6 +449,12 @@ module s1c88
                 MICRO_ALU_OP_AND:
                     alu_op <= ALUOP_AND;
 
+                MICRO_ALU_OP_OR:
+                    alu_op <= ALUOP_OR;
+
+                MICRO_ALU_OP_XOR:
+                    alu_op <= ALUOP_XOR;
+
                 MICRO_ALU_OP_ADD:
                     alu_op <= ALUOP_ADD;
 
@@ -680,17 +691,17 @@ module s1c88
             begin
                 if(pl == 1)
                 begin
-                    if(micro_mov_dst == MICRO_MOV_PC)
-                    begin
-                        PC <= src_reg;
-                        address_out <= {9'b0, src_reg[14:0]};
-                    end
-
                     if(!fetch_opcode)
                     begin
                         state <= STATE_EXECUTE;
                         if(microinstruction_done)
                             fetch_opcode <= 1;
+
+                        if(micro_mov_dst == MICRO_MOV_PC)
+                        begin
+                            PC <= src_reg;
+                            address_out <= {9'b0, src_reg[14:0]};
+                        end
                     end
                 end
                 else
@@ -887,6 +898,22 @@ module s1c88
                                     MICRO_MOV_B:
                                     begin
                                         data_out <= BA[15:8];
+                                    end
+                                    MICRO_MOV_IXL:
+                                    begin
+                                        data_out <= IX[7:0];
+                                    end
+                                    MICRO_MOV_IXH:
+                                    begin
+                                        data_out <= IX[15:8];
+                                    end
+                                    MICRO_MOV_IYL:
+                                    begin
+                                        data_out <= IY[7:0];
+                                    end
+                                    MICRO_MOV_IYH:
+                                    begin
+                                        data_out <= IY[15:8];
                                     end
                                     MICRO_MOV_ALU_A:
                                     begin

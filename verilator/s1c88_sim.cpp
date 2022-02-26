@@ -23,41 +23,42 @@ void write_hardware_register(uint32_t address, uint8_t data)
     {
         case 0x0:
         {
-            printf("Writing hardware register SYS_CTRL1\n");
+            printf("Writing hardware register SYS_CTRL1=");
         }
         break;
 
         case 0x1:
         {
-            printf("Writing hardware register SYS_CTRL2\n");
+            printf("Writing hardware register SYS_CTRL2=");
         }
         break;
 
         case 0x2:
         {
-            printf("Writing hardware register SYS_CTRL3\n");
+            printf("Writing hardware register SYS_CTRL3=");
         }
         break;
 
         case 0x8:
         {
-            printf("Writing hardware register SEC_CTRL\n");
+            printf("Writing hardware register SEC_CTRL=");
             sec_ctrl = data & 3;
         }
         break;
 
         case 0x80:
         {
-            printf("Writing hardware register PRC_MODE\n");
+            printf("Writing hardware register PRC_MODE=");
         }
         break;
 
         default:
         {
             printf("Writing to hardware register 0x%x\n", address);
+            return;
         }
-        break;
     }
+    printf("%x\n", data);
 }
 
 uint8_t read_hardware_register(uint32_t address)
@@ -148,7 +149,7 @@ int main(int argc, char** argv, char** env)
 
     int timestamp = 0;
     bool data_sent = false;
-    while (timestamp < 300 && !Verilated::gotFinish())
+    while (timestamp < 400 && !Verilated::gotFinish())
     {
         s1c88->clk = 1;
         s1c88->eval();
@@ -228,7 +229,7 @@ int main(int argc, char** argv, char** env)
             }
             else
             {
-                printf("Program trying to write to cartridge!\n");
+                printf("Program trying to write to cartridge at 0x%x!\n", s1c88->address_out);
             }
 
             data_sent = true;
