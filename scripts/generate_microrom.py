@@ -66,6 +66,29 @@ def read_localparams(filepath):
 
     return localparam_dict
 
+def num_string_to_binary_string(x):
+
+    if '\'' in x:
+        num_bits, value = x.split('\'')
+        num_bits = int(num_bits)
+        format, value = value[0], value[1:]
+        if format == 'd':
+            value = int(value)
+        elif format == 'h':
+            value = int(value, base=16)
+        elif format == 'b':
+            value = int(value, base=2)
+        else:
+            print("Couldn't decode x:", x)
+            return x
+
+        value = bin(value)[2:].zfill(num_bits)
+
+        return value
+
+    x = bin(int(x))[2:]
+    return x
+
 if __name__ == '__main__':
     microinstruction_width = 32
     rom_bits = 9
@@ -106,7 +129,11 @@ if __name__ == '__main__':
                 addresses[opcode] = microinstruction_address
         else:
             microcommands = line.split(' ')
-            microcommands = [localparam_dict[x] if x in localparam_dict else x for x in microcommands]
+            microcommands = [
+                    localparam_dict[x] if x in localparam_dict else
+                    num_string_to_binary_string(x)
+                    for x in microcommands]
+
             command = ''.join(microcommands)
             assert(len(command) == microinstruction_width)
             rom.append(command)

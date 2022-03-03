@@ -91,6 +91,49 @@ module s1c88
     //   for now we will continue using the nops. It's easy to remove them in
     //   the future if we decide to do this.
 
+    // For jump instruction we need: condition, offset (TA1/TA2). I think
+    // we'll leave the mov instructions in there as common to all
+    // instructions.
+    // We can infer rr/qqrr from imm_size (not sure if we need to latch it).
+    // 2-byte instructions use TA1, 3-byte instructions use TA2. So either we
+    // set it in the micro since we have space, or infer by looking if
+    // imm_size == 1 or extended_opcode[9:8] != 0. That would mean we don't
+    // even need the offset, only the condition. We do save logic, though, by
+    // putting that in the micro.
+    //
+    // Conditions:
+    //     __cc2__
+    //     * N^V=1      ; Less
+    //     * N^V=0      ; Grater
+    //     * Z|[N^V]=1  ; Less or equal
+    //     * Z|[N^V]=0  ; Greater or equal
+    //     * V=1        ; Overflow
+    //     * V=0        ; No Overflow
+    //     * N=1        ; Minus
+    //     * N=0        ; Plus
+    //     * F0=1       ; F0 is set
+    //     * F0=0       ; F0 is reset
+    //     * F1=1       ; F1 is set
+    //     * F1=0       ; F1 is reset
+    //     * F2=1       ; F2 is set
+    //     * F2=0       ; F2 is reset
+    //     * F3=1       ; F3 is set
+    //     * F3=0       ; F3 is reset
+    //
+    //     __cc1__
+    //     * C=1        ; Carry
+    //     * C=0        ; Non Carry
+    //     * Z=1        ; Zero
+    //     * Z=0        ; Non Zero
+    //
+    //     __other__
+    //     * B=0
+    //
+    // Total 21 conditions, 5 bits are enough.
+    //
+    // @note: Perhaps MICRO_MOV_TA1/2 are not required after implementing the
+    // jump micro.
+
     localparam [1:0]
         BUS_COMMAND_IDLE      = 2'd0,
         BUS_COMMAND_IRQ_READ  = 2'd1,
@@ -117,8 +160,7 @@ module s1c88
     localparam [2:0]
         MICRO_TYPE_MISC = 3'd0,
         MICRO_TYPE_BUS  = 3'd1,
-        MICRO_TYPE_JMP  = 3'd2,
-        MICRO_TYPE_SJMP = 3'd3;
+        MICRO_TYPE_JMP  = 3'd2;
 
     localparam [2:0]
         MICRO_NOT_DONE    = 3'b00,
@@ -201,8 +243,31 @@ module s1c88
         MICRO_ALU_OP_ROL  = 5'h10,
         MICRO_ALU_OP_ROR  = 5'h11;
 
+    localparam [4:0]
+        MICRO_COND_NONE          = 5'h00,
+        MICRO_COND_LESS          = 5'h01,
+        MICRO_COND_GREATER       = 5'h02,
+        MICRO_COND_LESS_EQUAL    = 5'h03,
+        MICRO_COND_GREATER_EQUAL = 5'h04,
+        MICRO_COND_OVERFLOW      = 5'h05,
+        MICRO_COND_NON_OVERFLOW  = 5'h06,
+        MICRO_COND_MINUS         = 5'h07,
+        MICRO_COND_PLUS          = 5'h08,
+        MICRO_COND_CARRY         = 5'h09,
+        MICRO_COND_NON_CARRY     = 5'h0A,
+        MICRO_COND_ZERO          = 5'h0B,
+        MICRO_COND_NON_ZERO      = 5'h0C,
+        MICRO_COND_F0_SET        = 5'h0D,
+        MICRO_COND_F0_RST        = 5'h0E,
+        MICRO_COND_F1_SET        = 5'h0F,
+        MICRO_COND_F1_RST        = 5'h10,
+        MICRO_COND_F2_SET        = 5'h11,
+        MICRO_COND_F2_RST        = 5'h12,
+        MICRO_COND_F3_SET        = 5'h13,
+        MICRO_COND_F3_RST        = 5'h14,
+        MICRO_COND_B_IS_ZERO     = 5'h15;
+
     reg [8:0] translation_rom[0:767];
-    //reg [8:0] jump_table[0:15];
     reg [31:0] rom[0:511];
 
     assign write = pl && pk &&
@@ -231,6 +296,15 @@ module s1c88
     reg [15:0] IY;
     wire [7:0] A = BA[7:0];
     wire [7:0] B = BA[15:8];
+
+    wire flag_zero     = SC[0];
+    wire flag_carry    = SC[1];
+    wire flag_overflow = SC[2];
+    wire flag_negative = SC[3];
+    wire flag_decimal  = SC[4];
+    wire flag_unpack   = SC[5];
+    wire flag_i0       = SC[6];
+    wire flag_i1       = SC[7];
 
     reg [4:0] alu_op;
     reg alu_size;
@@ -262,6 +336,11 @@ module s1c88
 
     wire [4:0] micro_alu_op = micro_op[27:23];
     wire micro_alu_size = micro_op[28];
+
+    wire [4:0] micro_jmp_condition = micro_op[16:12];
+    wire [15:0] jump_dest = top_address +
+        (16'd1 << (imm_size | (extended_opcode[9:8] != 0))) +
+        (imm_size? imm: {8'd0, imm[7:0]});
 
     wire [2:0] micro_op_type = micro_op[31:29];
 
@@ -556,6 +635,61 @@ module s1c88
         endcase
     endtask
 
+    reg jump_condition_true;
+    always_comb
+    begin
+        jump_condition_true = 0;
+        case(micro_jmp_condition)
+            // Unconditional jump
+            MICRO_COND_NONE:
+            begin
+                jump_condition_true = 1;
+            end
+            MICRO_COND_LESS, MICRO_COND_GREATER:
+            begin
+            end
+            MICRO_COND_LESS_EQUAL, MICRO_COND_GREATER_EQUAL:
+            begin
+            end
+            MICRO_COND_OVERFLOW, MICRO_COND_NON_OVERFLOW:
+            begin
+            end
+            MICRO_COND_MINUS, MICRO_COND_PLUS:
+            begin
+                if(flag_negative == micro_jmp_condition[0])
+                    jump_condition_true = 1;
+            end
+            MICRO_COND_CARRY, MICRO_COND_NON_CARRY:
+            begin
+                if(flag_carry == micro_jmp_condition[0])
+                    jump_condition_true = 1;
+            end
+            MICRO_COND_ZERO, MICRO_COND_NON_ZERO:
+            begin
+                if(flag_zero == micro_jmp_condition[0])
+                    jump_condition_true = 1;
+            end
+            MICRO_COND_F0_SET, MICRO_COND_F0_RST:
+            begin
+            end
+            MICRO_COND_F1_SET, MICRO_COND_F1_RST:
+            begin
+            end
+            MICRO_COND_F2_SET, MICRO_COND_F2_RST:
+            begin
+            end
+            MICRO_COND_F3_SET, MICRO_COND_F3_RST:
+            begin
+            end
+            MICRO_COND_B_IS_ZERO:
+            begin
+            end
+            default:
+            begin
+            end
+        endcase
+    end
+
     always_ff @ (negedge clk, posedge reset)
     begin
         if(reset)
@@ -703,11 +837,23 @@ module s1c88
                             PC <= src_reg;
                             address_out <= {9'b0, src_reg[14:0]};
                         end
+
+                        if(micro_op_type == MICRO_TYPE_JMP)
+                        begin
+                            // @todo: Do we need to move the NB/CB writing to
+                            // pl == 0?
+                            if(jump_condition_true)
+                            begin
+                                PC          <= jump_dest;
+                                NB          <= CB;
+                                address_out <= {9'b0, jump_dest[14:0]};
+                            end
+                            else CB <= NB;
+                        end
                     end
                 end
                 else
                 begin
-                    // @todo: Can we merge these cases?
                     if(micro_op_type == MICRO_TYPE_BUS && micro_bus_op == MICRO_BUS_MEM_READ)
                     begin
                         write_data_to_register(micro_bus_reg, {8'd0, data_in});
