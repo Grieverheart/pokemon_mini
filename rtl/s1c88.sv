@@ -80,7 +80,8 @@ module s1c88
 
     // @todo:
     //
-    // * Implement jump instructions (JRS NZ 0xE7).
+    // * Implement jump instructions (JRS NZ 0xE7). -- We just need to
+    //   implement the if branch and hardcode the else.
     // * I think we need to remove the imm reading from the decoder and move
     //   that to the microinstructions. that will allow us to run more
     //   operations. This seems to be required for some ops like AND A, #nn.
