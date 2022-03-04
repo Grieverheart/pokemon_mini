@@ -149,7 +149,7 @@ int main(int argc, char** argv, char** env)
 
     int timestamp = 0;
     bool data_sent = false;
-    while (timestamp < 400 && !Verilated::gotFinish())
+    while (timestamp < 500 && !Verilated::gotFinish())
     {
         s1c88->clk = 1;
         s1c88->eval();

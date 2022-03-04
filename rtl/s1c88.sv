@@ -15,30 +15,48 @@ module s1c88
     output wire sync,
     output logic iack
 );
-    //In the S1C88, the fetching of the first operation
-    //code of the instruction is done overlapping the last
-    //cycle of the immediately prior instruction.
-    //Consequently, the execution cycle for 1 instruction
-    //of the S1C88 begins either from the fetch cycle for
-    //the second op-code, the read cycle for the first
-    //operand or the first execution cycle (varies depend-
-    //ing on the instruction) and terminates with the
-    //fetch cycle for the first op-code of the following
-    //instruction. 1 cycle instruction only becomes the
-    //fetch cycle of the first op-code of the following
-    //instruction. In addition, there are also instances
-    //where it shifts to the fetch cycle of the first op-code
-    //rather than interposing an execute cycle after an
-    //operand read cycle.
+    //In the S1C88, the fetching of the first operation code of the
+    //instruction is done overlapping the last cycle of the immediately prior
+    //instruction.  Consequently, the execution cycle for 1 instruction of the
+    //S1C88 begins either from the fetch cycle for the second op-code, the
+    //read cycle for the first operand or the first execution cycle (varies
+    //depend- ing on the instruction) and terminates with the fetch cycle for
+    //the first op-code of the following instruction. 1 cycle instruction only
+    //becomes the fetch cycle of the first op-code of the following
+    //instruction. In addition, there are also instances where it shifts to
+    //the fetch cycle of the first op-code rather than interposing an execute
+    //cycle after an operand read cycle.
 
-    // After having been stored in the 16-bit temporary
-    // register TEMP 2, the operation result is either
-    // stored in the register/memory or used as address
-    // data according to the operation instruction.
+    // After having been stored in the 16-bit temporary register TEMP 2, the
+    // operation result is either stored in the register/memory or used as
+    // address data according to the operation instruction.
 
     // It seems like SC is set only by the ALU on the manual. This means that
-    // if you want to set SC you have to go through the ALU. Perhaps
-    // there is a specific ALU operation for this.
+    // if you want to set SC you have to go through the ALU. Perhaps there is
+    // a specific ALU operation for this. Indeed, SC is modified through
+    // these instructions:
+    //
+    // AND SC,#nn (Resets the optional flag) OR SC,#nn (Sets the optional flag)
+    // XOR SC,#nn (Inverts the optional flag) LD SC,#nn (Flag write) LD SC,A
+    // (Flag write) POP SC (Flag return) RETE (Flag evacuation)
+    //
+    // note that the LD ops take 1 cycle longer than normal, I guess because
+    // in microcode it's calling one of the ALU operations above.  The ALU
+    // operations are 2 bytes and take 3 cycles, which means 2 microcode
+    // cycles. I would guess that 1 cycle is for setting up the operands (SC,
+    // nn), and the second one is for writing to SC. Perhaps in microcode you
+    // could have a flag to write straight to SC.
+    //
+    // In our implementation we don't need to impose this limitation and we
+    // can instead write straight to SC.
+
+    // The most significant bit of the PC indicates the common area at '0' and
+    // the bank area at '1', and this content determines whether or not it
+    // will output CB to the address bus. In the case of the common area, 00H
+    // is output to A15–A22 of the address bus and in the case of the bank
+    // area, the content 8 bits of the CB are output. A23 of the address bus
+    // is for the exclusive use of data memory area and it always outputs '0'
+    // at the time of maximum 8M byte program memory access.
 
     // @note: The original implementation would probably have implemented
     // reading of the immediates in microcode, allowing it to put the
@@ -48,40 +66,29 @@ module s1c88
     // Microinstruction Design Notes:
     // 
     // Currently we allow all microinstructions to set the alu operation.
-    // Perhaps it would be better to have microinstructions for the
-    // reading of the immediate values too, then you can write the
-    // immediate straight where you need it in the next microinstructions.
-    // Alternatively, we could have convert bus micros into simple move
-    // micros with MICRO_MOV_MEM, but where would we put the addressing
-    // mode? In 8086, the address is explicitly set by the
-    // microinstructions. Perhaps this could also be a possibility here,
-    // but we would need to run the microinstructions on both positive and
-    // negative edges, with the negative edge logic indexing into the rom
-    // with a 0 offset, while the positive edge logic indexing with an
-    // offset of +1.
+    // Perhaps it would be better to have microinstructions for the reading of
+    // the immediate values too, then you can write the immediate straight
+    // where you need it in the next microinstructions.  Alternatively, we
+    // could have convert bus micros into simple move micros with
+    // MICRO_MOV_MEM, but where would we put the addressing mode? In 8086, the
+    // address is explicitly set by the microinstructions. Perhaps this could
+    // also be a possibility here, but we would need to run the
+    // microinstructions on both positive and negative edges, with the
+    // negative edge logic indexing into the rom with a 0 offset, while the
+    // positive edge logic indexing with an offset of +1.
 
-    // @note: If we moved IMM automatically into alu A (i.e. during
-    // decoding), then we could have moved performed all alu operations
-    // one micro earlier, meaning that we could have modified PC one micro
-    // earlier. See example microprogram:
     //
-    // rom[24] = {MICRO_TYPE_BUS, 1'b1, MICRO_ALU_OP_ADD, MICRO_BUS_MEM_WRITE, MICRO_ADD_SP, MICRO_MOV_CB,  2'b00, MICRO_MOV_ALU_A, MICRO_MOV_PC};
-    // rom[25] = {MICRO_TYPE_BUS, 1'b1, MICRO_ALU_OP_INC2, MICRO_BUS_MEM_WRITE, MICRO_ADD_SP, MICRO_MOV_PCH, 2'b00, MICRO_MOV_ALU_A, MICRO_MOV_ALU_R};
-    // rom[26] = {MICRO_TYPE_BUS, 1'b0, MICRO_ALU_OP_NONE MICRO_BUS_MEM_WRITE, MICRO_ADD_SP, MICRO_MOV_PCL, 2'b10, MICRO_MOV_NONE, MICRO_MOV_NONE};
-    // rom[27] = {MICRO_TYPE_MISC, 1'b0, MICRO_ALU_OP_NONE, 1'd0, MICRO_MOV_NONE, MICRO_MOV_NONE, 2'b01, MICRO_MOV_PC, MICRO_MOV_ALU_R};
-    //
-    // I guess we will see at a later point if we need to change where PC
-    // is being set again. Note, though that we still have to set PC in
-    // the last micro, and since we want to overlap instructions, the
-    // window that is left for PC to change on time for an opcode fetch is
-    // narrow, leaving (I think) only the possibility of updating PC at
-    // PL == 1.
+    // I guess we will see at a later point if we need to change where PC is
+    // being set again. Note, though that we still have to set PC in the
+    // last micro, and since we want to overlap instructions, the window
+    // that is left for PC to change on time for an opcode fetch is narrow,
+    // leaving (I think) only the possibility of updating PC at PL == 1.
     //
 
     // @todo:
     //
-    // * Implement jump instructions (JRS NZ 0xE7). -- We just need to
-    //   implement the if branch and hardcode the else.
+    // * Make sure alu and flags work properly. We also need to add carry, add
+    //   decimal operations, and unpack operations.
     // * I think we need to remove the imm reading from the decoder and move
     //   that to the microinstructions. that will allow us to run more
     //   operations. This seems to be required for some ops like AND A, #nn.
@@ -104,7 +111,7 @@ module s1c88
     // Conditions:
     //     __cc2__
     //     * N^V=1      ; Less
-    //     * N^V=0      ; Grater
+    //     * N^V=0      ; Greater
     //     * Z|[N^V]=1  ; Less or equal
     //     * Z|[N^V]=0  ; Greater or equal
     //     * V=1        ; Overflow
@@ -157,10 +164,10 @@ module s1c88
         EXCEPTION_TYPE_IRQ1    = 3'd5,
         EXCEPTION_TYPE_NONE    = 3'd6;
 
-    localparam [2:0]
-        MICRO_TYPE_MISC = 3'd0,
-        MICRO_TYPE_BUS  = 3'd1,
-        MICRO_TYPE_JMP  = 3'd2;
+    localparam [1:0]
+        MICRO_TYPE_MISC = 2'd0,
+        MICRO_TYPE_BUS  = 2'd1,
+        MICRO_TYPE_JMP  = 2'd2;
 
     localparam [2:0]
         MICRO_NOT_DONE    = 3'b00,
@@ -242,6 +249,14 @@ module s1c88
         MICRO_ALU_OP_ROL  = 5'h9,
         MICRO_ALU_OP_ROR  = 5'hA;
 
+    localparam
+        MICRO_ALU8  = 1'b0,
+        MICRO_ALU16 = 1'b1;
+
+    localparam
+        MICRO_ALU_FLAG_NONE  = 1'b0,
+        MICRO_ALU_FLAG_WRITE = 1'b1;
+
     localparam [4:0]
         MICRO_COND_NONE          = 5'h00,
         MICRO_COND_LESS          = 5'h01,
@@ -306,17 +321,18 @@ module s1c88
     wire flag_i1       = SC[7];
 
     reg [4:0] alu_op;
+    reg alu_flag_update;
     reg alu_size;
     reg [15:0] alu_A;
     reg [15:0] alu_B;
     wire [15:0] alu_R;
-    wire [5:0] alu_flags;
+    wire [3:0] alu_flags;
 
     alu alu
     (
         alu_op,
         alu_size,
-        alu_A, alu_B, alu_R,
+        alu_A, alu_B, SC[0], alu_R,
         alu_flags
     );
 
@@ -334,6 +350,7 @@ module s1c88
     wire micro_bus_op = micro_op[22];
 
     wire [4:0] micro_alu_op = micro_op[27:23];
+    wire micro_alu_flag_update = micro_op[29];
     wire micro_alu_size = micro_op[28];
 
     wire [4:0] micro_jmp_condition = micro_op[16:12];
@@ -341,7 +358,7 @@ module s1c88
         (16'd1 << (imm_size | (extended_opcode[9:8] != 0))) +
         (imm_size? imm: {8'd0, imm[7:0]});
 
-    wire [2:0] micro_op_type = micro_op[31:29];
+    wire [1:0] micro_op_type = micro_op[31:30];
 
     reg [3:0] microprogram_counter;
     reg [8:0] microaddress;
@@ -372,6 +389,12 @@ module s1c88
 
             MICRO_MOV_IX:
                 register = s1c88.IX;
+
+            MICRO_MOV_IXL:
+                register = {8'd0, s1c88.IX[7:0]};
+
+            MICRO_MOV_IXH:
+                register = {8'd0, s1c88.IX[15:8]};
 
             MICRO_MOV_IY:
                 register = s1c88.IY;
@@ -520,9 +543,7 @@ module s1c88
         else if(pl == 1)
         begin
             alu_size <= micro_alu_size;
-            // @todo: We probably need to add flag for updating flags
-            // or not.
-            //alu_flags_r <= alu_flags;
+            alu_flag_update <= micro_alu_flag_update;
 
             case(micro_alu_op)
                 MICRO_ALU_OP_AND:
@@ -568,6 +589,12 @@ module s1c88
         case(reg_id)
             MICRO_MOV_IX:
                 IX <= data;
+
+            MICRO_MOV_IXL:
+                IX[7:0] <= data[7:0];
+
+            MICRO_MOV_IXH:
+                IX[15:8] <= data[7:0];
 
             MICRO_MOV_IY:
                 IY <= data;
@@ -632,24 +659,26 @@ module s1c88
     endtask
 
     reg jump_condition_true;
+    reg not_implemented_jump_error;
     always_comb
     begin
         jump_condition_true = 0;
+        not_implemented_jump_error = 0;
         case(micro_jmp_condition)
             // Unconditional jump
             MICRO_COND_NONE:
             begin
                 jump_condition_true = 1;
             end
-            MICRO_COND_LESS, MICRO_COND_GREATER:
-            begin
-            end
-            MICRO_COND_LESS_EQUAL, MICRO_COND_GREATER_EQUAL:
-            begin
-            end
-            MICRO_COND_OVERFLOW, MICRO_COND_NON_OVERFLOW:
-            begin
-            end
+            //MICRO_COND_LESS, MICRO_COND_GREATER:
+            //begin
+            //end
+            //MICRO_COND_LESS_EQUAL, MICRO_COND_GREATER_EQUAL:
+            //begin
+            //end
+            //MICRO_COND_OVERFLOW, MICRO_COND_NON_OVERFLOW:
+            //begin
+            //end
             MICRO_COND_MINUS, MICRO_COND_PLUS:
             begin
                 if(flag_negative == micro_jmp_condition[0])
@@ -665,23 +694,25 @@ module s1c88
                 if(flag_zero == micro_jmp_condition[0])
                     jump_condition_true = 1;
             end
-            MICRO_COND_F0_SET, MICRO_COND_F0_RST:
-            begin
-            end
-            MICRO_COND_F1_SET, MICRO_COND_F1_RST:
-            begin
-            end
-            MICRO_COND_F2_SET, MICRO_COND_F2_RST:
-            begin
-            end
-            MICRO_COND_F3_SET, MICRO_COND_F3_RST:
-            begin
-            end
-            MICRO_COND_B_IS_ZERO:
-            begin
-            end
+            //MICRO_COND_F0_SET, MICRO_COND_F0_RST:
+            //begin
+            //end
+            //MICRO_COND_F1_SET, MICRO_COND_F1_RST:
+            //begin
+            //end
+            //MICRO_COND_F2_SET, MICRO_COND_F2_RST:
+            //begin
+            //end
+            //MICRO_COND_F3_SET, MICRO_COND_F3_RST:
+            //begin
+            //end
+            //MICRO_COND_B_IS_ZERO:
+            //begin
+            //end
             default:
             begin
+                if(micro_op_type == MICRO_TYPE_JMP)
+                    not_implemented_jump_error = 1;
             end
         endcase
     end
@@ -700,6 +731,12 @@ module s1c88
             fetch_opcode         <= 0;
             top_address          <= 0;
             not_implemented_write_error <= 0;
+
+            SC <= 8'hC0;
+            NB <= 8'h01;
+            EP <= 0;
+            IX <= 0;
+            IY <= 0;
         end
         else if(reset_counter < 2)
         begin
@@ -840,11 +877,11 @@ module s1c88
                             // pl == 0?
                             if(jump_condition_true)
                             begin
-                                PC          <= jump_dest;
-                                NB          <= CB;
+                                CB <= NB;
+                                PC <= jump_dest;
                                 address_out <= {9'b0, jump_dest[14:0]};
                             end
-                            else CB <= NB;
+                            else NB <= CB;
                         end
                     end
                 end
@@ -854,30 +891,30 @@ module s1c88
                     // flags, and I need an always_comb block or a wire for
                     // masking bits of SC to be updated? Alternatively insert
                     // a big case here.
-                    //if(alu_flag_update)
-                    //begin
-                    //    case(alu_op)
-                    //        ALUOP_AND, ALUOP_OR, ALUOP_XOR:
-                    //        begin
-                    //            SC[0] <= alu_flags[ALU_FLAG_Z];
-                    //            SC[3] <= alu_flags[ALU_FLAG_S];
-                    //        end
-                    //        ALUOP_ADD, ALUOP_ADDC, ALUOP_SUB, ALUOP_SUBC, ALUOP_CMP, ALUOP_NEG:
-                    //        begin
-                    //            SC[0] <= alu_flags[ALU_FLAG_Z];
-                    //            SC[1] <= alu_flags[ALU_FLAG_CY];
-                    //            SC[2] <= alu_flags[ALU_FLAG_V];
-                    //            SC[3] <= alu_flags[ALU_FLAG_S];
-                    //        end
-                    //        ALUOP_INC, ALUOP_DEC:
-                    //        begin
-                    //            SC[0] <= alu_flags[ALU_FLAG_Z];
-                    //        end
-                    //        default:
-                    //        begin
-                    //        end
-                    //    endcase
-                    //end
+                    if(alu_flag_update)
+                    begin
+                        case(alu_op)
+                            ALUOP_AND, ALUOP_OR, ALUOP_XOR:
+                            begin
+                                SC[0] <= alu_flags[ALU_FLAG_Z];
+                                SC[3] <= alu_flags[ALU_FLAG_S];
+                            end
+                            ALUOP_ADD, ALUOP_ADDC, ALUOP_SUB, ALUOP_SUBC, ALUOP_CMP, ALUOP_NEG:
+                            begin
+                                SC[0] <= alu_flags[ALU_FLAG_Z];
+                                SC[1] <= alu_flags[ALU_FLAG_C];
+                                SC[2] <= alu_flags[ALU_FLAG_V];
+                                SC[3] <= alu_flags[ALU_FLAG_S];
+                            end
+                            ALUOP_INC, ALUOP_DEC:
+                            begin
+                                SC[0] <= alu_flags[ALU_FLAG_Z];
+                            end
+                            default:
+                            begin
+                            end
+                        endcase
+                    end
 
                     if(micro_op_type == MICRO_TYPE_BUS && micro_bus_op == MICRO_BUS_MEM_READ)
                     begin

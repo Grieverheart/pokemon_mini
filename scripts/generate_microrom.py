@@ -36,6 +36,11 @@ def read_localparams(filepath):
             break
 
         command = text[0:endcommand_pos]
+        # @todo: The current parsing does not allow for comments!
+        # @todo: Perhaps it's nice to be able to annotate the localparams to
+        # modify the number of bits/value, e.g. it would be nice to change
+        # MICRO_ALU_OP_NONE to be 7'd0 so that we do not have to define the alu
+        # size and flag updating explicitly.
         if command.startswith('localparam'):
             command = command.strip().replace('\n', '').replace(' ', '')
             if command.find('[') != -1:

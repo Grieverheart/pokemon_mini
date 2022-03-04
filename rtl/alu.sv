@@ -25,14 +25,12 @@ enum [4:0]
     ALUOP_NEG  = 5'd20
 } AluOp;
 
-enum [2:0]
+enum [1:0]
 {
-    ALU_FLAG_AC,  // Auxiliary carry flag
-    ALU_FLAG_CY,  // Carry flag
-    ALU_FLAG_V,   // Overflow flag
-    ALU_FLAG_P,   // Parity flag
-    ALU_FLAG_S,   // Sign flag
-    ALU_FLAG_Z    // Zero flag
+    ALU_FLAG_Z,  // Zero flag
+    ALU_FLAG_C,  // Carry flag
+    ALU_FLAG_V,  // Overflow flag
+    ALU_FLAG_S   // Sign flag
 } AluFlags;
 
 
@@ -43,9 +41,9 @@ module alu
     input size,
     input [15:0] A,
     input [15:0] B,
-    // @todo: Also needs input flags.
+    input C,
     output reg [15:0] R,
-    output reg [5:0] flags
+    output reg [3:0] flags
 );
 
     function [15:0] rol
@@ -178,10 +176,6 @@ module alu
         end
     endfunction
 
-    function parity(input [15:0] x);
-        parity = ~(x[0] ^ x[1] ^ x[2] ^ x[3] ^ x[4] ^ x[5] ^ x[6] ^ x[7]);
-    endfunction
-
     // @question: When size == 0, do we modify the contents of the upper byte?
     // Does it matter at all if we write back only the lower byte anyway?
     // I would guess not.
@@ -193,19 +187,22 @@ module alu
     // @todo: What's the correct way to handle 0 shifts?
 
     wire [3:0] msb = (size == 0)? 4'd7: 4'd15;
+    reg [16:0] R_temp;
 
+    // Should we put flags in separate always_comb? It's annoying that we have
+    // to check again if it's ADD, INC, etc.
     always_comb
     begin
+        R_temp = 0;
         case(alu_op)
 
             ALUOP_AND:
             begin
                 R = A & B;
-                flags[ALU_FLAG_CY] = 0;
-                flags[ALU_FLAG_V]  = 0;
-                flags[ALU_FLAG_Z]  = (R == 0);
-                flags[ALU_FLAG_P]  = parity(R);
-                flags[ALU_FLAG_S]  = R[msb];
+                flags[ALU_FLAG_C] = 0;
+                flags[ALU_FLAG_V] = 0;
+                flags[ALU_FLAG_Z] = (R == 0);
+                flags[ALU_FLAG_S] = R[msb];
             end
 
             ALUOP_INC,
@@ -213,16 +210,19 @@ module alu
             ALUOP_ADD:
             begin
                 if(alu_op == ALUOP_ADD)
-                    {flags[ALU_FLAG_CY], R} = {1'b0, A} + {1'b0, B};
+                begin
+                    R_temp = {1'b0, A} + {1'b0, B};
+                    R = R_temp[15:0];
+                    flags[ALU_FLAG_C] = R_temp[{1'b0, msb} + 5'd1];
+                end
                 else if(alu_op == ALUOP_INC)
                     R = A + 1;
                 else
                     R = A + 2;
 
                 flags[ALU_FLAG_V] = (B[msb] == A[msb]) && (R[msb] != A[msb]);
-                // can we do this? flags[ALU_FLAG_V] = (R[msb] == flags[ALU_FLAG_CY]);
+                // can we do this? flags[ALU_FLAG_V] = (R[msb] == flags[ALU_FLAG_C]);
                 flags[ALU_FLAG_Z] = (R == 0);
-                flags[ALU_FLAG_P] = parity(R);
                 flags[ALU_FLAG_S] = R[msb];
             end
 
@@ -236,12 +236,13 @@ module alu
                 else if(alu_op == ALUOP_DEC2)
                     R = A - 2;
                 else
+                begin
                     R = A - B;
-                    flags[ALU_FLAG_CY] = (A < B);
+                    flags[ALU_FLAG_C] = (A < B);
+                end
 
                 flags[ALU_FLAG_V] = (B[msb] != A[msb]) && (R[msb] != A[msb]);
                 flags[ALU_FLAG_Z] = (R == 0);
-                flags[ALU_FLAG_P] = parity(R);
                 flags[ALU_FLAG_S] = R[msb];
             end
 
@@ -249,10 +250,9 @@ module alu
             begin
                 R = A ^ B;
 
-                flags[ALU_FLAG_CY] = 0;
-                flags[ALU_FLAG_V]  = 0;
+                flags[ALU_FLAG_C] = 0;
+                flags[ALU_FLAG_V] = 0;
 
-                flags[ALU_FLAG_P] = parity(R);
                 flags[ALU_FLAG_Z] = (R == 0);
                 flags[ALU_FLAG_S] = R[msb];
             end
@@ -260,14 +260,14 @@ module alu
             ALUOP_ROL:
             begin
                 R = rol(size, A, B);
-                flags[ALU_FLAG_CY] = R[msb];
+                flags[ALU_FLAG_C] = R[msb];
                 if(B[msb] == R[msb]) flags[ALU_FLAG_V] = 0;
             end
 
             ALUOP_ROR:
             begin
                 R = ror(size, A, B);
-                flags[ALU_FLAG_CY] = R[0];
+                flags[ALU_FLAG_C] = R[0];
                 if(B[msb] == R[msb]) flags[ALU_FLAG_V] = 0;
             end
 
@@ -276,18 +276,17 @@ module alu
                 if(B == 1)
                 begin
                     R = {A[14:0], 1'b0};
-                    flags[ALU_FLAG_CY] = A[msb];
+                    flags[ALU_FLAG_C] = A[msb];
                     if(A[msb] == A[msb-1]) flags[ALU_FLAG_V] = 0;
                 end
                 else
                 begin
                     R = (A << B[4:0]);
-                    if(B > 0) flags[ALU_FLAG_CY] = A[msb - B[4:0] + 1];
+                    if(B > 0) flags[ALU_FLAG_C] = A[msb - B[4:0] + 1];
                 end
 
                 flags[ALU_FLAG_Z] = (R == 0);
                 flags[ALU_FLAG_S] = R[msb];
-                flags[ALU_FLAG_P] = parity(R);
             end
 
             ALUOP_SHR:
@@ -298,25 +297,24 @@ module alu
                         {A[15:8], 1'b0, A[7:1]}:
                         {1'b0, A[15:1]};
 
-                    flags[ALU_FLAG_CY] = A[0];
+                    flags[ALU_FLAG_C] = A[0];
 
                     if(A[msb] == 0) flags[ALU_FLAG_V] = 0;
                 end
                 else
                 begin
                     R = (A >> B[4:0]);
-                    if(B > 0) flags[ALU_FLAG_CY] = A[B[4:0]-1];
+                    if(B > 0) flags[ALU_FLAG_C] = A[B[4:0]-1];
                 end
 
                 flags[ALU_FLAG_Z] = (R == 0);
                 flags[ALU_FLAG_S] = R[msb];
-                flags[ALU_FLAG_P] = parity(R);
             end
 
             default:
             begin
                 R = 16'hFACE;
-                flags = 6'd0;
+                flags = 4'd0;
             end
 
         endcase
