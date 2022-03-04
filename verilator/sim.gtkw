@@ -1,15 +1,15 @@
 [*]
 [*] GTKWave Analyzer v3.3.111 (w)1999-2020 BSI
-[*] Sun Feb 27 22:49:31 2022
+[*] Fri Mar  4 09:37:51 2022
 [*]
 [dumpfile] "/home/nicktasios/Programming/fpga/pokemon_mini/verilator/sim.vcd"
-[dumpfile_mtime] "Sat Feb 26 00:52:43 2022"
-[dumpfile_size] 29780
+[dumpfile_mtime] "Thu Mar  3 14:07:38 2022"
+[dumpfile_size] 31809
 [savefile] "/home/nicktasios/Programming/fpga/pokemon_mini/verilator/sim.gtkw"
-[timestart] 260
+[timestart] 140
 [size] 2560 1371
 [pos] -1 -1
-*-3.965784 351 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-3.965784 183 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [sst_width] 227
 [signals_width] 408
 [sst_expanded] 1
@@ -75,6 +75,7 @@ s1c88.state[2:0]
 s1c88.next_state[2:0]
 @22
 s1c88.imm[15:0]
+s1c88.jump_dest[15:0]
 s1c88.data_in[7:0]
 @c00022
 s1c88.data_out[7:0]

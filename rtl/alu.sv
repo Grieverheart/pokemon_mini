@@ -36,12 +36,14 @@ enum [2:0]
 } AluFlags;
 
 
+// @todo: Need to implement decimal and unpack operations.
 module alu
 (
     input [4:0] alu_op,
     input size,
     input [15:0] A,
     input [15:0] B,
+    // @todo: Also needs input flags.
     output reg [15:0] R,
     output reg [5:0] flags
 );

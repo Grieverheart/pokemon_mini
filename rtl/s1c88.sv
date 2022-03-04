@@ -237,11 +237,10 @@ module s1c88
         MICRO_ALU_OP_ADD  = 5'h4,
         MICRO_ALU_OP_SUB  = 5'h5,
         MICRO_ALU_OP_INC  = 5'h6,
-        MICRO_ALU_OP_INC2 = 5'h7,
-        MICRO_ALU_OP_DEC  = 5'h8,
-        MICRO_ALU_OP_NEG  = 5'h9,
-        MICRO_ALU_OP_ROL  = 5'h10,
-        MICRO_ALU_OP_ROR  = 5'h11;
+        MICRO_ALU_OP_DEC  = 5'h7,
+        MICRO_ALU_OP_NEG  = 5'h8,
+        MICRO_ALU_OP_ROL  = 5'h9,
+        MICRO_ALU_OP_ROR  = 5'hA;
 
     localparam [4:0]
         MICRO_COND_NONE          = 5'h00,
@@ -543,9 +542,6 @@ module s1c88
 
                 MICRO_ALU_OP_INC:
                     alu_op <= ALUOP_INC;
-
-                MICRO_ALU_OP_INC2:
-                    alu_op <= ALUOP_INC2;
 
                 MICRO_ALU_OP_DEC:
                     alu_op <= ALUOP_DEC;
@@ -854,6 +850,35 @@ module s1c88
                 end
                 else
                 begin
+                    // @todo: Need flag for optionally updating SC from alu
+                    // flags, and I need an always_comb block or a wire for
+                    // masking bits of SC to be updated? Alternatively insert
+                    // a big case here.
+                    //if(alu_flag_update)
+                    //begin
+                    //    case(alu_op)
+                    //        ALUOP_AND, ALUOP_OR, ALUOP_XOR:
+                    //        begin
+                    //            SC[0] <= alu_flags[ALU_FLAG_Z];
+                    //            SC[3] <= alu_flags[ALU_FLAG_S];
+                    //        end
+                    //        ALUOP_ADD, ALUOP_ADDC, ALUOP_SUB, ALUOP_SUBC, ALUOP_CMP, ALUOP_NEG:
+                    //        begin
+                    //            SC[0] <= alu_flags[ALU_FLAG_Z];
+                    //            SC[1] <= alu_flags[ALU_FLAG_CY];
+                    //            SC[2] <= alu_flags[ALU_FLAG_V];
+                    //            SC[3] <= alu_flags[ALU_FLAG_S];
+                    //        end
+                    //        ALUOP_INC, ALUOP_DEC:
+                    //        begin
+                    //            SC[0] <= alu_flags[ALU_FLAG_Z];
+                    //        end
+                    //        default:
+                    //        begin
+                    //        end
+                    //    endcase
+                    //end
+
                     if(micro_op_type == MICRO_TYPE_BUS && micro_bus_op == MICRO_BUS_MEM_READ)
                     begin
                         write_data_to_register(micro_bus_reg, {8'd0, data_in});
