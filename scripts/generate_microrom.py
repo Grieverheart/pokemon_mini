@@ -96,7 +96,7 @@ def num_string_to_binary_string(x):
 
 if __name__ == '__main__':
     microinstruction_width = 32
-    rom_bits = 9
+    rom_bits = 10
 
     root = os.path.abspath(os.path.join(os.path.dirname(__file__), '../'))
 
@@ -108,6 +108,7 @@ if __name__ == '__main__':
     rom = []
     microinstruction_address = 0
     num_opcodes_implemented = 0
+    default_address = 0
     for line in lines:
         line = line.strip()
 
@@ -120,18 +121,22 @@ if __name__ == '__main__':
 
         if line[0] == '#':
             if line[1:] == 'default':
+                default_address = microinstruction_address
                 for i in range(len(addresses)):
                     if addresses[i] == -1:
-                        addresses[i] = microinstruction_address
+                        addresses[i] = default_address
             else:
-                num_opcodes_implemented += 1
                 opcode = int(line[1:], base=16)
                 if opcode >= 0xCF00:
                     opcode = 0x200 | opcode & 0xFF
                 elif opcode >= 0xCE00:
                     opcode = 0x100 | opcode & 0xFF
 
-                addresses[opcode] = microinstruction_address
+                if addresses[opcode] != default_address and addresses[opcode] != -1:
+                    print('Warning: opcode 0x%x already implemented.' % opcode)
+                else:
+                    num_opcodes_implemented += 1
+                    addresses[opcode] = microinstruction_address
         else:
             microcommands = line.split(' ')
             microcommands = [
@@ -144,10 +149,11 @@ if __name__ == '__main__':
             rom.append(command)
             microinstruction_address += 1
 
+    print('%d microinstructions in rom.' % len(rom))
     print('%d/608 opcodes implemented.' % num_opcodes_implemented)
 
     rom = '\n'.join([hex(int(x, base=2))[2:] for x in rom])
-    addresses = '\n'.join([hex(int(bin(x)[2:].zfill(rom_bits)[:9], base=2))[2:] for x in addresses])
+    addresses = '\n'.join([hex(int(bin(x)[2:].zfill(rom_bits)[:rom_bits], base=2))[2:] for x in addresses])
 
     with open('translation_rom.mem', 'w') as fp:
         fp.write(addresses)

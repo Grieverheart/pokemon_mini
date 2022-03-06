@@ -87,6 +87,12 @@ module s1c88
 
     // @todo:
     //
+    // * I had to add execution on pl=1 during a cycle where next state is
+    //   execution and the current state is not an exception handling one. Now
+    //   I'm wondering again if we should not change the state at pk=1
+    //   instead. Trying it out might require a lot of work, but otherwise it
+    //   will be bothering me. Try documenting the process as much as
+    //   possible and try making graphs first.
     // * Make sure alu and flags work properly. We also need to add carry, add
     //   decimal operations, and unpack operations.
     // * I think we need to remove the imm reading from the decoder and move
@@ -281,8 +287,8 @@ module s1c88
         MICRO_COND_F3_RST        = 5'h14,
         MICRO_COND_B_IS_ZERO     = 5'h15;
 
-    reg [8:0] translation_rom[0:767];
-    reg [31:0] rom[0:511];
+    reg [9:0] translation_rom[0:767];
+    reg [31:0] rom[0:1023];
 
     assign write = pl && pk &&
         (state == STATE_EXECUTE) &&
@@ -336,7 +342,7 @@ module s1c88
         alu_flags
     );
 
-    wire [31:0] micro_op = rom[microaddress + {5'd0, microprogram_counter}];
+    wire [31:0] micro_op = rom[microaddress + {6'd0, microprogram_counter}];
     wire [4:0] micro_mov_src = micro_op[4:0];
     wire [4:0] micro_mov_dst = micro_op[9:5];
     wire [4:0] micro_mov_src_sec = micro_op[16:12];
@@ -361,7 +367,7 @@ module s1c88
     wire [1:0] micro_op_type = micro_op[31:30];
 
     reg [3:0] microprogram_counter;
-    reg [8:0] microaddress;
+    reg [9:0] microaddress;
 
     task map_microinstruction_register(input [4:0] reg_id, output logic [15:0] register, output logic not_implemented_error);
         not_implemented_error = 0;
@@ -635,6 +641,9 @@ module s1c88
             MICRO_MOV_CB:
                 CB <= data[7:0];
 
+            MICRO_MOV_NB:
+                NB <= data[7:0];
+
             MICRO_MOV_A:
                 BA[7:0] <= data[7:0];
 
@@ -717,8 +726,11 @@ module s1c88
         endcase
     end
 
+    reg branch_taken;
     always_ff @ (negedge clk, posedge reset)
     begin
+        branch_taken = 0;
+
         if(reset)
         begin
             iack                 <= 0;
@@ -855,7 +867,11 @@ module s1c88
                     address_out <= {9'd0, PC[14:0] + 15'd1};
                 end
             end
-            else if(state == STATE_EXECUTE)
+
+            if(
+                state == STATE_EXECUTE ||
+                (next_state == STATE_EXECUTE && pl == 1 && state != STATE_EXC_PROCESS)
+            )
             begin
                 if(pl == 1)
                 begin
@@ -877,6 +893,7 @@ module s1c88
                             // pl == 0?
                             if(jump_condition_true)
                             begin
+                                branch_taken = 1;
                                 CB <= NB;
                                 PC <= jump_dest;
                                 address_out <= {9'b0, jump_dest[14:0]};
