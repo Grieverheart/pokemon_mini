@@ -2,8 +2,8 @@ enum [4:0]
 {
     ALUOP_ADD  = 5'd0,
     ALUOP_OR   = 5'd1,
-    ALUOP_ADDC = 5'd2,
-    ALUOP_SUBC = 5'd3,
+    ALUOP_ADC  = 5'd2,
+    ALUOP_SBC  = 5'd3,
     ALUOP_AND  = 5'd4,
     ALUOP_SUB  = 5'd5,
     ALUOP_XOR  = 5'd6,
@@ -207,11 +207,18 @@ module alu
 
             ALUOP_INC,
             ALUOP_INC2,
-            ALUOP_ADD:
+            ALUOP_ADD,
+            ALUOP_ADC:
             begin
                 if(alu_op == ALUOP_ADD)
                 begin
                     R_temp = {1'b0, A} + {1'b0, B};
+                    R = R_temp[15:0];
+                    flags[ALU_FLAG_C] = R_temp[{1'b0, msb} + 5'd1];
+                end
+                if(alu_op == ALUOP_ADC)
+                begin
+                    R_temp = {1'b0, A} + {1'b0, B} + {16'd0, C};
                     R = R_temp[15:0];
                     flags[ALU_FLAG_C] = R_temp[{1'b0, msb} + 5'd1];
                 end
@@ -229,12 +236,19 @@ module alu
             ALUOP_DEC,
             ALUOP_DEC2,
             ALUOP_CMP,
-            ALUOP_SUB:
+            ALUOP_SUB,
+            ALUOP_SBC:
             begin
                 if(alu_op == ALUOP_DEC)
                     R = A - 1;
                 else if(alu_op == ALUOP_DEC2)
                     R = A - 2;
+                else if(alu_op == ALUOP_SBC)
+                begin
+                    R = A - B - {15'd0, C};
+                    // @todo: Is there a better way to calculate carry?
+                    flags[ALU_FLAG_C] = (A < B + {15'd0, C});
+                end
                 else
                 begin
                     R = A - B;

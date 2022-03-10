@@ -851,7 +851,7 @@ module s1c88
                                 SC[0] <= alu_flags[ALU_FLAG_Z];
                                 SC[3] <= alu_flags[ALU_FLAG_S];
                             end
-                            ALUOP_ADD, ALUOP_ADDC, ALUOP_SUB, ALUOP_SUBC, ALUOP_CMP, ALUOP_NEG:
+                            ALUOP_ADD, ALUOP_ADC, ALUOP_SUB, ALUOP_SBC, ALUOP_CMP, ALUOP_NEG:
                             begin
                                 SC[0] <= alu_flags[ALU_FLAG_Z];
                                 SC[1] <= alu_flags[ALU_FLAG_C];
