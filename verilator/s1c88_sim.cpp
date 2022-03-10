@@ -176,7 +176,7 @@ int main(int argc, char** argv, char** env)
         //tfp->dump(timestamp++);
 
         // @todo: Translate instructions using instructions.csv.
-        if(s1c88->rootp->s1c88__DOT__state == 4 && s1c88->pl == 0)
+        if(s1c88->rootp->s1c88__DOT__state == 2 && s1c88->pl == 0)
         {
             if(s1c88->rootp->s1c88__DOT__microaddress == 0)
                 printf("Instruction 0x%x not implemented\n", s1c88->rootp->s1c88__DOT__extended_opcode);
@@ -214,7 +214,7 @@ int main(int argc, char** argv, char** env)
             // memory write
             if(s1c88->address_out < 0x1000)
             {
-                printf("Program trying to write to bios!\n");
+                printf("Program trying to write to bios at 0x%x!\n", s1c88->address_out);
             }
             else if(s1c88->address_out < 0x2000)
             {

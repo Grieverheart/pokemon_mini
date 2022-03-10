@@ -8,7 +8,7 @@ module s1c88
     output logic pl,
 
     output logic [7:0] data_out,
-    output logic [23:0] address_out,
+    output logic [23:0] address_out, // @todo: Should we make this a wire?
     output logic [1:0]  bus_status,
     output logic read,
     output wire write,
@@ -87,22 +87,19 @@ module s1c88
 
     // @todo:
     //
+    // * Make sure alu and flags work properly. We also need to add carry, add
+    //   decimal operations, and unpack operations.
+    // * Use the correct page register depending on addressing mode.
+    // * Check if we still need to add NOP after bus operation if it's the
+    //   last micro. -- We can probably think of ways to implement this, but
+    //   for now we will continue using the nops. It's easy to remove them in
+    //   the future if we decide to do this.
     // * I had to add execution on pl=1 during a cycle where next state is
     //   execution and the current state is not an exception handling one. Now
     //   I'm wondering again if we should not change the state at pk=1
     //   instead. Trying it out might require a lot of work, but otherwise it
     //   will be bothering me. Try documenting the process as much as
     //   possible and try making graphs first.
-    // * Make sure alu and flags work properly. We also need to add carry, add
-    //   decimal operations, and unpack operations.
-    // * I think we need to remove the imm reading from the decoder and move
-    //   that to the microinstructions. that will allow us to run more
-    //   operations. This seems to be required for some ops like AND A, #nn.
-    // * Use the correct page register depending on addressing mode.
-    // * Check if we still need to add NOP after bus operation if it's the
-    //   last micro. -- We can probably think of ways to implement this, but
-    //   for now we will continue using the nops. It's easy to remove them in
-    //   the future if we decide to do this.
 
     // For jump instruction we need: condition, offset (TA1/TA2). I think
     // we'll leave the mov instructions in there as common to all
@@ -156,10 +153,8 @@ module s1c88
     localparam [2:0]
         STATE_IDLE          = 3'd0,
         STATE_OPEXT_READ    = 3'd1,
-        STATE_IMM_LOW_READ  = 3'd2,
-        STATE_IMM_HIGH_READ = 3'd3,
-        STATE_EXECUTE       = 3'd4,
-        STATE_EXC_PROCESS   = 3'd5;
+        STATE_EXECUTE       = 3'd2,
+        STATE_EXC_PROCESS   = 3'd3;
 
     localparam [2:0]
         EXCEPTION_TYPE_RESET   = 3'd0,
@@ -184,41 +179,39 @@ module s1c88
         MICRO_BUS_MEM_READ  = 1'd0,
         MICRO_BUS_MEM_WRITE = 1'd1;
 
+    // @todo: probably we also need to add L and H for alu operands.
     localparam [4:0]
         MICRO_MOV_NONE     = 5'h00,
-
-        MICRO_MOV_IMM      = 5'h01,
-        MICRO_MOV_IMML     = 5'h02,
-        MICRO_MOV_IMMH     = 5'h03,
-
-        MICRO_MOV_A        = 5'h04,
-        MICRO_MOV_B        = 5'h05,
-        MICRO_MOV_BA       = 5'h06,
-        MICRO_MOV_H        = 5'h07,
-        MICRO_MOV_L        = 5'h08,
-        MICRO_MOV_HL       = 5'h09,
-        MICRO_MOV_IX       = 5'h0A,
-        MICRO_MOV_IXH      = 5'h0B,
-        MICRO_MOV_IXL      = 5'h0C,
-        MICRO_MOV_IY       = 5'h0D,
-        MICRO_MOV_IYH      = 5'h0E,
-        MICRO_MOV_IYL      = 5'h0F,
-        MICRO_MOV_SP       = 5'h10,
-        MICRO_MOV_BR       = 5'h11,
-        MICRO_MOV_PC       = 5'h12,
-        MICRO_MOV_PCL      = 5'h13,
-        MICRO_MOV_PCH      = 5'h14,
-        MICRO_MOV_TA1      = 5'h15,
-        MICRO_MOV_TA2      = 5'h16,
-        MICRO_MOV_NB       = 5'h17,
-        MICRO_MOV_CB       = 5'h18,
-        MICRO_MOV_SC       = 5'h19,
-        MICRO_MOV_EP       = 5'h1A,
-        MICRO_MOV_XP       = 5'h1B,
-        MICRO_MOV_YP       = 5'h1C,
-        MICRO_MOV_ALU_R    = 5'h1D,
-        MICRO_MOV_ALU_A    = 5'h1E,
-        MICRO_MOV_ALU_B    = 5'h1F;
+        MICRO_MOV_A        = 5'h01,
+        MICRO_MOV_B        = 5'h02,
+        MICRO_MOV_BA       = 5'h03,
+        MICRO_MOV_H        = 5'h04,
+        MICRO_MOV_L        = 5'h05,
+        MICRO_MOV_HL       = 5'h06,
+        MICRO_MOV_IX       = 5'h07,
+        MICRO_MOV_IXH      = 5'h08,
+        MICRO_MOV_IXL      = 5'h09,
+        MICRO_MOV_IY       = 5'h0A,
+        MICRO_MOV_IYH      = 5'h0B,
+        MICRO_MOV_IYL      = 5'h0C,
+        MICRO_MOV_SP       = 5'h0D,
+        MICRO_MOV_BR       = 5'h0E,
+        MICRO_MOV_PC       = 5'h0F,
+        MICRO_MOV_PCL      = 5'h10,
+        MICRO_MOV_PCH      = 5'h11,
+        MICRO_MOV_DATA     = 5'h12,
+        MICRO_MOV_NB       = 5'h13,
+        MICRO_MOV_CB       = 5'h14,
+        MICRO_MOV_SC       = 5'h15,
+        MICRO_MOV_EP       = 5'h16,
+        MICRO_MOV_XP       = 5'h17,
+        MICRO_MOV_YP       = 5'h18,
+        MICRO_MOV_ALU_R    = 5'h19,
+        MICRO_MOV_ALU_A    = 5'h1A,
+        MICRO_MOV_ALU_B    = 5'h1B,
+        MICRO_MOV_IMM      = 5'h1C,
+        MICRO_MOV_IMML     = 5'h1D,
+        MICRO_MOV_IMMH     = 5'h1E;
 
     // @note: Can probably reduce some resource usage by making all *1 address
     // micros be at an odd address.
@@ -286,6 +279,10 @@ module s1c88
         MICRO_COND_F3_SET        = 5'h13,
         MICRO_COND_F3_RST        = 5'h14,
         MICRO_COND_B_IS_ZERO     = 5'h15;
+
+    localparam
+        MICRO_JMP_SHORT = 1'b0,
+        MICRO_JMP_LONG  = 1'b1;
 
     reg [9:0] translation_rom[0:767];
     reg [31:0] rom[0:1023];
@@ -360,9 +357,10 @@ module s1c88
     wire micro_alu_size = micro_op[28];
 
     wire [4:0] micro_jmp_condition = micro_op[16:12];
+    wire micro_jmp_long = micro_op[17];
     wire [15:0] jump_dest = top_address +
-        (16'd1 << (imm_size | (extended_opcode[9:8] != 0))) +
-        (imm_size? imm: {8'd0, imm[7:0]});
+        (16'd1 << (micro_jmp_long | (extended_opcode[9:8] != 0))) +
+        (micro_jmp_long? imm: {8'd0, imm[7:0]});
 
     wire [1:0] micro_op_type = micro_op[31:30];
 
@@ -374,15 +372,6 @@ module s1c88
         case(reg_id)
             MICRO_MOV_NONE:
                 register = 0;
-
-            MICRO_MOV_IMM:
-                register = s1c88.imm;
-
-            MICRO_MOV_IMML:
-                register = {8'd0, s1c88.imm_low};
-
-            MICRO_MOV_IMMH:
-                register = {8'd0, s1c88.imm_high};
 
             MICRO_MOV_A:
                 register = {8'd0, s1c88.A};
@@ -411,6 +400,15 @@ module s1c88
             MICRO_MOV_ALU_B:
                 register = s1c88.alu_B;
 
+            MICRO_MOV_IMM:
+                register = s1c88.imm;
+
+            MICRO_MOV_IMML:
+                register = {8'd0, s1c88.imm_low};
+
+            MICRO_MOV_IMMH:
+                register = {8'd0, s1c88.imm_high};
+
             MICRO_MOV_ALU_R:
                 register = s1c88.alu_R;
 
@@ -435,11 +433,8 @@ module s1c88
             MICRO_MOV_PC:
                 register = s1c88.PC;
 
-            MICRO_MOV_TA1:
-                register = s1c88.top_address + 16'd1;
-
-            MICRO_MOV_TA2:
-                register = s1c88.top_address + 16'd2;
+            MICRO_MOV_DATA:
+                register = {8'd0, s1c88.data_in};
 
             MICRO_MOV_NB:
                 register = {8'd0, s1c88.NB};
@@ -484,23 +479,13 @@ module s1c88
 
         (state == STATE_EXC_PROCESS) ?
             (need_opext                       ? STATE_OPEXT_READ:
-            (need_imm                         ? STATE_IMM_LOW_READ:
-                                                STATE_EXECUTE)):
+                                                STATE_EXECUTE):
 
         (state == STATE_EXECUTE) ?
             (need_opext                       ? STATE_OPEXT_READ:
-            (need_imm                         ? STATE_IMM_LOW_READ:
             (exception != EXCEPTION_TYPE_NONE ? STATE_EXC_PROCESS:
-                                                STATE_EXECUTE))):
-
-        (state == STATE_OPEXT_READ) ?
-            (need_imm    ? STATE_IMM_LOW_READ:
-                           STATE_EXECUTE):
-
-        (state == STATE_IMM_LOW_READ) ?
-            (imm_size    ? STATE_IMM_HIGH_READ:
-                           STATE_EXECUTE):
-                           STATE_EXECUTE;
+                                                STATE_EXECUTE)):
+                                                STATE_EXECUTE;
 
     reg [15:0] PC = 16'hFACE;
     reg [15:0] top_address;
@@ -516,22 +501,7 @@ module s1c88
 
     reg [2:0] exception_process_step;
 
-    wire imm_size;
-    wire need_opext;
-    wire need_imm;
-    wire alu_b_imm8;
-    wire alu_b_imm16;
-
-    decode decode_inst
-    (
-        .opcode,
-        .opext,
-        .need_opext,
-        .need_imm,
-        .imm_size,
-        .alu_b_imm8,
-        .alu_b_imm16
-    );
+    wire need_opext = (opcode == 8'hCE) | (opcode == 8'hCF);
 
     assign sync = fetch_opcode;
     reg fetch_opcode;
@@ -628,6 +598,15 @@ module s1c88
 
             MICRO_MOV_L:
                 HL[15:8] <= data[7:0];
+
+            MICRO_MOV_IMM:
+                {imm_low, imm_high} <= data;
+
+            MICRO_MOV_IMML:
+                imm_low <= data[7:0];
+
+            MICRO_MOV_IMMH:
+                imm_high <= data[7:0];
 
             MICRO_MOV_HL:
                 HL <= data;
@@ -766,35 +745,16 @@ module s1c88
             begin
                 not_implemented_write_error <= 0;
 
-                if(next_state == STATE_EXECUTE)
-                begin
-                    if(alu_b_imm8)
-                    begin
-                        // Simply take the last requested byte. #nn is always
-                        // the last instruction byte.
-                        alu_B <= {8'h0, data_in};
-                    end
-                    if(alu_b_imm16)
-                    begin
-                        alu_B <= imm;
-                    end
-                end
-
                 if(fetch_opcode)
                 begin
                     opcode <= data_in;
                     top_address <= PC;
+                    PC <= PC + 1;
                 end
             end
             else if(pl == 1)
             begin
                 address_out <= {9'd0, PC[14:0]};
-
-                if(fetch_opcode)
-                begin
-                    PC <= PC + 1;
-                    address_out <= {9'd0, PC[14:0] + 15'd1};
-                end
 
                 state <= next_state;
                 bus_status <= BUS_COMMAND_MEM_READ;
@@ -822,6 +782,14 @@ module s1c88
 
                 if(pl == 0)
                 begin
+                    if(exception_process_step == 2)
+                    begin
+                        PC[7:0] <= data_in;
+                    end
+                    else if(exception_process_step == 3)
+                    begin
+                        PC[15:8] <= data_in;
+                    end
                 end
                 else
                 begin
@@ -833,15 +801,12 @@ module s1c88
                     end
                     else if(exception_process_step == 2)
                     begin
-                        PC[7:0]     <= data_in;
                         address_out <= 1;
                         iack        <= 0;
                         exception   <= EXCEPTION_TYPE_NONE;
                     end
                     else if(exception_process_step == 3)
                     begin
-                        PC[15:8]     <= data_in;
-                        address_out  <= {9'd0, data_in[6:0], PC[7:0]};
                         fetch_opcode <= 1;
                         state        <= next_state;
                     end
@@ -852,26 +817,10 @@ module s1c88
                 if(pl == 0)
                 begin
                     opext <= data_in;
-                end
-                else
-                begin
                     PC <= PC + 1;
-                    address_out <= {9'd0, PC[14:0] + 15'd1};
                 end
             end
-            else if(state == STATE_IMM_LOW_READ || state == STATE_IMM_HIGH_READ)
-            begin
-                if(pl == 1)
-                begin
-                    PC <= PC + 1;
-                    address_out <= {9'd0, PC[14:0] + 15'd1};
-                end
-            end
-
-            if(
-                state == STATE_EXECUTE ||
-                (next_state == STATE_EXECUTE && pl == 1 && state != STATE_EXC_PROCESS)
-            )
+            else if(state == STATE_EXECUTE)
             begin
                 if(pl == 1)
                 begin
@@ -880,26 +829,12 @@ module s1c88
                         state <= STATE_EXECUTE;
                         if(microinstruction_done)
                             fetch_opcode <= 1;
+                    end
 
-                        if(micro_mov_dst == MICRO_MOV_PC)
-                        begin
-                            PC <= src_reg;
-                            address_out <= {9'b0, src_reg[14:0]};
-                        end
-
-                        if(micro_op_type == MICRO_TYPE_JMP)
-                        begin
-                            // @todo: Do we need to move the NB/CB writing to
-                            // pl == 0?
-                            if(jump_condition_true)
-                            begin
-                                branch_taken = 1;
-                                CB <= NB;
-                                PC <= jump_dest;
-                                address_out <= {9'b0, jump_dest[14:0]};
-                            end
-                            else NB <= CB;
-                        end
+                    if(micro_op_type == MICRO_TYPE_JMP && jump_condition_true)
+                    begin
+                        address_out <= {9'd0, jump_dest[14:0]};
+                        branch_taken = 1;
                     end
                 end
                 else
@@ -933,6 +868,27 @@ module s1c88
                         endcase
                     end
 
+                    if(micro_mov_dst == MICRO_MOV_PC)
+                    begin
+                        PC <= src_reg;
+                    end
+
+                    if(micro_mov_src == MICRO_MOV_DATA)
+                    begin
+                        PC <= PC + 1;
+                    end
+
+                    if(micro_op_type == MICRO_TYPE_JMP)
+                    begin
+                        if(jump_condition_true)
+                        begin
+                            branch_taken = 1;
+                            CB <= NB;
+                            PC <= jump_dest+1;
+                        end
+                        else NB <= CB;
+                    end
+
                     if(micro_op_type == MICRO_TYPE_BUS && micro_bus_op == MICRO_BUS_MEM_READ)
                     begin
                         write_data_to_register(micro_bus_reg, {8'd0, data_in});
@@ -947,10 +903,10 @@ module s1c88
 
             if(micro_op_type == MICRO_TYPE_BUS && pl == 1)
             begin
-                if((state == STATE_EXECUTE && !microinstruction_done) || (next_state == STATE_EXECUTE))
+                if(state == STATE_EXECUTE && !microinstruction_done)
                 begin
-                // Don't do any bus ops on the last microinstruction
-                // step.
+                    // Don't do any bus ops on the last microinstruction
+                    // step.
                     if(micro_bus_op == MICRO_BUS_MEM_WRITE)
                         bus_status <= BUS_COMMAND_MEM_WRITE;
 
@@ -1001,7 +957,6 @@ module s1c88
                     endcase
                 end
             end
-                
         end
     end
 
@@ -1070,38 +1025,15 @@ module s1c88
                     end
                 end
 
-                STATE_IMM_LOW_READ:
-                begin
-                    if(pk == 0)
-                    begin
-                        read <= 1;
-                    end
-                    else
-                    begin
-                        // @todo: Move to nededge clk
-                        imm_low <= data_in;
-                    end
-                end
-
-                STATE_IMM_HIGH_READ:
-                begin
-                    if(pk == 0)
-                    begin
-                        read <= 1;
-                    end
-                    else
-                    begin
-                        // @todo: Move to nededge clk
-                        imm_high <= data_in;
-                    end
-                end
-
                 STATE_EXECUTE:
                 begin
                     if(!microinstruction_done && pk == 1)
                     begin
                         microprogram_counter <= microprogram_counter + 1;
                     end
+
+                    if(micro_mov_src == MICRO_MOV_DATA && pk == 0)
+                        read <= 1;
 
                     if(micro_op_type == MICRO_TYPE_BUS)
                     begin
@@ -1149,10 +1081,6 @@ module s1c88
                                     begin
                                         data_out <= alu_B[7:0];
                                     end
-                                    MICRO_MOV_ALU_R:
-                                    begin
-                                        data_out <= alu_R[7:0];
-                                    end
                                     MICRO_MOV_IMML:
                                     begin
                                         data_out <= imm_low;
@@ -1160,6 +1088,10 @@ module s1c88
                                     MICRO_MOV_IMMH:
                                     begin
                                         data_out <= imm_high;
+                                    end
+                                    MICRO_MOV_ALU_R:
+                                    begin
+                                        data_out <= alu_R[7:0];
                                     end
                                     MICRO_MOV_PCL:
                                     begin
