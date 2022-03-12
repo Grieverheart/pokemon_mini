@@ -87,8 +87,12 @@ module s1c88
 
     // @todo:
     //
-    // * Make sure alu and flags work properly. We also need to add carry, add
-    //   decimal operations, and unpack operations.
+    // * Investigate why the bios is trying to write to bios address. It seems
+    //   that the code is pushing IX onto the stack and later popping into BR.
+    //   IX is 0 at the time of pushing. Disassemble the code and try to
+    //   understand what is happening and if somehow I'm not doing something
+    //   correctly.
+    // * Implement alu decimal operations, and unpack operations.
     // * Use the correct page register depending on addressing mode.
     // * Check if we still need to add NOP after bus operation if it's the
     //   last micro. -- We can probably think of ways to implement this, but
@@ -241,12 +245,14 @@ module s1c88
         MICRO_ALU_OP_AND  = 5'h2,
         MICRO_ALU_OP_OR   = 5'h3,
         MICRO_ALU_OP_ADD  = 5'h4,
-        MICRO_ALU_OP_SUB  = 5'h5,
-        MICRO_ALU_OP_INC  = 5'h6,
-        MICRO_ALU_OP_DEC  = 5'h7,
-        MICRO_ALU_OP_NEG  = 5'h8,
-        MICRO_ALU_OP_ROL  = 5'h9,
-        MICRO_ALU_OP_ROR  = 5'hA;
+        MICRO_ALU_OP_ADC  = 5'h5,
+        MICRO_ALU_OP_SUB  = 5'h6,
+        MICRO_ALU_OP_SBC  = 5'h7,
+        MICRO_ALU_OP_INC  = 5'h8,
+        MICRO_ALU_OP_DEC  = 5'h9,
+        MICRO_ALU_OP_NEG  = 5'hA,
+        MICRO_ALU_OP_ROL  = 5'hB,
+        MICRO_ALU_OP_ROR  = 5'hC;
 
     localparam
         MICRO_ALU8  = 1'b0,
@@ -534,8 +540,14 @@ module s1c88
                 MICRO_ALU_OP_ADD:
                     alu_op <= ALUOP_ADD;
 
+                MICRO_ALU_OP_ADC:
+                    alu_op <= ALUOP_ADC;
+
                 MICRO_ALU_OP_SUB:
                     alu_op <= ALUOP_SUB;
+
+                MICRO_ALU_OP_SBC:
+                    alu_op <= ALUOP_SBC;
 
                 MICRO_ALU_OP_INC:
                     alu_op <= ALUOP_INC;
@@ -706,9 +718,11 @@ module s1c88
     end
 
     reg branch_taken;
+    reg not_implemented_addressing_error;
     always_ff @ (negedge clk, posedge reset)
     begin
         branch_taken = 0;
+        not_implemented_addressing_error <= 0;
 
         if(reset)
         begin
@@ -950,9 +964,9 @@ module s1c88
                             address_out <= {8'b0, BR, imm_low};
                         end
 
-                        // @todo: set error flag.
                         default:
                         begin
+                            not_implemented_addressing_error <= 1;
                         end
                     endcase
                 end

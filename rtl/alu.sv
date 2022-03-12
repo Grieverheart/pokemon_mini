@@ -194,6 +194,7 @@ module alu
     always_comb
     begin
         R_temp = 0;
+        flags = 4'h0;
         case(alu_op)
 
             ALUOP_AND:
@@ -227,7 +228,7 @@ module alu
                 else
                     R = A + 2;
 
-                flags[ALU_FLAG_V] = (B[msb] == A[msb]) && (R[msb] != A[msb]);
+                flags[ALU_FLAG_V] = (A[msb] & B[msb] & ~R[msb]) | (~A[msb] & ~B[msb] & R[msb]);
                 // can we do this? flags[ALU_FLAG_V] = (R[msb] == flags[ALU_FLAG_C]);
                 flags[ALU_FLAG_Z] = (R == 0);
                 flags[ALU_FLAG_S] = R[msb];
@@ -245,17 +246,18 @@ module alu
                     R = A - 2;
                 else if(alu_op == ALUOP_SBC)
                 begin
-                    R = A - B - {15'd0, C};
-                    // @todo: Is there a better way to calculate carry?
-                    flags[ALU_FLAG_C] = (A < B + {15'd0, C});
+                    R_temp = {1'b0, A} - {1'b0, B} - {16'd0, C};
+                    R = R_temp[15:0];
+                    flags[ALU_FLAG_C] = R_temp[{1'b0, msb} + 5'd1];
                 end
                 else
                 begin
-                    R = A - B;
-                    flags[ALU_FLAG_C] = (A < B);
+                    R_temp = {1'b0, A} - {1'b0, B};
+                    R = R_temp[15:0];
+                    flags[ALU_FLAG_C] = R_temp[{1'b0, msb} + 5'd1];
                 end
 
-                flags[ALU_FLAG_V] = (B[msb] != A[msb]) && (R[msb] != A[msb]);
+                flags[ALU_FLAG_V] = (A[msb] & ~B[msb] & ~R[msb]) | (~A[msb] & B[msb] & R[msb]);
                 flags[ALU_FLAG_Z] = (R == 0);
                 flags[ALU_FLAG_S] = R[msb];
             end
