@@ -149,7 +149,7 @@ int main(int argc, char** argv, char** env)
 
     int timestamp = 0;
     bool data_sent = false;
-    while (timestamp < 600 && !Verilated::gotFinish())
+    while (timestamp < 8000 && !Verilated::gotFinish())
     {
         s1c88->clk = 1;
         s1c88->eval();
@@ -182,7 +182,7 @@ int main(int argc, char** argv, char** env)
                 printf("Instruction 0x%x not implemented\n", s1c88->rootp->s1c88__DOT__extended_opcode);
         }
 
-        if(s1c88->bus_status == BUS_MEM_READ)// && s1c88->read)
+        if(s1c88->bus_status == BUS_MEM_READ && s1c88->pl == 0) // Check if PL=0 just to reduce spam.
         {
             // memory read
             if(s1c88->address_out < 0x1000)

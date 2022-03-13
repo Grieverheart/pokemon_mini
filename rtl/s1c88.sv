@@ -178,7 +178,7 @@ module s1c88
         MICRO_BUS_MEM_READ  = 1'd0,
         MICRO_BUS_MEM_WRITE = 1'd1;
 
-    // @todo: probably we also need to add L and H for alu operands.
+    // @todo: probably we also need to add L and H for at least alu operands.
     localparam [4:0]
         MICRO_MOV_NONE     = 5'h00,
         MICRO_MOV_A        = 5'h01,
@@ -489,7 +489,6 @@ module s1c88
                                                 STATE_EXECUTE;
 
     reg [15:0] PC = 16'hFACE;
-    // @todo: Check if we can set this properly when doing a jump like CARL.
     reg [15:0] top_address;
 
     reg [7:0] opcode;
@@ -895,6 +894,7 @@ module s1c88
                             branch_taken = 1;
                             CB <= NB;
                             PC <= jump_dest+1;
+                            top_address <= jump_dest;
                         end
                         else NB <= CB;
                     end
