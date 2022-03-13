@@ -8,7 +8,7 @@ module s1c88
     output logic pl,
 
     output logic [7:0] data_out,
-    output logic [23:0] address_out, // @todo: Should we make this a wire?
+    output logic [23:0] address_out,
     output logic [1:0]  bus_status,
     output logic read,
     output wire write,
@@ -87,11 +87,6 @@ module s1c88
 
     // @todo:
     //
-    // * Investigate why the bios is trying to write to bios address. It seems
-    //   that the code is pushing IX onto the stack and later popping into BR.
-    //   IX is 0 at the time of pushing. Disassemble the code and try to
-    //   understand what is happening and if somehow I'm not doing something
-    //   correctly.
     // * Implement alu decimal operations, and unpack operations.
     // * Use the correct page register depending on addressing mode.
     // * Check if we still need to add NOP after bus operation if it's the
@@ -366,7 +361,7 @@ module s1c88
     wire micro_jmp_long = micro_op[17];
     wire [15:0] jump_dest = top_address +
         (16'd1 << (micro_jmp_long | (extended_opcode[9:8] != 0))) +
-        (micro_jmp_long? imm: {8'd0, imm[7:0]});
+        $signed(micro_jmp_long? imm: {{8{imm[7]}}, imm[7:0]});
 
     wire [1:0] micro_op_type = micro_op[31:30];
 
@@ -494,6 +489,7 @@ module s1c88
                                                 STATE_EXECUTE;
 
     reg [15:0] PC = 16'hFACE;
+    // @todo: Check if we can set this properly when doing a jump like CARL.
     reg [15:0] top_address;
 
     reg [7:0] opcode;
