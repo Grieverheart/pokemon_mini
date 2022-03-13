@@ -193,6 +193,7 @@ module alu
     // to check again if it's ADD, INC, etc.
     always_comb
     begin
+        // @todo: Implement OR!
         R_temp = 0;
         flags = 4'h0;
         case(alu_op)
