@@ -95,7 +95,7 @@ def num_string_to_binary_string(x):
     return x
 
 if __name__ == '__main__':
-    microinstruction_width = 32
+    microinstruction_width = 36
     rom_bits = 10
 
     root = os.path.abspath(os.path.join(os.path.dirname(__file__), '../'))

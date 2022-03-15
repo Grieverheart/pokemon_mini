@@ -207,6 +207,24 @@ module alu
                 flags[ALU_FLAG_S] = R[msb];
             end
 
+            ALUOP_OR:
+            begin
+                R = A | B;
+                flags[ALU_FLAG_C] = 0;
+                flags[ALU_FLAG_V] = 0;
+                flags[ALU_FLAG_Z] = (R == 0);
+                flags[ALU_FLAG_S] = R[msb];
+            end
+
+            ALUOP_XOR:
+            begin
+                R = A ^ B;
+                flags[ALU_FLAG_C] = 0;
+                flags[ALU_FLAG_V] = 0;
+                flags[ALU_FLAG_Z] = (R == 0);
+                flags[ALU_FLAG_S] = R[msb];
+            end
+
             ALUOP_INC,
             ALUOP_INC2,
             ALUOP_ADD,
@@ -259,17 +277,6 @@ module alu
                 end
 
                 flags[ALU_FLAG_V] = (A[msb] & ~B[msb] & ~R[msb]) | (~A[msb] & B[msb] & R[msb]);
-                flags[ALU_FLAG_Z] = (R == 0);
-                flags[ALU_FLAG_S] = R[msb];
-            end
-
-            ALUOP_XOR:
-            begin
-                R = A ^ B;
-
-                flags[ALU_FLAG_C] = 0;
-                flags[ALU_FLAG_V] = 0;
-
                 flags[ALU_FLAG_Z] = (R == 0);
                 flags[ALU_FLAG_S] = R[msb];
             end

@@ -46,9 +46,113 @@ void write_hardware_register(uint32_t address, uint8_t data)
         }
         break;
 
+        case 0x10:
+        {
+            printf("Writing hardware register SYS_BATT=");
+        }
+        break;
+
+        case 0x19:
+        {
+            printf("Writing hardware register TMR1_ENA_OSC/TMR1_OSC=");
+        }
+        break;
+
+        case 0x20:
+        {
+            printf("Writing hardware register IRQ_PRI1=");
+        }
+        break;
+
+        case 0x21:
+        {
+            printf("Writing hardware register IRQ_PRI2=");
+        }
+        break;
+
+        case 0x22:
+        {
+            printf("Writing hardware register IRQ_PRI3=");
+        }
+        break;
+
+        case 0x23:
+        {
+            printf("Writing hardware register IRQ_ENA1=");
+        }
+        break;
+
+        case 0x24:
+        {
+            printf("Writing hardware register IRQ_ENA2=");
+        }
+        break;
+
+        case 0x25:
+        {
+            printf("Writing hardware register IRQ_ENA3=");
+        }
+        break;
+
+        case 0x26:
+        {
+            printf("Writing hardware register IRQ_ENA4=");
+        }
+        break;
+
+        case 0x40:
+        {
+            printf("Writing hardware register TMR256_CTRL=");
+        }
+        break;
+
+        case 0x60:
+        {
+            printf("Writing hardware register IO_DIR=");
+        }
+        break;
+
+        case 0x61:
+        {
+            printf("Writing hardware register IO_DATA=");
+        }
+        break;
+
+        case 0x70:
+        {
+            printf("Writing hardware register AUD_CTRL=");
+        }
+        break;
+
+        case 0x71:
+        {
+            printf("Writing hardware register AUD_VOL=");
+        }
+        break;
+
         case 0x80:
         {
             printf("Writing hardware register PRC_MODE=");
+        }
+        break;
+
+        case 0x81:
+        {
+            printf("Writing hardware register PRC_RATE=");
+        }
+        break;
+
+        case 0x44:
+        case 0x45:
+        case 0x46:
+        case 0x47:
+        case 0x50:
+        case 0x51:
+        case 0x54:
+        case 0x55:
+        case 0x62:
+        {
+            printf("Writing hardware register Unknown=");
         }
         break;
 
@@ -109,6 +213,44 @@ uint8_t read_hardware_register(uint32_t address)
         {
             printf("Reading hardware register SEC_CNT_MID\n");
             data = (sec_cnt >> 16) & 0xFF;
+        }
+        break;
+
+        case 0x52:
+        {
+            printf("Reading hardware register KEY_PAD\n");
+        }
+        break;
+
+        case 0x19:
+        {
+            printf("Reading hardware register TMR1_ENA_OSC/TMR1_OSC\n");
+        }
+        break;
+
+        case 0x60:
+        {
+            printf("Reading hardware register IO_DIR\n");
+        }
+        break;
+
+        case 0x61:
+        {
+            printf("Reading hardware register IO_DATA\n");
+        }
+        break;
+
+        case 0x44:
+        case 0x45:
+        case 0x46:
+        case 0x47:
+        case 0x50:
+        case 0x51:
+        case 0x54:
+        case 0x55:
+        case 0x62:
+        {
+            printf("Reading hardware register Unknown\n");
         }
         break;
 
@@ -179,7 +321,7 @@ int main(int argc, char** argv, char** env)
         if(s1c88->rootp->s1c88__DOT__state == 2 && s1c88->pl == 0)
         {
             if(s1c88->rootp->s1c88__DOT__microaddress == 0)
-                printf("Instruction 0x%x not implemented\n", s1c88->rootp->s1c88__DOT__extended_opcode);
+                printf("** Instruction 0x%x not implemented **\n", s1c88->rootp->s1c88__DOT__extended_opcode);
         }
 
         if(s1c88->bus_status == BUS_MEM_READ && s1c88->pl == 0) // Check if PL=0 just to reduce spam.

@@ -179,60 +179,66 @@ module s1c88
         MICRO_BUS_MEM_WRITE = 1'd1;
 
     // @todo: probably we also need to add L and H for at least alu operands.
-    localparam [4:0]
-        MICRO_MOV_NONE     = 5'h00,
-        MICRO_MOV_A        = 5'h01,
-        MICRO_MOV_B        = 5'h02,
-        MICRO_MOV_BA       = 5'h03,
-        MICRO_MOV_H        = 5'h04,
-        MICRO_MOV_L        = 5'h05,
-        MICRO_MOV_HL       = 5'h06,
-        MICRO_MOV_IX       = 5'h07,
-        MICRO_MOV_IXH      = 5'h08,
-        MICRO_MOV_IXL      = 5'h09,
-        MICRO_MOV_IY       = 5'h0A,
-        MICRO_MOV_IYH      = 5'h0B,
-        MICRO_MOV_IYL      = 5'h0C,
-        MICRO_MOV_SP       = 5'h0D,
-        MICRO_MOV_BR       = 5'h0E,
-        MICRO_MOV_PC       = 5'h0F,
-        MICRO_MOV_PCL      = 5'h10,
-        MICRO_MOV_PCH      = 5'h11,
-        MICRO_MOV_DATA     = 5'h12,
-        MICRO_MOV_NB       = 5'h13,
-        MICRO_MOV_CB       = 5'h14,
-        MICRO_MOV_SC       = 5'h15,
-        MICRO_MOV_EP       = 5'h16,
-        MICRO_MOV_XP       = 5'h17,
-        MICRO_MOV_YP       = 5'h18,
-        MICRO_MOV_ALU_R    = 5'h19,
-        MICRO_MOV_ALU_A    = 5'h1A,
-        MICRO_MOV_ALU_B    = 5'h1B,
-        MICRO_MOV_IMM      = 5'h1C,
-        MICRO_MOV_IMML     = 5'h1D,
-        MICRO_MOV_IMMH     = 5'h1E;
+    localparam [5:0]
+        MICRO_MOV_NONE     = 6'h00,
+        MICRO_MOV_A        = 6'h01,
+        MICRO_MOV_B        = 6'h02,
+        MICRO_MOV_BA       = 6'h03,
+        MICRO_MOV_H        = 6'h04,
+        MICRO_MOV_L        = 6'h05,
+        MICRO_MOV_HL       = 6'h06,
+        MICRO_MOV_IX       = 6'h07,
+        MICRO_MOV_IXH      = 6'h08,
+        MICRO_MOV_IXL      = 6'h09,
+        MICRO_MOV_IY       = 6'h0A,
+        MICRO_MOV_IYH      = 6'h0B,
+        MICRO_MOV_IYL      = 6'h0C,
+        MICRO_MOV_SP       = 6'h0D,
+        MICRO_MOV_SPH      = 6'h0E,
+        MICRO_MOV_SPL      = 6'h0F,
+        MICRO_MOV_BR       = 6'h10,
+        MICRO_MOV_PC       = 6'h11,
+        MICRO_MOV_PCL      = 6'h12,
+        MICRO_MOV_PCH      = 6'h13,
+        MICRO_MOV_DATA     = 6'h14,
+        MICRO_MOV_NB       = 6'h15,
+        MICRO_MOV_CB       = 6'h16,
+        MICRO_MOV_SC       = 6'h17,
+        MICRO_MOV_EP       = 6'h18,
+        MICRO_MOV_XP       = 6'h19,
+        MICRO_MOV_YP       = 6'h1A,
+        MICRO_MOV_ALU_R    = 6'h1B,
+        MICRO_MOV_ALU_A    = 6'h1C,
+        MICRO_MOV_ALU_AH   = 6'h1D,
+        MICRO_MOV_ALU_AL   = 6'h1E,
+        MICRO_MOV_ALU_B    = 6'h1F,
+        MICRO_MOV_ALU_BH   = 6'h20,
+        MICRO_MOV_ALU_BL   = 6'h21,
+        MICRO_MOV_IMM      = 6'h22,
+        MICRO_MOV_IMML     = 6'h23,
+        MICRO_MOV_IMMH     = 6'h24;
 
     // @note: Can probably reduce some resource usage by making all *1 address
     // micros be at an odd address.
-    localparam [4:0]
-        MICRO_ADD_HL     = 5'h00,
-        MICRO_ADD_HL1    = 5'h01,
-        MICRO_ADD_IX     = 5'h02,
-        MICRO_ADD_IX1    = 5'h03,
-        MICRO_ADD_IX_DD  = 5'h04,
-        MICRO_ADD_IX_L   = 5'h05,
-        MICRO_ADD_IY     = 5'h06,
-        MICRO_ADD_IY1    = 5'h07,
-        MICRO_ADD_IY_DD  = 5'h08,
-        MICRO_ADD_IY_L   = 5'h09,
-        MICRO_ADD_BR     = 5'h0A,
-        MICRO_ADD_BR1    = 5'h0B,
-        MICRO_ADD_HH_LL  = 5'h0C,
-        MICRO_ADD_HH_LL1 = 5'h0D,
-        MICRO_ADD_KK     = 5'h0E,
-        MICRO_ADD_SP     = 5'h0F,
-        MICRO_ADD_SP_DD  = 5'h10,
-        MICRO_ADD_SP_DD1 = 5'h11;
+    localparam [5:0]
+        MICRO_ADD_HL     = 6'h00,
+        MICRO_ADD_HL1    = 6'h01,
+        MICRO_ADD_IX     = 6'h02,
+        MICRO_ADD_IX1    = 6'h03,
+        MICRO_ADD_IX_DD  = 6'h04,
+        MICRO_ADD_IX_L   = 6'h05,
+        MICRO_ADD_IY     = 6'h06,
+        MICRO_ADD_IY1    = 6'h07,
+        MICRO_ADD_IY_DD  = 6'h08,
+        MICRO_ADD_IY_L   = 6'h09,
+        MICRO_ADD_BR     = 6'h0A,
+        MICRO_ADD_BR1    = 6'h0B,
+        MICRO_ADD_HH_LL  = 6'h0C,
+        MICRO_ADD_HH_LL1 = 6'h0D,
+        MICRO_ADD_KK     = 6'h0E,
+        MICRO_ADD_SP     = 6'h0F,
+        MICRO_ADD_SP_DD  = 6'h10,
+        MICRO_ADD_SP_DD1 = 6'h11;
 
     localparam [4:0]
         MICRO_ALU_OP_NONE = 5'h0,
@@ -286,7 +292,7 @@ module s1c88
         MICRO_JMP_LONG  = 1'b1;
 
     reg [9:0] translation_rom[0:767];
-    reg [31:0] rom[0:1023];
+    reg [35:0] rom[0:1023];
 
     assign write = pl && pk &&
         (state == STATE_EXECUTE) &&
@@ -340,35 +346,57 @@ module s1c88
         alu_flags
     );
 
-    wire [31:0] micro_op = rom[microaddress + {6'd0, microprogram_counter}];
-    wire [4:0] micro_mov_src = micro_op[4:0];
-    wire [4:0] micro_mov_dst = micro_op[9:5];
-    wire [4:0] micro_mov_src_sec = micro_op[16:12];
-    wire [4:0] micro_mov_dst_sec = micro_op[21:17];
+    // @todo: At some point we can reduce the microcode size. For example, we
+    // can reduce the size of secondary mov operations, as well as the mov_add
+    // and possibly mov_reg. Also we don't seem to use the nearly done flag so
+    // we could potentially save another bit from that.
+    //
+    // TYPE_MISC 
+    //  2         1            1       5   1    6       6     2    6   6
+    //  36        34          33      32   27  26      20     14  12   6
+    // type alu_flag_write alu_size alu_op 0 mov_sec mov_sec done mov mov
+    //
+    // TYPE_BUS
+    //  2         1            1       5    1     6       6     2    6   6
+    //  36        34          33      32    27   26      20     14  12   6
+    // type alu_flag_write alu_size alu_op r/w mov_add mov_reg done mov mov
+    //
+    // TYPE_JMP
+    //  2         1            1       5   7     1         5    2    6   6
+    //  36        34          33      32   27   20        19    14  12   6
+    // type alu_flag_write alu_size alu_op 0 jmp_size jmp_cond done mov mov
 
-    wire microinstruction_done = micro_op[10];
-    wire microinstruction_nearly_done = micro_op[11];
+    wire [35:0] micro_op = rom[microaddress + {6'd0, microprogram_counter}];
 
-    wire [4:0] micro_bus_reg = micro_op[16:12];
-    wire [4:0] micro_bus_add = micro_op[21:17];
-    wire micro_bus_op = micro_op[22];
+    wire [1:0] micro_op_type = micro_op[35:34];
 
-    wire [4:0] micro_alu_op = micro_op[27:23];
-    wire micro_alu_flag_update = micro_op[29];
-    wire micro_alu_size = micro_op[28];
+    wire [5:0] micro_mov_src = micro_op[5:0];
+    wire [5:0] micro_mov_dst = micro_op[11:6];
+    wire [5:0] micro_mov_src_sec = micro_op[19:14];
+    wire [5:0] micro_mov_dst_sec = micro_op[25:20];
 
-    wire [4:0] micro_jmp_condition = micro_op[16:12];
-    wire micro_jmp_long = micro_op[17];
+    wire microinstruction_done = micro_op[12];
+    wire microinstruction_nearly_done = micro_op[13];
+
+    wire [5:0] micro_bus_reg = micro_op[19:14];
+    wire [5:0] micro_bus_add = micro_op[25:20];
+    wire micro_bus_op = micro_op[26];
+
+    wire [4:0] micro_alu_op = micro_op[31:27];
+    wire micro_alu_size = micro_op[32];
+    wire micro_alu_flag_update = micro_op[33];
+
+    wire [4:0] micro_jmp_condition = micro_op[18:14];
+    wire micro_jmp_long = micro_op[19];
+
     wire [15:0] jump_dest = top_address +
         (16'd1 << (micro_jmp_long | (extended_opcode[9:8] != 0))) +
         $signed(micro_jmp_long? imm: {{8{imm[7]}}, imm[7:0]});
 
-    wire [1:0] micro_op_type = micro_op[31:30];
-
     reg [3:0] microprogram_counter;
     reg [9:0] microaddress;
 
-    task map_microinstruction_register(input [4:0] reg_id, output logic [15:0] register, output logic not_implemented_error);
+    task map_microinstruction_register(input [5:0] reg_id, output logic [15:0] register, output logic not_implemented_error);
         not_implemented_error = 0;
         case(reg_id)
             MICRO_MOV_NONE:
@@ -395,11 +423,29 @@ module s1c88
             MICRO_MOV_IY:
                 register = s1c88.IY;
 
+            MICRO_MOV_IYL:
+                register = {8'd0, s1c88.IY[7:0]};
+
+            MICRO_MOV_IYH:
+                register = {8'd0, s1c88.IY[15:8]};
+
             MICRO_MOV_ALU_A:
                 register = s1c88.alu_A;
 
+            MICRO_MOV_ALU_AL:
+                register = {8'd0, s1c88.alu_A[7:0]};
+
+            MICRO_MOV_ALU_AH:
+                register = {8'd0, s1c88.alu_A[15:8]};
+
             MICRO_MOV_ALU_B:
                 register = s1c88.alu_B;
+
+            MICRO_MOV_ALU_BL:
+                register = {8'd0, s1c88.alu_B[7:0]};
+
+            MICRO_MOV_ALU_BH:
+                register = {8'd0, s1c88.alu_B[15:8]};
 
             MICRO_MOV_IMM:
                 register = s1c88.imm;
@@ -424,6 +470,12 @@ module s1c88
 
             MICRO_MOV_SP:
                 register = s1c88.SP;
+
+            MICRO_MOV_SPL:
+                register = {8'd0, s1c88.SP[7:0]};
+
+            MICRO_MOV_SPH:
+                register = {8'd0, s1c88.SP[15:8]};
 
             MICRO_MOV_SC:
                 register = {8'd0, s1c88.SC};
@@ -568,7 +620,7 @@ module s1c88
 
 
     reg not_implemented_write_error;
-    task write_data_to_register(input [4:0] reg_id, input [15:0] data);
+    task write_data_to_register(input [5:0] reg_id, input [15:0] data);
         case(reg_id)
             MICRO_MOV_IX:
                 IX <= data;
@@ -581,6 +633,12 @@ module s1c88
 
             MICRO_MOV_IY:
                 IY <= data;
+
+            MICRO_MOV_IYL:
+                IY[7:0] <= data[7:0];
+
+            MICRO_MOV_IYH:
+                IY[15:8] <= data[7:0];
 
             MICRO_MOV_EP:
                 EP <= data[7:0];
@@ -599,6 +657,12 @@ module s1c88
 
             MICRO_MOV_SP:
                 SP <= data;
+
+            MICRO_MOV_SPL:
+                SP[7:0] <= data[7:0];
+
+            MICRO_MOV_SPH:
+                SP[15:8] <= data[7:0];
 
             MICRO_MOV_H:
                 HL[7:0]  <= data[7:0];
