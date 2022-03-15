@@ -210,6 +210,12 @@ module s1c88
 
     // @note: Can probably reduce some resource usage by making all *1 address
     // micros be at an odd address.
+    // @todo_maybe: Investigate if we can perhaps use the alu to calculate the
+    // XX+dd, XX+L addresses. It seems weird to me that the microinstructions
+    // using these all have the same number of clock cycles. I think they need
+    // to be using the ALU to calculate the addresses. Current implementation is
+    // simpler, though, if we don't care too much about resources used by the
+    // FPGA.
     localparam [5:0]
         MICRO_ADD_HL     = 6'h00,
         MICRO_ADD_HL1    = 6'h01,
@@ -239,11 +245,12 @@ module s1c88
         MICRO_ALU_OP_ADC  = 5'h5,
         MICRO_ALU_OP_SUB  = 5'h6,
         MICRO_ALU_OP_SBC  = 5'h7,
-        MICRO_ALU_OP_INC  = 5'h8,
-        MICRO_ALU_OP_DEC  = 5'h9,
-        MICRO_ALU_OP_NEG  = 5'hA,
-        MICRO_ALU_OP_ROL  = 5'hB,
-        MICRO_ALU_OP_ROR  = 5'hC;
+        MICRO_ALU_OP_CMP  = 5'h8,
+        MICRO_ALU_OP_INC  = 5'h9,
+        MICRO_ALU_OP_DEC  = 5'hA,
+        MICRO_ALU_OP_NEG  = 5'hB,
+        MICRO_ALU_OP_ROL  = 5'hC,
+        MICRO_ALU_OP_ROR  = 5'hD;
 
     localparam
         MICRO_ALU8  = 1'b0,
