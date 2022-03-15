@@ -89,16 +89,6 @@ module s1c88
     //
     // * Implement alu decimal operations, and unpack operations.
     // * Use the correct page register depending on addressing mode.
-    // * Check if we still need to add NOP after bus operation if it's the
-    //   last micro. -- We can probably think of ways to implement this, but
-    //   for now we will continue using the nops. It's easy to remove them in
-    //   the future if we decide to do this.
-    // * I had to add execution on pl=1 during a cycle where next state is
-    //   execution and the current state is not an exception handling one. Now
-    //   I'm wondering again if we should not change the state at pk=1
-    //   instead. Trying it out might require a lot of work, but otherwise it
-    //   will be bothering me. Try documenting the process as much as
-    //   possible and try making graphs first.
 
     // For jump instruction we need: condition, offset (TA1/TA2). I think
     // we'll leave the mov instructions in there as common to all
@@ -1130,6 +1120,14 @@ module s1c88
                                     MICRO_MOV_B:
                                     begin
                                         data_out <= BA[15:8];
+                                    end
+                                    MICRO_MOV_L:
+                                    begin
+                                        data_out <= HL[7:0];
+                                    end
+                                    MICRO_MOV_H:
+                                    begin
+                                        data_out <= HL[15:8];
                                     end
                                     MICRO_MOV_IXL:
                                     begin

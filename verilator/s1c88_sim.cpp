@@ -100,6 +100,30 @@ void write_hardware_register(uint32_t address, uint8_t data)
         }
         break;
 
+        case 0x27:
+        {
+            printf("Writing hardware register IRQ_ACT1=");
+        }
+        break;
+
+        case 0x28:
+        {
+            printf("Writing hardware register IRQ_ACT2=");
+        }
+        break;
+
+        case 0x29:
+        {
+            printf("Writing hardware register IRQ_ACT3=");
+        }
+        break;
+
+        case 0x2A:
+        {
+            printf("Writing hardware register IRQ_ACT4=");
+        }
+        break;
+
         case 0x40:
         {
             printf("Writing hardware register TMR256_CTRL=");
@@ -139,6 +163,66 @@ void write_hardware_register(uint32_t address, uint8_t data)
         case 0x81:
         {
             printf("Writing hardware register PRC_RATE=");
+        }
+        break;
+
+        case 0x82:
+        {
+            printf("Writing hardware register PRC_MAP_LO=");
+        }
+        break;
+
+        case 0x83:
+        {
+            printf("Writing hardware register PRC_MAP_MID=");
+        }
+        break;
+
+        case 0x84:
+        {
+            printf("Writing hardware register PRC_MAP_HI=");
+        }
+        break;
+
+        case 0x85:
+        {
+            printf("Writing hardware register PRC_SCROLL_Y=");
+        }
+        break;
+
+        case 0x86:
+        {
+            printf("Writing hardware register PRC_SCROLL_X=");
+        }
+        break;
+
+        case 0x87:
+        {
+            printf("Writing hardware register PRC_SPR_LO=");
+        }
+        break;
+
+        case 0x88:
+        {
+            printf("Writing hardware register PRC_SPR_MID=");
+        }
+        break;
+
+        case 0x89:
+        {
+            printf("Writing hardware register PRC_SPR_HI=");
+        }
+        break;
+
+        case 0xFE:
+        {
+            printf("Writing hardware register LCD_CTRL=");
+        }
+        break;
+
+        case 0xFF:
+        {
+            printf("Writing hardware register LCD_DATA=");
         }
         break;
 
@@ -240,6 +324,12 @@ uint8_t read_hardware_register(uint32_t address)
         }
         break;
 
+        case 0x71:
+        {
+            printf("Reading hardware register AUD_VOL\n");
+        }
+        break;
+
         case 0x44:
         case 0x45:
         case 0x46:
@@ -291,7 +381,7 @@ int main(int argc, char** argv, char** env)
 
     int timestamp = 0;
     bool data_sent = false;
-    while (timestamp < 8000 && !Verilated::gotFinish())
+    while (timestamp < 45000 && !Verilated::gotFinish())
     {
         s1c88->clk = 1;
         s1c88->eval();
