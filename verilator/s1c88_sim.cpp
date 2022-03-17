@@ -17,7 +17,7 @@ enum
 uint32_t sec_cnt = 0;
 uint8_t sec_ctrl = 0;
 
-uint8_t registers[256];
+uint8_t registers[256] = {};
 
 void write_hardware_register(uint32_t address, uint8_t data)
 {
@@ -445,15 +445,17 @@ int main(int argc, char** argv, char** env)
 
     int timestamp = 0;
     bool data_sent = false;
-    while (timestamp < 300000 && !Verilated::gotFinish())
+    while (timestamp < 1470000 && !Verilated::gotFinish())
     {
         s1c88->clk = 1;
         s1c88->eval();
-        tfp->dump(timestamp++);
+        if(timestamp > 1400000) tfp->dump(timestamp);
+        timestamp++;
 
         s1c88->clk = 0;
         s1c88->eval();
-        tfp->dump(timestamp++);
+        if(timestamp > 1400000) tfp->dump(timestamp);
+        timestamp++;
 
         if(timestamp >= 8)
             s1c88->reset = 0;

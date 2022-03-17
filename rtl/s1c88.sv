@@ -87,8 +87,6 @@ module s1c88
 
     // @todo:
     //
-    // * Investigate why fixing the jump micro being called twice reduced the
-    //   clock cycles by 1?
     // * Implement alu decimal operations, and unpack operations.
     // * Use the correct page register depending on addressing mode.
 
