@@ -17,6 +17,8 @@ enum
 uint32_t sec_cnt = 0;
 uint8_t sec_ctrl = 0;
 
+uint8_t registers[256];
+
 void write_hardware_register(uint32_t address, uint8_t data)
 {
     switch(address)
@@ -246,87 +248,148 @@ void write_hardware_register(uint32_t address, uint8_t data)
             return;
         }
     }
-    printf("%x\n", data);
+    registers[address] = data;
+    printf("0x%x\n", data);
 }
 
 uint8_t read_hardware_register(uint32_t address)
 {
-    uint8_t data = 0;
+    uint8_t data = registers[address];
     switch(address)
     {
         case 0x0:
         {
-            printf("Reading hardware register SYS_CTRL1\n");
+            printf("Reading hardware register SYS_CTRL1=");
         }
         break;
 
         case 0x1:
         {
-            printf("Reading hardware register SYS_CTRL2\n");
+            printf("Reading hardware register SYS_CTRL2=");
         }
         break;
 
         case 0x2:
         {
-            printf("Reading hardware register SYS_CTRL3\n");
+            printf("Reading hardware register SYS_CTRL3=");
         }
         break;
 
         case 0x8:
         {
-            printf("Reading hardware register SEC_CTRL\n");
+            printf("Reading hardware register SEC_CTRL=");
             data = sec_ctrl;
         }
         break;
 
         case 0x9:
         {
-            printf("Reading hardware register SEC_CNT_LO\n");
+            printf("Reading hardware register SEC_CNT_LO=");
             data = sec_cnt & 0xFF;
         }
         break;
 
         case 0xA:
         {
-            printf("Reading hardware register SEC_CNT_MID\n");
+            printf("Reading hardware register SEC_CNT_MID=");
             data = (sec_cnt >> 8) & 0xFF;
         }
         break;
 
         case 0xB:
         {
-            printf("Reading hardware register SEC_CNT_MID\n");
+            printf("Reading hardware register SEC_CNT_MID=");
             data = (sec_cnt >> 16) & 0xFF;
         }
         break;
 
         case 0x52:
         {
-            printf("Reading hardware register KEY_PAD\n");
+            printf("Reading hardware register KEY_PAD=");
         }
         break;
 
         case 0x19:
         {
-            printf("Reading hardware register TMR1_ENA_OSC/TMR1_OSC\n");
+            printf("Reading hardware register TMR1_ENA_OSC/TMR1_OSC=");
         }
         break;
 
         case 0x60:
         {
-            printf("Reading hardware register IO_DIR\n");
+            printf("Reading hardware register IO_DIR=");
         }
         break;
 
         case 0x61:
         {
-            printf("Reading hardware register IO_DATA\n");
+            printf("Reading hardware register IO_DATA=");
         }
         break;
 
         case 0x71:
         {
-            printf("Reading hardware register AUD_VOL\n");
+            printf("Reading hardware register AUD_VOL=");
+        }
+        break;
+
+        case 0x80:
+        {
+            printf("Reading hardware register PRC_MODE=");
+        }
+        break;
+
+        case 0x81:
+        {
+            printf("Reading hardware register PRC_RATE=");
+        }
+        break;
+
+        case 0x82:
+        {
+            printf("Reading hardware register PRC_MAP_LO=");
+        }
+        break;
+
+        case 0x83:
+        {
+            printf("Reading hardware register PRC_MAP_MID=");
+        }
+        break;
+
+        case 0x84:
+        {
+            printf("Reading hardware register PRC_MAP_HI=");
+        }
+        break;
+
+        case 0x85:
+        {
+            printf("Reading hardware register PRC_SCROLL_Y=");
+        }
+        break;
+
+        case 0x86:
+        {
+            printf("Reading hardware register PRC_SCROLL_X=");
+        }
+        break;
+
+        case 0x87:
+        {
+            printf("Reading hardware register PRC_SPR_LO=");
+        }
+        break;
+
+        case 0x88:
+        {
+            printf("Reading hardware register PRC_SPR_MID=");
+        }
+        break;
+
+        case 0x89:
+        {
+            printf("Reading hardware register PRC_SPR_HI=");
         }
         break;
 
@@ -340,16 +403,17 @@ uint8_t read_hardware_register(uint32_t address)
         case 0x55:
         case 0x62:
         {
-            printf("Reading hardware register Unknown\n");
+            printf("Reading hardware register Unknown=");
         }
         break;
 
         default:
         {
-            printf("Reading hardware register 0x%x\n", address);
+            printf("Reading hardware register 0x%x=", address);
         }
         break;
     }
+    printf("0x%x\n", data);
     return data;
 }
 

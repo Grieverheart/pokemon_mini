@@ -1,19 +1,19 @@
 [*]
-[*] GTKWave Analyzer v3.3.111 (w)1999-2020 BSI
-[*] Mon Mar  7 22:27:07 2022
+[*] GTKWave Analyzer v3.3.107 (w)1999-2020 BSI
+[*] Thu Mar 17 00:25:00 2022
 [*]
-[dumpfile] "/home/nicktasios/Programming/fpga/pokemon_mini/verilator/sim.vcd"
-[dumpfile_mtime] "Mon Mar  7 22:24:41 2022"
-[dumpfile_size] 45655
-[savefile] "/home/nicktasios/Programming/fpga/pokemon_mini/verilator/sim.gtkw"
-[timestart] 315
-[size] 2560 1371
+[dumpfile] "/Users/nicktasios/Programming/fpga/pokemon_mini/verilator/sim.vcd"
+[dumpfile_mtime] "Thu Mar 17 00:22:27 2022"
+[dumpfile_size] 24186327
+[savefile] "/Users/nicktasios/Programming/fpga/pokemon_mini/verilator/sim.gtkw"
+[timestart] 66839
+[size] 1280 755
 [pos] -1 -1
-*-3.965784 461 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
-[sst_width] 227
-[signals_width] 412
+*-3.965784 66853 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[sst_width] 193
+[signals_width] 325
 [sst_expanded] 1
-[sst_vpaned_height] 857
+[sst_vpaned_height] 300
 @28
 s1c88.clk
 s1c88.pk
@@ -59,7 +59,7 @@ s1c88.reset_counter[1:0]
 s1c88.exception_process_step[2:0]
 @22
 s1c88.microinstruction_nearly_done
-@29
+@28
 s1c88.microinstruction_done
 @22
 s1c88.microprogram_counter[3:0]
@@ -154,7 +154,9 @@ s1c88.top_address[15:0]
 (15)s1c88.top_address[15:0]
 @1401200
 -group_end
-@c00200
+@24
+s1c88.B[7:0]
+@c00201
 -registers
 @c00022
 s1c88.PC[15:0]
@@ -175,6 +177,27 @@ s1c88.PC[15:0]
 (13)s1c88.PC[15:0]
 (14)s1c88.PC[15:0]
 (15)s1c88.PC[15:0]
+@1401200
+-group_end
+@c00022
+s1c88.HL[15:0]
+@28
+(0)s1c88.HL[15:0]
+(1)s1c88.HL[15:0]
+(2)s1c88.HL[15:0]
+(3)s1c88.HL[15:0]
+(4)s1c88.HL[15:0]
+(5)s1c88.HL[15:0]
+(6)s1c88.HL[15:0]
+(7)s1c88.HL[15:0]
+(8)s1c88.HL[15:0]
+(9)s1c88.HL[15:0]
+(10)s1c88.HL[15:0]
+(11)s1c88.HL[15:0]
+(12)s1c88.HL[15:0]
+(13)s1c88.HL[15:0]
+(14)s1c88.HL[15:0]
+(15)s1c88.HL[15:0]
 @1401200
 -group_end
 @c00022
@@ -213,7 +236,7 @@ s1c88.IY[15:0]
 s1c88.EP[7:0]
 s1c88.XP[7:0]
 s1c88.YP[7:0]
-@1401200
+@1401201
 -registers
 @c00200
 -alu
@@ -231,6 +254,7 @@ s1c88.alu_size
 @c00022
 #{error} s1c88.opcode_error s1c88.not_implemented_jump_error s1c88.not_implemented_data_out_error s1c88.not_implemented_mov_src_error s1c88.not_implemented_write_error
 @28
+s1c88.alu_op_error
 s1c88.opcode_error
 s1c88.not_implemented_jump_error
 s1c88.not_implemented_data_out_error

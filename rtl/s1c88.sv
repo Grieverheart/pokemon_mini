@@ -87,6 +87,8 @@ module s1c88
 
     // @todo:
     //
+    // * Investigate why fixing the jump micro being called twice reduced the
+    //   clock cycles by 1?
     // * Implement alu decimal operations, and unpack operations.
     // * Use the correct page register depending on addressing mode.
 
@@ -237,20 +239,26 @@ module s1c88
         MICRO_ADD_SP_DD1 = 6'h11;
 
     localparam [4:0]
-        MICRO_ALU_OP_NONE = 5'h0,
-        MICRO_ALU_OP_XOR  = 5'h1,
-        MICRO_ALU_OP_AND  = 5'h2,
-        MICRO_ALU_OP_OR   = 5'h3,
-        MICRO_ALU_OP_ADD  = 5'h4,
-        MICRO_ALU_OP_ADC  = 5'h5,
-        MICRO_ALU_OP_SUB  = 5'h6,
-        MICRO_ALU_OP_SBC  = 5'h7,
-        MICRO_ALU_OP_CMP  = 5'h8,
-        MICRO_ALU_OP_INC  = 5'h9,
-        MICRO_ALU_OP_DEC  = 5'hA,
-        MICRO_ALU_OP_NEG  = 5'hB,
-        MICRO_ALU_OP_ROL  = 5'hC,
-        MICRO_ALU_OP_ROR  = 5'hD;
+        MICRO_ALU_OP_NONE = 5'h00,
+        MICRO_ALU_OP_XOR  = 5'h01,
+        MICRO_ALU_OP_AND  = 5'h02,
+        MICRO_ALU_OP_OR   = 5'h03,
+        MICRO_ALU_OP_ADD  = 5'h04,
+        MICRO_ALU_OP_ADC  = 5'h05,
+        MICRO_ALU_OP_SUB  = 5'h06,
+        MICRO_ALU_OP_SBC  = 5'h07,
+        MICRO_ALU_OP_CMP  = 5'h08,
+        MICRO_ALU_OP_INC  = 5'h09,
+        MICRO_ALU_OP_DEC  = 5'h0A,
+        MICRO_ALU_OP_NEG  = 5'h0B,
+        MICRO_ALU_OP_RL   = 5'h0C,
+        MICRO_ALU_OP_RLC  = 5'h0D,
+        MICRO_ALU_OP_RR   = 5'h0E,
+        MICRO_ALU_OP_RRC  = 5'h0F,
+        MICRO_ALU_OP_SLL  = 5'h10,
+        MICRO_ALU_OP_SLA  = 5'h11,
+        MICRO_ALU_OP_SRL  = 5'h12,
+        MICRO_ALU_OP_SRA  = 5'h13;
 
     localparam
         MICRO_ALU8  = 1'b0,
@@ -561,6 +569,7 @@ module s1c88
         {opcode_extension[1:0], opext}:
         {2'd0, opcode};
 
+    reg alu_op_error;
     always_ff @ (negedge clk, posedge reset)
     begin
         if(reset)
@@ -568,6 +577,7 @@ module s1c88
         end
         else if(pl == 1)
         begin
+            alu_op_error <= 0;
             alu_size <= micro_alu_size;
             alu_flag_update <= micro_alu_flag_update;
 
@@ -602,14 +612,36 @@ module s1c88
                 MICRO_ALU_OP_NEG:
                     alu_op <= ALUOP_NEG;
 
-                MICRO_ALU_OP_ROL:
+                MICRO_ALU_OP_RL:
+                    alu_op <= ALUOP_ROLC;
+
+                MICRO_ALU_OP_RR:
+                    alu_op <= ALUOP_RORC;
+
+                MICRO_ALU_OP_RLC:
                     alu_op <= ALUOP_ROL;
 
-                MICRO_ALU_OP_ROR:
+                MICRO_ALU_OP_RRC:
                     alu_op <= ALUOP_ROR;
 
+                MICRO_ALU_OP_SLL:
+                    alu_op <= ALUOP_SHL;
+
+                MICRO_ALU_OP_SRL:
+                    alu_op <= ALUOP_SHR;
+
+                MICRO_ALU_OP_SLA:
+                    alu_op <= ALUOP_SHLA;
+
+                MICRO_ALU_OP_SRA:
+                    alu_op <= ALUOP_SHRA;
+
                 default:
+                begin
                     alu_op <= ALUOP_ADD;
+                    if(micro_alu_op != MICRO_ALU_OP_NONE)
+                        alu_op_error <= 1;
+                end
 
             endcase
         end
@@ -661,10 +693,10 @@ module s1c88
             MICRO_MOV_SPH:
                 SP[15:8] <= data[7:0];
 
-            MICRO_MOV_H:
+            MICRO_MOV_L:
                 HL[7:0]  <= data[7:0];
 
-            MICRO_MOV_L:
+            MICRO_MOV_H:
                 HL[15:8] <= data[7:0];
 
             MICRO_MOV_IMM:
@@ -899,12 +931,12 @@ module s1c88
                         state <= STATE_EXECUTE;
                         if(microinstruction_done)
                             fetch_opcode <= 1;
-                    end
 
-                    if(micro_op_type == MICRO_TYPE_JMP && jump_condition_true)
-                    begin
-                        address_out <= {9'd0, jump_dest[14:0]};
-                        branch_taken = 1;
+                        if(micro_op_type == MICRO_TYPE_JMP && jump_condition_true)
+                        begin
+                            address_out <= {9'd0, jump_dest[14:0]};
+                            branch_taken = 1;
+                        end
                     end
                 end
                 else
@@ -921,7 +953,7 @@ module s1c88
                                 SC[0] <= alu_flags[ALU_FLAG_Z];
                                 SC[3] <= alu_flags[ALU_FLAG_S];
                             end
-                            ALUOP_ADD, ALUOP_ADC, ALUOP_SUB, ALUOP_SBC, ALUOP_CMP, ALUOP_NEG:
+                            ALUOP_ADD, ALUOP_ADC, ALUOP_SUB, ALUOP_SBC, ALUOP_NEG:
                             begin
                                 SC[0] <= alu_flags[ALU_FLAG_Z];
                                 SC[1] <= alu_flags[ALU_FLAG_C];
@@ -1121,69 +1153,61 @@ module s1c88
                             begin
                                 case(micro_bus_reg)
                                     MICRO_MOV_A:
-                                    begin
                                         data_out <= BA[7:0];
-                                    end
+
                                     MICRO_MOV_B:
-                                    begin
                                         data_out <= BA[15:8];
-                                    end
+
                                     MICRO_MOV_L:
-                                    begin
                                         data_out <= HL[7:0];
-                                    end
+
                                     MICRO_MOV_H:
-                                    begin
                                         data_out <= HL[15:8];
-                                    end
+
                                     MICRO_MOV_IXL:
-                                    begin
                                         data_out <= IX[7:0];
-                                    end
+
                                     MICRO_MOV_IXH:
-                                    begin
                                         data_out <= IX[15:8];
-                                    end
+
                                     MICRO_MOV_IYL:
-                                    begin
                                         data_out <= IY[7:0];
-                                    end
+
                                     MICRO_MOV_IYH:
-                                    begin
                                         data_out <= IY[15:8];
-                                    end
+
                                     MICRO_MOV_ALU_A:
-                                    begin
                                         data_out <= alu_A[7:0];
-                                    end
+
                                     MICRO_MOV_ALU_B:
-                                    begin
                                         data_out <= alu_B[7:0];
-                                    end
+
                                     MICRO_MOV_IMML:
-                                    begin
                                         data_out <= imm_low;
-                                    end
+
                                     MICRO_MOV_IMMH:
-                                    begin
                                         data_out <= imm_high;
-                                    end
+
                                     MICRO_MOV_ALU_R:
-                                    begin
                                         data_out <= alu_R[7:0];
-                                    end
+
                                     MICRO_MOV_PCL:
-                                    begin
                                         data_out <= PC[7:0];
-                                    end
+
                                     MICRO_MOV_PCH:
-                                    begin
                                         data_out <= PC[15:8];
-                                    end
+
                                     MICRO_MOV_CB:
-                                    begin
                                         data_out <= CB;
-                                    end
+
+                                    MICRO_MOV_EP:
+                                        data_out <= EP;
+
+                                    MICRO_MOV_BR:
+                                        data_out <= BR;
+
+                                    MICRO_MOV_SC:
+                                        data_out <= SC;
 
                                     default:
                                     begin
