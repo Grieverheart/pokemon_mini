@@ -96,7 +96,7 @@ def num_string_to_binary_string(x):
 
 if __name__ == '__main__':
     microinstruction_width = 36
-    rom_bits = 10
+    rom_bits = 11
 
     root = os.path.abspath(os.path.join(os.path.dirname(__file__), '../'))
 
@@ -139,6 +139,7 @@ if __name__ == '__main__':
                     addresses[opcode] = microinstruction_address
         else:
             microcommands = line.split(' ')
+            microcommands = [x for x in microcommands if len(x) > 0]
             microcommands = [
                     localparam_dict[x] if x in localparam_dict else
                     num_string_to_binary_string(x)

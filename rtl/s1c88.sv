@@ -168,7 +168,6 @@ module s1c88
         MICRO_BUS_MEM_READ  = 1'd0,
         MICRO_BUS_MEM_WRITE = 1'd1;
 
-    // @todo: probably we also need to add L and H for at least alu operands.
     localparam [5:0]
         MICRO_MOV_NONE     = 6'h00,
         MICRO_MOV_A        = 6'h01,
@@ -206,7 +205,9 @@ module s1c88
         MICRO_MOV_ALU_BL   = 6'h21,
         MICRO_MOV_IMM      = 6'h22,
         MICRO_MOV_IMML     = 6'h23,
-        MICRO_MOV_IMMH     = 6'h24;
+        MICRO_MOV_IMMH     = 6'h24,
+        MICRO_MOV_ZERO     = 6'h25,
+        MICRO_MOV_FFFF     = 6'h26;
 
     // @note: Can probably reduce some resource usage by making all *1 address
     // micros be at an odd address.
@@ -256,7 +257,8 @@ module s1c88
         MICRO_ALU_OP_SLL  = 5'h10,
         MICRO_ALU_OP_SLA  = 5'h11,
         MICRO_ALU_OP_SRL  = 5'h12,
-        MICRO_ALU_OP_SRA  = 5'h13;
+        MICRO_ALU_OP_SRA  = 5'h13,
+        MICRO_ALU_OP_CPL  = 5'h14;
 
     localparam
         MICRO_ALU8  = 1'b0,
@@ -294,8 +296,8 @@ module s1c88
         MICRO_JMP_SHORT = 1'b0,
         MICRO_JMP_LONG  = 1'b1;
 
-    reg [9:0] translation_rom[0:767];
-    reg [35:0] rom[0:1023];
+    reg [10:0] translation_rom[0:767];
+    reg [35:0] rom[0:2047];
 
     assign write = pl && pk &&
         (state == STATE_EXECUTE) &&
@@ -369,7 +371,7 @@ module s1c88
     //  36        34          33      32   27   20        19    14  12   6
     // type alu_flag_write alu_size alu_op 0 jmp_size jmp_cond done mov mov
 
-    wire [35:0] micro_op = rom[microaddress + {6'd0, microprogram_counter}];
+    wire [35:0] micro_op = rom[microaddress + {7'd0, microprogram_counter}];
 
     wire [1:0] micro_op_type = micro_op[35:34];
 
@@ -397,7 +399,7 @@ module s1c88
         $signed(micro_jmp_long? imm: {{8{imm[7]}}, imm[7:0]});
 
     reg [3:0] microprogram_counter;
-    reg [9:0] microaddress;
+    reg [10:0] microaddress;
 
     task map_microinstruction_register(input [5:0] reg_id, output logic [15:0] register, output logic not_implemented_error);
         not_implemented_error = 0;
@@ -506,6 +508,12 @@ module s1c88
 
             MICRO_MOV_YP:
                 register = {8'd0, s1c88.YP};
+
+            MICRO_MOV_ZERO:
+                register = 16'd0;
+
+            MICRO_MOV_FFFF:
+                register = 16'hFFFF;
 
             default:
             begin
@@ -735,6 +743,12 @@ module s1c88
 
             MICRO_MOV_ALU_B:
                 alu_B <= data;
+
+            MICRO_MOV_ALU_BL:
+                alu_B[7:0] <= data[7:0];
+
+            MICRO_MOV_ALU_BH:
+                alu_B[15:8] <= data[7:0];
 
             default:
             begin
@@ -1014,22 +1028,42 @@ module s1c88
                     case(micro_bus_add)
                         MICRO_ADD_HL:
                         begin
-                            address_out <= {8'b0, HL};
+                            address_out <= {EP, HL};
+                        end
+
+                        MICRO_ADD_IX:
+                        begin
+                            address_out <= {XP, IX};
+                        end
+
+                        MICRO_ADD_IX1:
+                        begin
+                            address_out <= {XP, IX+16'd1};
+                        end
+
+                        MICRO_ADD_IY:
+                        begin
+                            address_out <= {YP, IY};
+                        end
+
+                        MICRO_ADD_IY1:
+                        begin
+                            address_out <= {XP, IY+16'd1};
                         end
 
                         MICRO_ADD_HL1:
                         begin
-                            address_out <= {8'b0, HL+16'd1};
+                            address_out <= {EP, HL+16'd1};
                         end
 
                         MICRO_ADD_HH_LL:
                         begin
-                            address_out <= {8'b0, imm};
+                            address_out <= {EP, imm};
                         end
 
                         MICRO_ADD_HH_LL1:
                         begin
-                            address_out <= {8'b0, imm+16'd1};
+                            address_out <= {EP, imm+16'd1};
                         end
 
                         MICRO_ADD_SP:
@@ -1048,7 +1082,7 @@ module s1c88
 
                         MICRO_ADD_BR:
                         begin
-                            address_out <= {8'b0, BR, imm_low};
+                            address_out <= {EP, BR, imm_low};
                         end
 
                         default:

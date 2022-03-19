@@ -315,6 +315,30 @@ uint8_t read_hardware_register(uint32_t address)
         }
         break;
 
+        case 0x27:
+        {
+            printf("Reading hardware register IRQ_ACT1=");
+        }
+        break;
+
+        case 0x28:
+        {
+            printf("Reading hardware register IRQ_ACT2=");
+        }
+        break;
+
+        case 0x29:
+        {
+            printf("Reading hardware register IRQ_ACT3=");
+        }
+        break;
+
+        case 0x2A:
+        {
+            printf("Reading hardware register IRQ_ACT4=");
+        }
+        break;
+
         case 0x60:
         {
             printf("Reading hardware register IO_DIR=");
@@ -425,6 +449,7 @@ int main(int argc, char** argv, char** env)
     fseek(fp, 0, SEEK_SET);  /* same as rewind(f); */
 
     uint8_t* bios = (uint8_t*) malloc(file_size);
+    uint8_t* bios_touched = (uint8_t*) calloc(file_size, 1);
     fread(bios, 1, file_size, fp);
     fclose(fp);
 
@@ -445,7 +470,7 @@ int main(int argc, char** argv, char** env)
 
     int timestamp = 0;
     bool data_sent = false;
-    while (timestamp < 1470000 && !Verilated::gotFinish())
+    while (timestamp < 1600000 && !Verilated::gotFinish())
     {
         s1c88->clk = 1;
         s1c88->eval();
@@ -480,12 +505,33 @@ int main(int argc, char** argv, char** env)
                 printf("** Instruction 0x%x not implemented **\n", s1c88->rootp->s1c88__DOT__extended_opcode);
         }
 
+        {
+            if(s1c88->rootp->s1c88__DOT__not_implemented_addressing_error == 1 && s1c88->pl == 0)
+                printf(" ** Addressing not implemented error ** \n");
+
+            if(s1c88->rootp->s1c88__DOT__not_implemented_jump_error == 1 && s1c88->pl == 0)
+                printf(" ** Jump not implemented error ** \n");
+
+            if(s1c88->rootp->s1c88__DOT__not_implemented_data_out_error == 1 && s1c88->pl == 0)
+                printf(" ** Data-out not implemented error ** \n");
+
+            if(s1c88->rootp->s1c88__DOT__not_implemented_mov_src_error == 1 && s1c88->pl == 0)
+                printf(" ** Mov src not implemented error ** \n");
+
+            if(s1c88->rootp->s1c88__DOT__not_implemented_write_error == 1 && s1c88->pl == 0)
+                printf(" ** Write not implemented error ** \n");
+
+            if(s1c88->rootp->s1c88__DOT__alu_op_error == 1 && s1c88->pl == 0)
+                printf(" ** Alu not implemented error ** \n");
+        }
+
         if(s1c88->bus_status == BUS_MEM_READ && s1c88->pl == 0) // Check if PL=0 just to reduce spam.
         {
             // memory read
             if(s1c88->address_out < 0x1000)
             {
                 // read from bios
+                bios_touched[s1c88->address_out & (file_size - 1)] = 1;
                 s1c88->data_in = *(bios + (s1c88->address_out & (file_size - 1)));
             }
             else if(s1c88->address_out < 0x2000)
@@ -502,7 +548,7 @@ int main(int argc, char** argv, char** env)
             else
             {
                 // read from cartridge
-                s1c88->data_in = 0xFA;//*(memory + (s1c88->address_out & 0x003FFF));
+                s1c88->data_in = 0;//*(memory + (s1c88->address_out & 0x003FFF));
             }
 
             data_sent = true;
@@ -537,6 +583,13 @@ int main(int argc, char** argv, char** env)
 
     tfp->close();
     delete s1c88;
+
+    size_t total_touched = 0;
+    for(size_t i = 0; i < file_size; ++i)
+    {
+        total_touched += bios_touched[i];
+    }
+    printf("%zu bytes out of total %zu read from bios.\n", total_touched, file_size);
 
     return 0;
 }
