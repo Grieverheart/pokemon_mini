@@ -16,6 +16,9 @@ enum
 
 uint32_t sec_cnt = 0;
 uint8_t sec_ctrl = 0;
+uint8_t prc_rate = 0;
+uint8_t prc_cnt = 1;
+uint8_t prc_rate_match = 0;
 
 uint8_t registers[256] = {};
 
@@ -24,20 +27,10 @@ void write_hardware_register(uint32_t address, uint8_t data)
     switch(address)
     {
         case 0x0:
-        {
-            printf("Writing hardware register SYS_CTRL1=");
-        }
-        break;
-
         case 0x1:
-        {
-            printf("Writing hardware register SYS_CTRL2=");
-        }
-        break;
-
         case 0x2:
         {
-            printf("Writing hardware register SYS_CTRL3=");
+            printf("Writing hardware register SYS_CTRL%d=", address+1);
         }
         break;
 
@@ -61,68 +54,28 @@ void write_hardware_register(uint32_t address, uint8_t data)
         break;
 
         case 0x20:
-        {
-            printf("Writing hardware register IRQ_PRI1=");
-        }
-        break;
-
         case 0x21:
-        {
-            printf("Writing hardware register IRQ_PRI2=");
-        }
-        break;
-
         case 0x22:
         {
-            printf("Writing hardware register IRQ_PRI3=");
+            printf("Writing hardware register IRQ_PRI%d=", address - 0x1F);
         }
         break;
 
         case 0x23:
-        {
-            printf("Writing hardware register IRQ_ENA1=");
-        }
-        break;
-
         case 0x24:
-        {
-            printf("Writing hardware register IRQ_ENA2=");
-        }
-        break;
-
         case 0x25:
-        {
-            printf("Writing hardware register IRQ_ENA3=");
-        }
-        break;
-
         case 0x26:
         {
-            printf("Writing hardware register IRQ_ENA4=");
+            printf("Writing hardware register IRQ_ENA%d=", address - 0x22);
         }
         break;
 
         case 0x27:
-        {
-            printf("Writing hardware register IRQ_ACT1=");
-        }
-        break;
-
         case 0x28:
-        {
-            printf("Writing hardware register IRQ_ACT2=");
-        }
-        break;
-
         case 0x29:
-        {
-            printf("Writing hardware register IRQ_ACT3=");
-        }
-        break;
-
         case 0x2A:
         {
-            printf("Writing hardware register IRQ_ACT4=");
+            printf("Writing hardware register IRQ_ACT%d=", address - 0x26);
         }
         break;
 
@@ -165,6 +118,19 @@ void write_hardware_register(uint32_t address, uint8_t data)
         case 0x81:
         {
             printf("Writing hardware register PRC_RATE=");
+            if((data & 0xE) != (prc_rate & 0xE)) prc_rate = data & 0xF;
+            else prc_rate = (prc_rate & 0xF0) | (data & 0x0F);
+			switch (prc_rate & 0x0E) {
+				case 0x00: prc_rate_match = 0x20; break;	// Rate /3
+				case 0x02: prc_rate_match = 0x50; break;	// Rate /6
+				case 0x04: prc_rate_match = 0x80; break;	// Rate /9
+				case 0x06: prc_rate_match = 0xB0; break;	// Rate /12
+				case 0x08: prc_rate_match = 0x10; break;	// Rate /2
+				case 0x0A: prc_rate_match = 0x30; break;	// Rate /4
+				case 0x0C: prc_rate_match = 0x50; break;	// Rate /6
+				case 0x0E: prc_rate_match = 0x70; break;	// Rate /8
+            }
+            
         }
         break;
 
@@ -258,20 +224,10 @@ uint8_t read_hardware_register(uint32_t address)
     switch(address)
     {
         case 0x0:
-        {
-            printf("Reading hardware register SYS_CTRL1=");
-        }
-        break;
-
         case 0x1:
-        {
-            printf("Reading hardware register SYS_CTRL2=");
-        }
-        break;
-
         case 0x2:
         {
-            printf("Reading hardware register SYS_CTRL3=");
+            printf("Reading hardware register SYS_CTRL%d=", address+1);
         }
         break;
 
@@ -316,26 +272,11 @@ uint8_t read_hardware_register(uint32_t address)
         break;
 
         case 0x27:
-        {
-            printf("Reading hardware register IRQ_ACT1=");
-        }
-        break;
-
         case 0x28:
-        {
-            printf("Reading hardware register IRQ_ACT2=");
-        }
-        break;
-
         case 0x29:
-        {
-            printf("Reading hardware register IRQ_ACT3=");
-        }
-        break;
-
         case 0x2A:
         {
-            printf("Reading hardware register IRQ_ACT4=");
+            printf("Reading hardware register IRQ_ACT%d=", address - 0x26);
         }
         break;
 
@@ -366,6 +307,7 @@ uint8_t read_hardware_register(uint32_t address)
         case 0x81:
         {
             printf("Reading hardware register PRC_RATE=");
+            data = prc_rate;
         }
         break;
 
@@ -462,9 +404,9 @@ int main(int argc, char** argv, char** env)
     s1c88->reset = 1;
 
     Verilated::traceEverOn(true);
-    VerilatedVcdC* tfp = new VerilatedVcdC;
-    s1c88->trace(tfp, 99);  // Trace 99 levels of hierarchy
-    tfp->open("sim.vcd");
+    //VerilatedVcdC* tfp = new VerilatedVcdC;
+    //s1c88->trace(tfp, 99);  // Trace 99 levels of hierarchy
+    //tfp->open("sim.vcd");
 
     int mem_counter = 0;
 
@@ -474,16 +416,37 @@ int main(int argc, char** argv, char** env)
     {
         s1c88->clk = 1;
         s1c88->eval();
-        if(timestamp > 1400000) tfp->dump(timestamp);
+        //if(timestamp > 1400000) tfp->dump(timestamp);
         timestamp++;
 
         s1c88->clk = 0;
         s1c88->eval();
-        if(timestamp > 1400000) tfp->dump(timestamp);
+        //if(timestamp > 1400000) tfp->dump(timestamp);
         timestamp++;
 
         if(timestamp >= 8)
             s1c88->reset = 0;
+
+        // PRC
+        if((timestamp/2 + 1) % 855 == 0)
+        {
+            ++prc_cnt;
+            if((prc_rate & 0xF0) == prc_rate_match)
+            {
+                // Active frame
+                if(prc_cnt == 0x42)
+                {
+                    prc_cnt = 1;
+                    prc_rate &= 0xF;
+                }
+            }
+            else if(prc_cnt == 0x42)
+            {
+                // Non-active frame
+                prc_cnt = 1;
+                prc_rate += 0x10;
+            }
+        }
 
         // At rising edge of clock
         if(data_sent)
@@ -505,6 +468,7 @@ int main(int argc, char** argv, char** env)
                 printf("** Instruction 0x%x not implemented **\n", s1c88->rootp->s1c88__DOT__extended_opcode);
         }
 
+        // Check for errors
         {
             if(s1c88->rootp->s1c88__DOT__not_implemented_addressing_error == 1 && s1c88->pl == 0)
                 printf(" ** Addressing not implemented error ** \n");
@@ -581,7 +545,7 @@ int main(int argc, char** argv, char** env)
         s1c88->eval();
     }
 
-    tfp->close();
+    //tfp->close();
     delete s1c88;
 
     size_t total_touched = 0;

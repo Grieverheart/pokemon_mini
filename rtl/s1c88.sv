@@ -1066,6 +1066,11 @@ module s1c88
                             address_out <= {EP, imm+16'd1};
                         end
 
+                        MICRO_ADD_KK:
+                        begin
+                            address_out <= {16'd0, imm[7:0]};
+                        end
+
                         MICRO_ADD_SP:
                         begin
                             if(micro_bus_op == MICRO_BUS_MEM_WRITE)
