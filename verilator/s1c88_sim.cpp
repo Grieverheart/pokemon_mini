@@ -6,6 +6,9 @@
 #include <cstring>
 #include <cstdint>
 
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#include "stb_image_write.h"
+
 enum
 {
     BUS_IDLE      = 0x0,
@@ -16,8 +19,10 @@ enum
 
 uint32_t sec_cnt = 0;
 uint8_t sec_ctrl = 0;
+uint32_t prc_map = 0;
+uint8_t prc_mode = 0;
 uint8_t prc_rate = 0;
-uint8_t prc_cnt = 1;
+uint8_t prc_cnt  = 1;
 uint8_t prc_rate_match = 0;
 
 uint8_t registers[256] = {};
@@ -112,6 +117,7 @@ void write_hardware_register(uint32_t address, uint8_t data)
         case 0x80:
         {
             printf("Writing hardware register PRC_MODE=");
+            prc_mode = data & 0x3F;
         }
         break;
 
@@ -137,18 +143,21 @@ void write_hardware_register(uint32_t address, uint8_t data)
         case 0x82:
         {
             printf("Writing hardware register PRC_MAP_LO=");
+            prc_map = (prc_map & 0xFFFFF00) | (data & 0xFF);
         }
         break;
 
         case 0x83:
         {
             printf("Writing hardware register PRC_MAP_MID=");
+            prc_map = (prc_map & 0xFFF00FF) | ((data & 0xFF) << 8);
         }
         break;
 
         case 0x84:
         {
             printf("Writing hardware register PRC_MAP_HI=");
+            prc_map = (prc_map & 0xF00FFFF) | ((data & 0xFF) << 16);
         }
         break;
 
@@ -301,6 +310,7 @@ uint8_t read_hardware_register(uint32_t address)
         case 0x80:
         {
             printf("Reading hardware register PRC_MODE=");
+            data = prc_mode;
         }
         break;
 
@@ -409,6 +419,7 @@ int main(int argc, char** argv, char** env)
     //tfp->open("sim.vcd");
 
     int mem_counter = 0;
+    int frame = 0;
 
     int timestamp = 0;
     bool data_sent = false;
@@ -434,6 +445,53 @@ int main(int argc, char** argv, char** env)
             if((prc_rate & 0xF0) == prc_rate_match)
             {
                 // Active frame
+                if(prc_mode & 0x2)
+                {
+                    printf("drawing...\n");
+                    int outaddr = 0x1000;
+                    int ltileidxaddr = -1;
+                    int tiletopaddr = 0;
+                    int tilebotaddr = 0;
+                    uint8_t image_data[96*64];
+                    for (int yC=0; yC<8; yC++)
+                    {
+                        int ty = (yC << 3);
+                        for (int xC=0; xC<96; xC++)
+                        {
+                            int tx = xC;
+                            int tileidxaddr = 0x1360 + (ty >> 3) * 12 + (tx >> 3);
+
+                            // Read tile index
+                            if(ltileidxaddr != tileidxaddr)
+                            {
+                                tiletopaddr = prc_map + memory[tileidxaddr & 0xFFF] * 8;
+                                tilebotaddr = prc_map + memory[(tileidxaddr + 12) & 0xFFF] * 8;
+                                ltileidxaddr = tileidxaddr;
+                            }
+
+                            // Read tile data
+                            uint8_t data = (memory[(tiletopaddr + (tx & 7)) & 0xFFF] >> (ty & 7))
+                                         | (memory[(tilebotaddr + (tx & 7)) & 0xFFF] << (8 - (ty & 7)));
+
+                            for(int i = 0; i < 8; ++i)
+                                image_data[96 * (8 * yC + i) + xC] = 255 * ((data >> i) & 1);
+
+                            // Write to VRAM
+                            memory[outaddr & 0xFFF] = /*(PRC_MODE & 0x01) ? ~data :*/ data;
+                            ++outaddr;
+                        }
+                    }
+                    char path[128];
+                    snprintf(path, 128, "temp/frame_%03d.png", frame);
+                    int has_error = !stbi_write_png(path, 96, 64, 1, image_data, 96);
+                    if(has_error) printf("Error saving image %s\n", path);
+
+                    fclose(fp);
+
+                    ++frame;
+                    prc_rate &= 0xF;
+                }
+
                 if(prc_cnt == 0x42)
                 {
                     prc_cnt = 1;
