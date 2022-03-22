@@ -490,8 +490,6 @@ int main(int argc, char** argv, char** env)
                     int has_error = !stbi_write_png(path, 96, 64, 1, image_data, 96);
                     if(has_error) printf("Error saving image %s\n", path);
 
-                    fclose(fp);
-
                     ++frame;
                     prc_cnt = 1;
                     prc_rate &= 0xF;
