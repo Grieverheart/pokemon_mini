@@ -81,6 +81,7 @@ void write_hardware_register(uint32_t address, uint8_t data)
         case 0x2A:
         {
             printf("Writing hardware register IRQ_ACT%d=", address - 0x26);
+            data = registers[address] & ~data;
         }
         break;
 
@@ -268,9 +269,21 @@ uint8_t read_hardware_register(uint32_t address)
         }
         break;
 
+        case 0x10:
+        {
+            printf("Reading hardware register SYS_BATT=");
+        }
+        break;
+
         case 0x52:
         {
             printf("Reading hardware register KEY_PAD=");
+        }
+        break;
+
+        case 0x53:
+        {
+            printf("Reading hardware register CART_BUS=");
         }
         break;
 
@@ -405,7 +418,7 @@ int main(int argc, char** argv, char** env)
     fread(bios, 1, file_size, fp);
     fclose(fp);
 
-    uint8_t* memory = (uint8_t*) malloc(4*1024);
+    uint8_t* memory = (uint8_t*) calloc(1, 4*1024);
 
     Verilated::commandArgs(argc, argv);
 
@@ -435,6 +448,9 @@ int main(int argc, char** argv, char** env)
         //if(timestamp > 1400000) tfp->dump(timestamp);
         timestamp++;
 
+        //if(s1c88->sync && s1c88->pl == 0)
+        //    printf("-- 0x%x\n", s1c88->rootp->s1c88__DOT__PC);
+
         if(timestamp >= 8)
             s1c88->reset = 0;
 
@@ -449,9 +465,6 @@ int main(int argc, char** argv, char** env)
                 {
                     printf("drawing...\n");
                     int outaddr = 0x1000;
-                    int ltileidxaddr = -1;
-                    int tiletopaddr = 0;
-                    int tilebotaddr = 0;
                     uint8_t image_data[96*64];
                     for (int yC=0; yC<8; yC++)
                     {
@@ -460,24 +473,15 @@ int main(int argc, char** argv, char** env)
                         {
                             int tx = xC;
                             int tileidxaddr = 0x1360 + (ty >> 3) * 12 + (tx >> 3);
-
-                            // Read tile index
-                            if(ltileidxaddr != tileidxaddr)
-                            {
-                                tiletopaddr = prc_map + memory[tileidxaddr & 0xFFF] * 8;
-                                tilebotaddr = prc_map + memory[(tileidxaddr + 12) & 0xFFF] * 8;
-                                ltileidxaddr = tileidxaddr;
-                            }
+                            int tiletopaddr = prc_map + memory[tileidxaddr & 0xFFF] * 8;
 
                             // Read tile data
-                            uint8_t data = (memory[(tiletopaddr + (tx & 7)) & 0xFFF] >> (ty & 7))
-                                         | (memory[(tilebotaddr + (tx & 7)) & 0xFFF] << (8 - (ty & 7)));
-
+                            uint8_t data = memory[(tiletopaddr + (tx & 7)) & 0xFFF];
                             for(int i = 0; i < 8; ++i)
                                 image_data[96 * (8 * yC + i) + xC] = 255 * ((data >> i) & 1);
 
                             // Write to VRAM
-                            memory[outaddr & 0xFFF] = /*(PRC_MODE & 0x01) ? ~data :*/ data;
+                            memory[outaddr & 0xFFF] = data;
                             ++outaddr;
                         }
                     }
@@ -489,6 +493,7 @@ int main(int argc, char** argv, char** env)
                     fclose(fp);
 
                     ++frame;
+                    prc_cnt = 1;
                     prc_rate &= 0xF;
                 }
 
@@ -565,6 +570,7 @@ int main(int argc, char** argv, char** env)
             else if(s1c88->address_out < 0x2100)
             {
                 // read from hardware registers
+                //printf("0x%x, 0x%x\n", s1c88->rootp->s1c88__DOT__top_address, s1c88->rootp->s1c88__DOT__extended_opcode);
                 s1c88->data_in = read_hardware_register(s1c88->address_out & 0x1FFF);
             }
             else
@@ -591,6 +597,7 @@ int main(int argc, char** argv, char** env)
             else if(s1c88->address_out < 0x2100)
             {
                 // write to hardware registers
+                //printf("0x%x, 0x%x\n", s1c88->rootp->s1c88__DOT__top_address, s1c88->rootp->s1c88__DOT__extended_opcode);
                 write_hardware_register(s1c88->address_out & 0x1FFF, s1c88->data_out);
             }
             else
@@ -608,9 +615,7 @@ int main(int argc, char** argv, char** env)
 
     size_t total_touched = 0;
     for(size_t i = 0; i < file_size; ++i)
-    {
         total_touched += bios_touched[i];
-    }
     printf("%zu bytes out of total %zu read from bios.\n", total_touched, file_size);
 
     return 0;

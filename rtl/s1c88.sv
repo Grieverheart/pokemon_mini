@@ -965,7 +965,13 @@ module s1c88
                                 SC[0] <= alu_flags[ALU_FLAG_Z];
                                 SC[3] <= alu_flags[ALU_FLAG_S];
                             end
-                            ALUOP_ADD, ALUOP_ADC, ALUOP_SUB, ALUOP_SBC, ALUOP_NEG:
+                            ALUOP_ROL, ALUOP_ROR, ALUOP_ROLC, ALUOP_RORC, ALUOP_SHL, ALUOP_SHR:
+                            begin
+                                SC[0] <= alu_flags[ALU_FLAG_Z];
+                                SC[1] <= alu_flags[ALU_FLAG_C];
+                                SC[3] <= alu_flags[ALU_FLAG_S];
+                            end
+                            ALUOP_ADD, ALUOP_ADC, ALUOP_SUB, ALUOP_SBC, ALUOP_NEG, ALUOP_SHLA, ALUOP_SHRA:
                             begin
                                 SC[0] <= alu_flags[ALU_FLAG_Z];
                                 SC[1] <= alu_flags[ALU_FLAG_C];
