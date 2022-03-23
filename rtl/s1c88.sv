@@ -4,6 +4,7 @@ module s1c88
     input clk,
     input reset,
     input [7:0] data_in,
+    input [3:0] irq,
     output logic pk,
     output logic pl,
 
@@ -11,6 +12,7 @@ module s1c88
     output logic [23:0] address_out,
     output logic [1:0]  bus_status,
     output logic read,
+    output logic read_interrupt_vector,
     output wire write,
     output wire sync,
     output logic iack
@@ -146,13 +148,13 @@ module s1c88
         STATE_EXC_PROCESS   = 3'd3;
 
     localparam [2:0]
-        EXCEPTION_TYPE_RESET   = 3'd0,
-        EXCEPTION_TYPE_DIVZERO = 3'd1,
-        EXCEPTION_TYPE_NMI     = 3'd2,
+        EXCEPTION_TYPE_NONE    = 3'd0,
+        EXCEPTION_TYPE_IRQ1    = 3'd1,
+        EXCEPTION_TYPE_IRQ2    = 3'd2,
         EXCEPTION_TYPE_IRQ3    = 3'd3,
-        EXCEPTION_TYPE_IRQ2    = 3'd4,
-        EXCEPTION_TYPE_IRQ1    = 3'd5,
-        EXCEPTION_TYPE_NONE    = 3'd6;
+        EXCEPTION_TYPE_NMI     = 3'd4,
+        EXCEPTION_TYPE_DIVZERO = 3'd5,
+        EXCEPTION_TYPE_RESET   = 3'd6;
 
     localparam [1:0]
         MICRO_TYPE_MISC = 2'd0,
@@ -542,7 +544,7 @@ module s1c88
                                                 STATE_EXECUTE):
 
         (state == STATE_EXC_PROCESS) ?
-            (need_opext                       ? STATE_OPEXT_READ:
+            (need_opext                       ? STATE_OPEXT_READ: // @todo: Remove this line.
                                                 STATE_EXECUTE):
 
         (state == STATE_EXECUTE) ?
@@ -758,6 +760,13 @@ module s1c88
         endcase
     endtask
 
+    wire [2:0] exception_factor = 
+         (irq[3])?                    3'd4:
+        ((irq[2] && SC[7:6] < 2'd3)?  3'd3:
+        ((irq[1] && SC[7:6] < 2'd2)?  3'd2:
+         (irq[0] && SC[7:6] == 2'd0)? 3'd1:
+                                      3'd0));
+
     reg jump_condition_true;
     reg not_implemented_jump_error;
     always_comb
@@ -854,6 +863,9 @@ module s1c88
         end
         else
         begin
+            if(exception_factor != 0 && exception != EXCEPTION_TYPE_RESET)
+                exception <= exception_factor;
+
             pl <= ~pl;
             if(pl == 0)
             begin
@@ -874,12 +886,14 @@ module s1c88
                 bus_status <= BUS_COMMAND_MEM_READ;
                 fetch_opcode <= 0;
 
-                if(next_state == STATE_EXECUTE)
+                if(next_state == STATE_EXECUTE) // @todo: || (state == STATE_EXECUTE && !fetch_opcode))
                 begin
                     if(microinstruction_done && exception == EXCEPTION_TYPE_NONE)
                         fetch_opcode <= 1;
                 end
 
+                // @todo: We need to do this when the curernt instruction is
+                // done. For reset it's different?
                 if(exception != EXCEPTION_TYPE_NONE && iack == 0)
                 begin
                     iack                   <= 1;

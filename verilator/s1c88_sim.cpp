@@ -427,32 +427,46 @@ int main(int argc, char** argv, char** env)
     s1c88->reset = 1;
 
     Verilated::traceEverOn(true);
-    //VerilatedVcdC* tfp = new VerilatedVcdC;
-    //s1c88->trace(tfp, 99);  // Trace 99 levels of hierarchy
-    //tfp->open("sim.vcd");
+    VerilatedVcdC* tfp = new VerilatedVcdC;
+    s1c88->trace(tfp, 99);  // Trace 99 levels of hierarchy
+    tfp->open("sim.vcd");
 
     int mem_counter = 0;
     int frame = 0;
 
     int timestamp = 0;
     bool data_sent = false;
-    while (timestamp < 1600000 && !Verilated::gotFinish())
+    bool stall_cpu = 0;
+    while (timestamp < 1200 && !Verilated::gotFinish())
     {
-        s1c88->clk = 1;
-        s1c88->eval();
-        //if(timestamp > 1400000) tfp->dump(timestamp);
-        timestamp++;
+        if(!stall_cpu)
+        {
+            s1c88->clk = 1;
+            s1c88->eval();
+            tfp->dump(timestamp);
+            timestamp++;
 
-        s1c88->clk = 0;
-        s1c88->eval();
-        //if(timestamp > 1400000) tfp->dump(timestamp);
-        timestamp++;
+            s1c88->clk = 0;
+            s1c88->eval();
+            tfp->dump(timestamp);
+            timestamp++;
+        }
+        else timestamp += 2;
 
         //if(s1c88->sync && s1c88->pl == 0)
         //    printf("-- 0x%x\n", s1c88->rootp->s1c88__DOT__PC);
 
         if(timestamp >= 8)
             s1c88->reset = 0;
+
+        if(timestamp == 258)
+        {
+            s1c88->irq = 1 << 3;
+        }
+        if(timestamp > 258 && s1c88->iack == 1)
+        {
+            s1c88->irq = 0;
+        }
 
         // PRC
         if((timestamp/2 + 1) % 855 == 0)
@@ -461,44 +475,51 @@ int main(int argc, char** argv, char** env)
             if((prc_rate & 0xF0) == prc_rate_match)
             {
                 // Active frame
-                if(prc_mode & 0x2)
+                if(prc_cnt == 0x18)
                 {
-                    printf("drawing...\n");
-                    int outaddr = 0x1000;
-                    uint8_t image_data[96*64];
-                    for (int yC=0; yC<8; yC++)
+                    if(prc_mode & 0x2)
                     {
-                        int ty = (yC << 3);
-                        for (int xC=0; xC<96; xC++)
+                        stall_cpu = 1;
+
+                        printf("drawing... %d\n", timestamp/2);
+                        int outaddr = 0x1000;
+                        uint8_t image_data[96*64];
+                        for (int yC=0; yC<8; yC++)
                         {
-                            int tx = xC;
-                            int tileidxaddr = 0x1360 + (ty >> 3) * 12 + (tx >> 3);
-                            int tiletopaddr = prc_map + memory[tileidxaddr & 0xFFF] * 8;
+                            int ty = (yC << 3);
+                            for (int xC=0; xC<96; xC++)
+                            {
+                                int tx = xC;
+                                int tileidxaddr = 0x1360 + (ty >> 3) * 12 + (tx >> 3);
+                                int tiletopaddr = prc_map + memory[tileidxaddr & 0xFFF] * 8;
 
-                            // Read tile data
-                            uint8_t data = memory[(tiletopaddr + (tx & 7)) & 0xFFF];
-                            for(int i = 0; i < 8; ++i)
-                                image_data[96 * (8 * yC + i) + xC] = 255 * ((data >> i) & 1);
+                                // Read tile data
+                                uint8_t data = memory[(tiletopaddr + (tx & 7)) & 0xFFF];
+                                for(int i = 0; i < 8; ++i)
+                                    image_data[96 * (8 * yC + i) + xC] = 255 * ((data >> i) & 1);
 
-                            // Write to VRAM
-                            memory[outaddr & 0xFFF] = data;
-                            ++outaddr;
+                                // Write to VRAM
+                                memory[outaddr & 0xFFF] = data;
+                                ++outaddr;
+                            }
                         }
+                        char path[128];
+                        snprintf(path, 128, "temp/frame_%03d.png", frame);
+                        int has_error = !stbi_write_png(path, 96, 64, 1, image_data, 96);
+                        if(has_error) printf("Error saving image %s\n", path);
+
+                        ++frame;
                     }
-                    char path[128];
-                    snprintf(path, 128, "temp/frame_%03d.png", frame);
-                    int has_error = !stbi_write_png(path, 96, 64, 1, image_data, 96);
-                    if(has_error) printf("Error saving image %s\n", path);
-
-                    ++frame;
-                    prc_cnt = 1;
-                    prc_rate &= 0xF;
                 }
-
-                if(prc_cnt == 0x42)
+                else if(prc_cnt == 0x39)
                 {
+                }
+                else if(prc_cnt == 0x42)
+                {
+                    stall_cpu = 0;
                     prc_cnt = 1;
                     prc_rate &= 0xF;
+                    registers[0x27] |= 0x40;
                 }
             }
             else if(prc_cnt == 0x42)
@@ -608,7 +629,7 @@ int main(int argc, char** argv, char** env)
         s1c88->eval();
     }
 
-    //tfp->close();
+    tfp->close();
     delete s1c88;
 
     size_t total_touched = 0;
