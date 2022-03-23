@@ -863,12 +863,13 @@ module s1c88
         end
         else
         begin
-            if(exception_factor != 0 && exception != EXCEPTION_TYPE_RESET)
-                exception <= exception_factor;
 
             pl <= ~pl;
             if(pl == 0)
             begin
+                if(exception_factor != 0 && exception != EXCEPTION_TYPE_RESET)
+                    exception <= exception_factor;
+
                 not_implemented_write_error <= 0;
 
                 if(fetch_opcode)
@@ -882,7 +883,9 @@ module s1c88
             begin
                 address_out <= {9'd0, PC[14:0]};
 
-                state <= next_state;
+                if(exception == EXCEPTION_TYPE_NONE || iack == 1)
+                    state <= next_state;
+
                 bus_status <= BUS_COMMAND_MEM_READ;
                 fetch_opcode <= 0;
 
@@ -892,8 +895,6 @@ module s1c88
                         fetch_opcode <= 1;
                 end
 
-                // @todo: We need to do this when the curernt instruction is
-                // done. For reset it's different?
                 if(exception != EXCEPTION_TYPE_NONE && iack == 0)
                 begin
                     iack                   <= 1;
@@ -910,11 +911,11 @@ module s1c88
 
                 if(pl == 0)
                 begin
-                    if(exception_process_step == 2)
+                    if(exception_process_step == 1)
                     begin
                         PC[7:0] <= data_in;
                     end
-                    else if(exception_process_step == 3)
+                    else if(exception_process_step == 2)
                     begin
                         PC[15:8] <= data_in;
                     end
@@ -923,17 +924,17 @@ module s1c88
                 begin
                     exception_process_step <= exception_process_step + 1;
 
-                    if(exception_process_step == 1)
+                    if(exception_process_step == 0)
                     begin
                         address_out <= 0;
                     end
-                    else if(exception_process_step == 2)
+                    else if(exception_process_step == 1)
                     begin
                         address_out <= 1;
                         iack        <= 0;
                         exception   <= EXCEPTION_TYPE_NONE;
                     end
-                    else if(exception_process_step == 3)
+                    else if(exception_process_step == 2)
                     begin
                         fetch_opcode <= 1;
                         state        <= next_state;
@@ -1136,6 +1137,7 @@ module s1c88
         begin
             pk <= ~pk;
             read <= 0;
+            //read_interrupt_vector <= 0;
             not_implemented_data_out_error <= 0;
 
             if(fetch_opcode)
@@ -1167,7 +1169,10 @@ module s1c88
                 begin
                     if(pk == 0)
                     begin
-                        if(exception_process_step <= 3)
+                        //if(exception_process_step == 0)
+                        //    read_interrupt_vector <= 1;
+
+                        if(exception_process_step <= 2)
                         begin
                             read <= 1;
                         end

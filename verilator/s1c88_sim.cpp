@@ -456,18 +456,6 @@ int main(int argc, char** argv, char** env)
         //if(s1c88->sync && s1c88->pl == 0)
         //    printf("-- 0x%x\n", s1c88->rootp->s1c88__DOT__PC);
 
-        if(timestamp >= 8)
-            s1c88->reset = 0;
-
-        if(timestamp == 258)
-        {
-            s1c88->irq = 1 << 3;
-        }
-        if(timestamp > 258 && s1c88->iack == 1)
-        {
-            s1c88->irq = 0;
-        }
-
         // PRC
         if((timestamp/2 + 1) % 855 == 0)
         {
@@ -569,6 +557,19 @@ int main(int argc, char** argv, char** env)
 
             if(s1c88->rootp->s1c88__DOT__alu_op_error == 1 && s1c88->pl == 0)
                 printf(" ** Alu not implemented error ** \n");
+        }
+
+        if(timestamp >= 8)
+            s1c88->reset = 0;
+
+        if(timestamp == 258)
+        {
+            s1c88->irq = 1 << 3;
+        }
+        if(timestamp > 258 && s1c88->iack == 1)
+        {
+            s1c88->irq = 0;
+            //s1c88->data_in = 0x3;
         }
 
         if(s1c88->bus_status == BUS_MEM_READ && s1c88->pl == 0) // Check if PL=0 just to reduce spam.
