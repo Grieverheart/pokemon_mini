@@ -426,10 +426,15 @@ int main(int argc, char** argv, char** env)
     s1c88->clk = 0;
     s1c88->reset = 1;
 
-    Verilated::traceEverOn(true);
-    VerilatedVcdC* tfp = new VerilatedVcdC;
-    s1c88->trace(tfp, 99);  // Trace 99 levels of hierarchy
-    tfp->open("sim.vcd");
+    bool dump = false;
+    VerilatedVcdC* tfp;
+    if(dump)
+    {
+        Verilated::traceEverOn(true);
+        tfp = new VerilatedVcdC;
+        s1c88->trace(tfp, 99);  // Trace 99 levels of hierarchy
+        tfp->open("sim.vcd");
+    }
 
     int mem_counter = 0;
     int frame = 0;
@@ -437,18 +442,18 @@ int main(int argc, char** argv, char** env)
     int timestamp = 0;
     bool data_sent = false;
     bool stall_cpu = 0;
-    while (timestamp < 8800 && !Verilated::gotFinish())
+    while (timestamp < 2500000 && !Verilated::gotFinish())
     {
         if(!stall_cpu)
         {
             s1c88->clk = 1;
             s1c88->eval();
-            tfp->dump(timestamp);
+            if(dump) tfp->dump(timestamp);
             timestamp++;
 
             s1c88->clk = 0;
             s1c88->eval();
-            tfp->dump(timestamp);
+            if(dump) tfp->dump(timestamp);
             timestamp++;
         }
         else timestamp += 2;
@@ -469,7 +474,7 @@ int main(int argc, char** argv, char** env)
                     {
                         stall_cpu = 1;
 
-                        printf("drawing... %d\n", timestamp/2);
+                        printf("drawing... %d: i01: 0x%x\n", timestamp/2, s1c88->i01);
                         int outaddr = 0x1000;
                         uint8_t image_data[96*64];
                         for (int yC=0; yC<8; yC++)
@@ -630,7 +635,7 @@ int main(int argc, char** argv, char** env)
         s1c88->eval();
     }
 
-    tfp->close();
+    if(dump) tfp->close();
     delete s1c88;
 
     size_t total_touched = 0;

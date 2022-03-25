@@ -7,6 +7,7 @@ module s1c88
     input [3:0] irq,
     output logic pk,
     output logic pl,
+    output wire [1:0] i01,
 
     output logic [7:0] data_out,
     output logic [23:0] address_out,
@@ -134,6 +135,9 @@ module s1c88
     //
     // @note: Perhaps MICRO_MOV_TA1/2 are not required after implementing the
     // jump micro.
+
+
+    assign i01 = SC[7:6];
 
     localparam [1:0]
         BUS_COMMAND_IDLE      = 2'd0,
