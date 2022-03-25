@@ -1226,7 +1226,11 @@ module s1c88
                         else if(exception_process_step == 3)
                             data_out <= PC[7:0];
                         else if(exception_process_step == 4)
+                        begin
                             data_out <= SC;
+                            if(exception == EXCEPTION_TYPE_RESET)
+                                read <= 1;
+                        end
                         else if(exception_process_step >= 5)
                         begin
                             read <= 1;
@@ -1247,7 +1251,11 @@ module s1c88
 
                 STATE_EXECUTE:
                 begin
-                    if(!microinstruction_done && pk == 1)
+                    // Don't increment if the microinstruction is done or if
+                    // fetching next opcode.
+                    // @todo: Check if we can just remove the condition on
+                    // microinstruction_done.
+                    if(pk == 1 && !microinstruction_done && !fetch_opcode)
                     begin
                         microprogram_counter <= microprogram_counter + 1;
                     end
@@ -1325,6 +1333,12 @@ module s1c88
 
                                     MICRO_MOV_SC:
                                         data_out <= SC;
+
+                                    MICRO_MOV_XP:
+                                        data_out <= XP;
+
+                                    MICRO_MOV_YP:
+                                        data_out <= YP;
 
                                     default:
                                     begin

@@ -437,7 +437,7 @@ int main(int argc, char** argv, char** env)
     int timestamp = 0;
     bool data_sent = false;
     bool stall_cpu = 0;
-    while (timestamp < 1200 && !Verilated::gotFinish())
+    while (timestamp < 8800 && !Verilated::gotFinish())
     {
         if(!stall_cpu)
         {
@@ -546,7 +546,7 @@ int main(int argc, char** argv, char** env)
             if(s1c88->rootp->s1c88__DOT__not_implemented_jump_error == 1 && s1c88->pl == 0)
                 printf(" ** Jump not implemented error ** \n");
 
-            if(s1c88->rootp->s1c88__DOT__not_implemented_data_out_error == 1 && s1c88->pl == 0)
+            if(s1c88->rootp->s1c88__DOT__not_implemented_data_out_error == 1 && s1c88->pl == 1)
                 printf(" ** Data-out not implemented error ** \n");
 
             if(s1c88->rootp->s1c88__DOT__not_implemented_mov_src_error == 1 && s1c88->pl == 0)
@@ -562,15 +562,15 @@ int main(int argc, char** argv, char** env)
         if(timestamp >= 8)
             s1c88->reset = 0;
 
-        if(timestamp == 258)
-        {
-            s1c88->irq = 1 << 3;
-        }
-        else if(timestamp > 258 && s1c88->iack == 1 && s1c88->pl == 0)
-        {
-            s1c88->irq = 0;
-            s1c88->data_in = 0x8;
-        }
+        //if(timestamp == 258)
+        //{
+        //    s1c88->irq = 1 << 3;
+        //}
+        //else if(timestamp > 258 && s1c88->iack == 1 && s1c88->pl == 0)
+        //{
+        //    s1c88->irq = 0;
+        //    s1c88->data_in = 0x8;
+        //}
 
         if(s1c88->bus_status == BUS_MEM_READ && s1c88->pl == 0) // Check if PL=0 just to reduce spam.
         {
