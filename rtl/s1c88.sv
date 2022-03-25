@@ -302,10 +302,14 @@ module s1c88
     reg [35:0] rom[0:2047];
 
     assign write = pl && pk &&
-        (state == STATE_EXECUTE) &&
-        (micro_op_type == MICRO_TYPE_BUS) &&
-        (micro_bus_op == MICRO_BUS_MEM_WRITE);/* &&
-        !microinstruction_done;*/
+          (exception != EXCEPTION_TYPE_RESET) &&
+        (((state == STATE_EXECUTE) &&
+          (micro_op_type == MICRO_TYPE_BUS) &&
+          (micro_bus_op == MICRO_BUS_MEM_WRITE)) ||
+
+         ((exception != EXCEPTION_TYPE_NONE) &&
+          (exception_process_step > 0 && exception_process_step < 5))
+        );
 
     initial
     begin
@@ -565,7 +569,8 @@ module s1c88
     reg [1:0] reset_counter;
     reg [2:0] exception = EXCEPTION_TYPE_NONE;
 
-    reg [2:0] exception_process_step;
+    reg [3:0] exception_process_step;
+    reg [7:0] irq_vector_address;
 
     wire need_opext = (opcode == 8'hCE) | (opcode == 8'hCF);
 
@@ -842,6 +847,7 @@ module s1c88
             bus_status           <= BUS_COMMAND_IDLE;
             reset_counter        <= 0;
             exception            <= EXCEPTION_TYPE_RESET;
+            irq_vector_address   <= 0;
             fetch_opcode         <= 0;
             top_address          <= 0;
             not_implemented_write_error <= 0;
@@ -882,25 +888,36 @@ module s1c88
             else if(pl == 1)
             begin
                 address_out <= {9'd0, PC[14:0]};
+                bus_status <= BUS_COMMAND_MEM_READ;
+                fetch_opcode <= 0;
+                //bus_status <= BUS_COMMAND_IRQ_READ;
 
                 if(exception == EXCEPTION_TYPE_NONE || iack == 1)
                     state <= next_state;
 
-                bus_status <= BUS_COMMAND_MEM_READ;
-                fetch_opcode <= 0;
+                if(next_state == STATE_EXC_PROCESS && exception_process_step == 0 && iack == 1)
+                    bus_status <= BUS_COMMAND_IRQ_READ;
 
-                if(next_state == STATE_EXECUTE) // @todo: || (state == STATE_EXECUTE && !fetch_opcode))
+                else if(exception == EXCEPTION_TYPE_RESET && iack == 0)
                 begin
-                    if(microinstruction_done && exception == EXCEPTION_TYPE_NONE)
-                        fetch_opcode <= 1;
+                    fetch_opcode           <= 1;
+                    iack                   <= 1;
+                    address_out            <= 24'hDEFACE;
+                    exception_process_step <= 4;
                 end
 
-                if(exception != EXCEPTION_TYPE_NONE && iack == 0)
+                if(next_state == STATE_EXECUTE || (state == STATE_EXECUTE && !fetch_opcode))
                 begin
-                    iack                   <= 1;
-                    fetch_opcode           <= 1;
-                    address_out            <= 24'hDEFACE;
-                    exception_process_step <= 0;
+                    if(microinstruction_done)
+                    begin
+                        fetch_opcode <= 1;
+
+                        if(exception != EXCEPTION_TYPE_NONE && iack == 0)
+                        begin
+                            iack                   <= 1;
+                            exception_process_step <= 0;
+                        end
+                    end
                 end
             end
 
@@ -911,11 +928,15 @@ module s1c88
 
                 if(pl == 0)
                 begin
-                    if(exception_process_step == 1)
+                    if(exception_process_step == 0)
+                    begin
+                        irq_vector_address <= data_in;
+                    end
+                    else if(exception_process_step == 5)
                     begin
                         PC[7:0] <= data_in;
                     end
-                    else if(exception_process_step == 2)
+                    else if(exception_process_step == 6)
                     begin
                         PC[15:8] <= data_in;
                     end
@@ -926,15 +947,39 @@ module s1c88
 
                     if(exception_process_step == 0)
                     begin
-                        address_out <= 0;
+                        bus_status <= BUS_COMMAND_MEM_WRITE;
+                        address_out <= {8'b0, SP - 16'd1};
+                        SP <= SP - 1;
                     end
                     else if(exception_process_step == 1)
                     begin
-                        address_out <= 1;
+                        bus_status <= BUS_COMMAND_MEM_WRITE;
+                        address_out <= {8'b0, SP - 16'd1};
+                        SP <= SP - 1;
+                    end
+                    else if(exception_process_step == 2)
+                    begin
+                        bus_status <= BUS_COMMAND_MEM_WRITE;
+                        address_out <= {8'b0, SP - 16'd1};
+                        SP <= SP - 1;
+                    end
+                    else if(exception_process_step == 3)
+                    begin
+                        bus_status <= BUS_COMMAND_MEM_WRITE;
+                        address_out <= {8'b0, SP - 16'd1};
+                        SP <= SP - 1;
+                    end
+                    else if(exception_process_step == 4)
+                    begin
+                        address_out <= {16'd0, irq_vector_address};
+                    end
+                    else if(exception_process_step == 5)
+                    begin
+                        address_out <= {16'd0, irq_vector_address + 8'd1};
                         iack        <= 0;
                         exception   <= EXCEPTION_TYPE_NONE;
                     end
-                    else if(exception_process_step == 2)
+                    else if(exception_process_step == 6)
                     begin
                         fetch_opcode <= 1;
                         state        <= next_state;
@@ -956,8 +1001,6 @@ module s1c88
                     if(!fetch_opcode)
                     begin
                         state <= STATE_EXECUTE;
-                        if(microinstruction_done)
-                            fetch_opcode <= 1;
 
                         if(micro_op_type == MICRO_TYPE_JMP && jump_condition_true)
                         begin
@@ -1137,7 +1180,7 @@ module s1c88
         begin
             pk <= ~pk;
             read <= 0;
-            //read_interrupt_vector <= 0;
+            read_interrupt_vector <= 0;
             not_implemented_data_out_error <= 0;
 
             if(fetch_opcode)
@@ -1169,10 +1212,17 @@ module s1c88
                 begin
                     if(pk == 0)
                     begin
-                        //if(exception_process_step == 0)
-                        //    read_interrupt_vector <= 1;
-
-                        if(exception_process_step <= 2)
+                        if(exception_process_step == 0)
+                            read_interrupt_vector <= 1;
+                        else if(exception_process_step == 1)
+                            data_out <= CB;
+                        else if(exception_process_step == 2)
+                            data_out <= PC[15:8];
+                        else if(exception_process_step == 3)
+                            data_out <= PC[7:0];
+                        else if(exception_process_step == 4)
+                            data_out <= SC;
+                        else if(exception_process_step >= 5)
                         begin
                             read <= 1;
                         end

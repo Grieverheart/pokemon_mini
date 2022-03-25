@@ -566,10 +566,10 @@ int main(int argc, char** argv, char** env)
         {
             s1c88->irq = 1 << 3;
         }
-        if(timestamp > 258 && s1c88->iack == 1)
+        else if(timestamp > 258 && s1c88->iack == 1 && s1c88->pl == 0)
         {
             s1c88->irq = 0;
-            //s1c88->data_in = 0x3;
+            s1c88->data_in = 0x8;
         }
 
         if(s1c88->bus_status == BUS_MEM_READ && s1c88->pl == 0) // Check if PL=0 just to reduce spam.
