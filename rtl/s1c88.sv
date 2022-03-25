@@ -972,6 +972,11 @@ module s1c88
                     else if(exception_process_step == 4)
                     begin
                         address_out <= {16'd0, irq_vector_address};
+                        // @important: in the CPU manual, it shows that i0,i1
+                        // are being set at pk == 0. Here we set all registers
+                        // at pl cycles to make it slightly easier, otherwise
+                        // we need to treat SC separately.
+                        SC[7:6] <= (exception < EXCEPTION_TYPE_NMI)? exception[1:0]: 2'h3;
                     end
                     else if(exception_process_step == 5)
                     begin
