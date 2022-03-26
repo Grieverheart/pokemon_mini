@@ -441,22 +441,17 @@ int main(int argc, char** argv, char** env)
 
     int timestamp = 0;
     bool data_sent = false;
-    bool stall_cpu = 0;
     while (timestamp < 2500000 && !Verilated::gotFinish())
     {
-        if(!stall_cpu)
-        {
-            s1c88->clk = 1;
-            s1c88->eval();
-            if(dump) tfp->dump(timestamp);
-            timestamp++;
+        s1c88->clk = 1;
+        s1c88->eval();
+        if(dump) tfp->dump(timestamp);
+        timestamp++;
 
-            s1c88->clk = 0;
-            s1c88->eval();
-            if(dump) tfp->dump(timestamp);
-            timestamp++;
-        }
-        else timestamp += 2;
+        s1c88->clk = 0;
+        s1c88->eval();
+        if(dump) tfp->dump(timestamp);
+        timestamp++;
 
         //if(s1c88->sync && s1c88->pl == 0)
         //    printf("-- 0x%x\n", s1c88->rootp->s1c88__DOT__PC);
@@ -472,8 +467,6 @@ int main(int argc, char** argv, char** env)
                 {
                     if(prc_mode & 0x2)
                     {
-                        stall_cpu = 1;
-
                         printf("drawing... %d: i01: 0x%x\n", timestamp/2, s1c88->i01);
                         int outaddr = 0x1000;
                         uint8_t image_data[96*64];
@@ -509,7 +502,6 @@ int main(int argc, char** argv, char** env)
                 }
                 else if(prc_cnt == 0x42)
                 {
-                    stall_cpu = 0;
                     prc_cnt = 1;
                     prc_rate &= 0xF;
                     registers[0x27] |= 0x40;
@@ -582,6 +574,8 @@ int main(int argc, char** argv, char** env)
             // memory read
             if(s1c88->address_out < 0x1000)
             {
+                //if(s1c88->sync == 1 && s1c88->pl == 0)
+                //    printf("___ 0x%x, %d, 0x%x\n", s1c88->rootp->address_out, timestamp, s1c88->i01);
                 // read from bios
                 bios_touched[s1c88->address_out & (file_size - 1)] = 1;
                 s1c88->data_in = *(bios + (s1c88->address_out & (file_size - 1)));
