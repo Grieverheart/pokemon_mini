@@ -335,6 +335,8 @@ module s1c88
     reg [15:0] IY;
     wire [7:0] A = BA[7:0];
     wire [7:0] B = BA[15:8];
+    wire [7:0] L = HL[7:0];
+    wire [7:0] H = HL[15:8];
 
     wire flag_zero     = SC[0];
     wire flag_carry    = SC[1];
@@ -404,6 +406,8 @@ module s1c88
     wire [4:0] micro_jmp_condition = micro_op[18:14];
     wire micro_jmp_long = micro_op[19];
 
+    // @todo: We shouldn't need top_address. I think we can just add the
+    // offset to PC.
     wire [15:0] jump_dest = top_address +
         (16'd1 << (micro_jmp_long | (extended_opcode[9:8] != 0))) +
         $signed(micro_jmp_long? imm: {{8{imm[7]}}, imm[7:0]});
@@ -475,10 +479,10 @@ module s1c88
                 register = s1c88.alu_R;
 
             MICRO_MOV_H:
-                register = {8'd0, s1c88.HL[15:8]};
+                register = {8'd0, s1c88.H};
 
             MICRO_MOV_L:
-                register = {8'd0, s1c88.HL[7:0]};
+                register = {8'd0, s1c88.L};
 
             MICRO_MOV_HL:
                 register = s1c88.HL;
@@ -1091,7 +1095,7 @@ module s1c88
 
             if(micro_op_type == MICRO_TYPE_BUS && pl == 1)
             begin
-                if(state == STATE_EXECUTE && !microinstruction_done)
+                if((state == STATE_EXECUTE || next_state == STATE_EXECUTE) && !microinstruction_done)
                 begin
                     // Don't do any bus ops on the last microinstruction
                     // step.
@@ -1114,6 +1118,16 @@ module s1c88
                             address_out <= {XP, IX+16'd1};
                         end
 
+                        MICRO_ADD_IX_DD:
+                        begin
+                            address_out <= {XP, IX+$signed({{8{imm_low[7]}}, imm_low})};
+                        end
+
+                        MICRO_ADD_IX_L:
+                        begin
+                            address_out <= {XP, IX+$signed({{8{L[7]}}, L})};
+                        end
+
                         MICRO_ADD_IY:
                         begin
                             address_out <= {YP, IY};
@@ -1121,7 +1135,17 @@ module s1c88
 
                         MICRO_ADD_IY1:
                         begin
-                            address_out <= {XP, IY+16'd1};
+                            address_out <= {YP, IY+16'd1};
+                        end
+
+                        MICRO_ADD_IY_DD:
+                        begin
+                            address_out <= {YP, IY+$signed({{8{imm_low[7]}}, imm_low})};
+                        end
+
+                        MICRO_ADD_IY_L:
+                        begin
+                            address_out <= {YP, IY+$signed({{8{L[7]}}, L})};
                         end
 
                         MICRO_ADD_HL1:
@@ -1157,6 +1181,11 @@ module s1c88
                                 SP <= SP + 16'd1;
                             end
                         end
+
+                        //MICRO_ADD_SP_DD:
+                        //begin
+                        //    address_out <= {8'd0, SP+$signed({{8{imm_low[7]}}, imm_low})};
+                        //end
 
                         MICRO_ADD_BR:
                         begin
@@ -1288,10 +1317,10 @@ module s1c88
                                         data_out <= BA[15:8];
 
                                     MICRO_MOV_L:
-                                        data_out <= HL[7:0];
+                                        data_out <= L;
 
                                     MICRO_MOV_H:
-                                        data_out <= HL[15:8];
+                                        data_out <= H;
 
                                     MICRO_MOV_IXL:
                                         data_out <= IX[7:0];

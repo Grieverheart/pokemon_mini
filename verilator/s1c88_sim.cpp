@@ -9,6 +9,16 @@
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
 
+
+#if 0
+#define PRINTD(...) do{ fprintf( stdout, __VA_ARGS__ ); } while( false )
+#define PRINTE(...) do{ fprintf( stderr, __VA_ARGS__ ); } while( false )
+#else
+#define PRINTD(...) do{ } while ( false )
+#define PRINTE(...) do{ } while ( false )
+#endif
+
+
 enum
 {
     BUS_IDLE      = 0x0,
@@ -35,26 +45,26 @@ void write_hardware_register(uint32_t address, uint8_t data)
         case 0x1:
         case 0x2:
         {
-            printf("Writing hardware register SYS_CTRL%d=", address+1);
+            PRINTD("Writing hardware register SYS_CTRL%d=", address+1);
         }
         break;
 
         case 0x8:
         {
-            printf("Writing hardware register SEC_CTRL=");
+            PRINTD("Writing hardware register SEC_CTRL=");
             sec_ctrl = data & 3;
         }
         break;
 
         case 0x10:
         {
-            printf("Writing hardware register SYS_BATT=");
+            PRINTD("Writing hardware register SYS_BATT=");
         }
         break;
 
         case 0x19:
         {
-            printf("Writing hardware register TMR1_ENA_OSC/TMR1_OSC=");
+            PRINTD("Writing hardware register TMR1_ENA_OSC/TMR1_OSC=");
         }
         break;
 
@@ -62,7 +72,7 @@ void write_hardware_register(uint32_t address, uint8_t data)
         case 0x21:
         case 0x22:
         {
-            printf("Writing hardware register IRQ_PRI%d=", address - 0x1F);
+            PRINTD("Writing hardware register IRQ_PRI%d=", address - 0x1F);
         }
         break;
 
@@ -71,7 +81,7 @@ void write_hardware_register(uint32_t address, uint8_t data)
         case 0x25:
         case 0x26:
         {
-            printf("Writing hardware register IRQ_ENA%d=", address - 0x22);
+            PRINTD("Writing hardware register IRQ_ENA%d=", address - 0x22);
         }
         break;
 
@@ -80,54 +90,54 @@ void write_hardware_register(uint32_t address, uint8_t data)
         case 0x29:
         case 0x2A:
         {
-            printf("Writing hardware register IRQ_ACT%d=", address - 0x26);
+            PRINTD("Writing hardware register IRQ_ACT%d=", address - 0x26);
             data = registers[address] & ~data;
         }
         break;
 
         case 0x40:
         {
-            printf("Writing hardware register TMR256_CTRL=");
+            PRINTD("Writing hardware register TMR256_CTRL=");
         }
         break;
 
         case 0x60:
         {
-            printf("Writing hardware register IO_DIR=");
+            PRINTD("Writing hardware register IO_DIR=");
         }
         break;
 
         case 0x61:
         {
-            printf("Writing hardware register IO_DATA=");
+            PRINTD("Writing hardware register IO_DATA=");
         }
         break;
 
         case 0x70:
         {
-            printf("Writing hardware register AUD_CTRL=");
+            PRINTD("Writing hardware register AUD_CTRL=");
         }
         break;
 
         case 0x71:
         {
-            printf("Writing hardware register AUD_VOL=");
+            PRINTD("Writing hardware register AUD_VOL=");
         }
         break;
 
         case 0x80:
         {
-            printf("Writing hardware register PRC_MODE=");
+            PRINTD("Writing hardware register PRC_MODE=");
             prc_mode = data & 0x3F;
         }
         break;
 
         case 0x81:
         {
-            printf("Writing hardware register PRC_RATE=");
-            if((data & 0xE) != (prc_rate & 0xE)) prc_rate = data & 0xF;
+            PRINTD("Writing hardware register PRC_RATE=");
+            if((prc_rate & 0xE) != (data & 0xE)) prc_rate = data & 0xF;
             else prc_rate = (prc_rate & 0xF0) | (data & 0x0F);
-			switch (prc_rate & 0x0E) {
+			switch (data & 0xE) {
 				case 0x00: prc_rate_match = 0x20; break;	// Rate /3
 				case 0x02: prc_rate_match = 0x50; break;	// Rate /6
 				case 0x04: prc_rate_match = 0x80; break;	// Rate /9
@@ -143,64 +153,64 @@ void write_hardware_register(uint32_t address, uint8_t data)
 
         case 0x82:
         {
-            printf("Writing hardware register PRC_MAP_LO=");
+            PRINTD("Writing hardware register PRC_MAP_LO=");
             prc_map = (prc_map & 0xFFFFF00) | (data & 0xFF);
         }
         break;
 
         case 0x83:
         {
-            printf("Writing hardware register PRC_MAP_MID=");
+            PRINTD("Writing hardware register PRC_MAP_MID=");
             prc_map = (prc_map & 0xFFF00FF) | ((data & 0xFF) << 8);
         }
         break;
 
         case 0x84:
         {
-            printf("Writing hardware register PRC_MAP_HI=");
+            PRINTD("Writing hardware register PRC_MAP_HI=");
             prc_map = (prc_map & 0xF00FFFF) | ((data & 0xFF) << 16);
         }
         break;
 
         case 0x85:
         {
-            printf("Writing hardware register PRC_SCROLL_Y=");
+            PRINTD("Writing hardware register PRC_SCROLL_Y=");
         }
         break;
 
         case 0x86:
         {
-            printf("Writing hardware register PRC_SCROLL_X=");
+            PRINTD("Writing hardware register PRC_SCROLL_X=");
         }
         break;
 
         case 0x87:
         {
-            printf("Writing hardware register PRC_SPR_LO=");
+            PRINTD("Writing hardware register PRC_SPR_LO=");
         }
         break;
 
         case 0x88:
         {
-            printf("Writing hardware register PRC_SPR_MID=");
+            PRINTD("Writing hardware register PRC_SPR_MID=");
         }
         break;
 
         case 0x89:
         {
-            printf("Writing hardware register PRC_SPR_HI=");
+            PRINTD("Writing hardware register PRC_SPR_HI=");
         }
         break;
 
         case 0xFE:
         {
-            printf("Writing hardware register LCD_CTRL=");
+            PRINTD("Writing hardware register LCD_CTRL=");
         }
         break;
 
         case 0xFF:
         {
-            printf("Writing hardware register LCD_DATA=");
+            PRINTD("Writing hardware register LCD_DATA=");
         }
         break;
 
@@ -214,18 +224,18 @@ void write_hardware_register(uint32_t address, uint8_t data)
         case 0x55:
         case 0x62:
         {
-            printf("Writing hardware register Unknown=");
+            PRINTD("Writing hardware register Unknown=");
         }
         break;
 
         default:
         {
-            printf("Writing to hardware register 0x%x\n", address);
+            PRINTD("Writing to hardware register 0x%x\n", address);
             return;
         }
     }
     registers[address] = data;
-    printf("0x%x\n", data);
+    PRINTD("0x%x\n", data);
 }
 
 uint8_t read_hardware_register(uint32_t address)
@@ -237,59 +247,59 @@ uint8_t read_hardware_register(uint32_t address)
         case 0x1:
         case 0x2:
         {
-            printf("Reading hardware register SYS_CTRL%d=", address+1);
+            PRINTD("Reading hardware register SYS_CTRL%d=", address+1);
         }
         break;
 
         case 0x8:
         {
-            printf("Reading hardware register SEC_CTRL=");
+            PRINTD("Reading hardware register SEC_CTRL=");
             data = sec_ctrl;
         }
         break;
 
         case 0x9:
         {
-            printf("Reading hardware register SEC_CNT_LO=");
+            PRINTD("Reading hardware register SEC_CNT_LO=");
             data = sec_cnt & 0xFF;
         }
         break;
 
         case 0xA:
         {
-            printf("Reading hardware register SEC_CNT_MID=");
+            PRINTD("Reading hardware register SEC_CNT_MID=");
             data = (sec_cnt >> 8) & 0xFF;
         }
         break;
 
         case 0xB:
         {
-            printf("Reading hardware register SEC_CNT_MID=");
+            PRINTD("Reading hardware register SEC_CNT_MID=");
             data = (sec_cnt >> 16) & 0xFF;
         }
         break;
 
         case 0x10:
         {
-            printf("Reading hardware register SYS_BATT=");
+            PRINTD("Reading hardware register SYS_BATT=");
         }
         break;
 
         case 0x52:
         {
-            printf("Reading hardware register KEY_PAD=");
+            PRINTD("Reading hardware register KEY_PAD=");
         }
         break;
 
         case 0x53:
         {
-            printf("Reading hardware register CART_BUS=");
+            PRINTD("Reading hardware register CART_BUS=");
         }
         break;
 
         case 0x19:
         {
-            printf("Reading hardware register TMR1_ENA_OSC/TMR1_OSC=");
+            PRINTD("Reading hardware register TMR1_ENA_OSC/TMR1_OSC=");
         }
         break;
 
@@ -298,87 +308,87 @@ uint8_t read_hardware_register(uint32_t address)
         case 0x29:
         case 0x2A:
         {
-            printf("Reading hardware register IRQ_ACT%d=", address - 0x26);
+            PRINTD("Reading hardware register IRQ_ACT%d=", address - 0x26);
         }
         break;
 
         case 0x60:
         {
-            printf("Reading hardware register IO_DIR=");
+            PRINTD("Reading hardware register IO_DIR=");
         }
         break;
 
         case 0x61:
         {
-            printf("Reading hardware register IO_DATA=");
+            PRINTD("Reading hardware register IO_DATA=");
         }
         break;
 
         case 0x71:
         {
-            printf("Reading hardware register AUD_VOL=");
+            PRINTD("Reading hardware register AUD_VOL=");
         }
         break;
 
         case 0x80:
         {
-            printf("Reading hardware register PRC_MODE=");
+            PRINTD("Reading hardware register PRC_MODE=");
             data = prc_mode;
         }
         break;
 
         case 0x81:
         {
-            printf("Reading hardware register PRC_RATE=");
+            PRINTD("Reading hardware register PRC_RATE=");
             data = prc_rate;
         }
         break;
 
         case 0x82:
         {
-            printf("Reading hardware register PRC_MAP_LO=");
+            PRINTD("Reading hardware register PRC_MAP_LO=");
         }
         break;
 
         case 0x83:
         {
-            printf("Reading hardware register PRC_MAP_MID=");
+            PRINTD("Reading hardware register PRC_MAP_MID=");
         }
         break;
 
         case 0x84:
         {
-            printf("Reading hardware register PRC_MAP_HI=");
+            PRINTD("Reading hardware register PRC_MAP_HI=");
         }
         break;
 
         case 0x85:
         {
-            printf("Reading hardware register PRC_SCROLL_Y=");
+            PRINTD("Reading hardware register PRC_SCROLL_Y=");
         }
         break;
 
         case 0x86:
         {
-            printf("Reading hardware register PRC_SCROLL_X=");
+            PRINTD("Reading hardware register PRC_SCROLL_X=");
         }
         break;
 
         case 0x87:
         {
-            printf("Reading hardware register PRC_SPR_LO=");
+            PRINTD("Reading hardware register PRC_SPR_LO=");
         }
         break;
 
         case 0x88:
         {
-            printf("Reading hardware register PRC_SPR_MID=");
+            PRINTD("Reading hardware register PRC_SPR_MID=");
         }
         break;
 
         case 0x89:
         {
-            printf("Reading hardware register PRC_SPR_HI=");
+            PRINTD("Reading hardware register PRC_SPR_HI=");
         }
         break;
 
@@ -392,17 +402,17 @@ uint8_t read_hardware_register(uint32_t address)
         case 0x55:
         case 0x62:
         {
-            printf("Reading hardware register Unknown=");
+            PRINTD("Reading hardware register Unknown=");
         }
         break;
 
         default:
         {
-            printf("Reading hardware register 0x%x=", address);
+            PRINTD("Reading hardware register 0x%x=", address);
         }
         break;
     }
-    printf("0x%x\n", data);
+    PRINTD("0x%x\n", data);
     return data;
 }
 
@@ -440,34 +450,48 @@ int main(int argc, char** argv, char** env)
     int frame = 0;
 
     int timestamp = 0;
+    int prc_state = 0;
+    int stall_cpu = 0;
     bool data_sent = false;
-    while (timestamp < 2500000 && !Verilated::gotFinish())
+    while (timestamp < 25000000 && !Verilated::gotFinish())
     {
-        s1c88->clk = 1;
-        s1c88->eval();
-        if(dump) tfp->dump(timestamp);
-        timestamp++;
+        if(!stall_cpu)
+        {
+            s1c88->clk = 1;
+            s1c88->eval();
+            if(dump && timestamp > 2200000) tfp->dump(timestamp);
+            timestamp++;
 
-        s1c88->clk = 0;
-        s1c88->eval();
-        if(dump) tfp->dump(timestamp);
-        timestamp++;
+            s1c88->clk = 0;
+            s1c88->eval();
+            if(dump && timestamp > 2200000) tfp->dump(timestamp);
+            timestamp++;
+        }
+        else timestamp += 2;
 
         //if(s1c88->sync && s1c88->pl == 0)
         //    printf("-- 0x%x\n", s1c88->rootp->s1c88__DOT__PC);
 
         // PRC
-        if((timestamp/2 + 1) % 855 == 0)
+        if((timestamp + 2) % 855 < 2)
         {
             ++prc_cnt;
             if((prc_rate & 0xF0) == prc_rate_match)
             {
                 // Active frame
+                if(prc_cnt < 0x18)
+                {
+                    prc_state = 0;
+                }
                 if(prc_cnt == 0x18)
                 {
-                    if(prc_mode & 0x2)
+                    // PRC BG&SPR Trigger
+                    if(prc_state != 1 && prc_mode & 0x2)
                     {
-                        printf("drawing... %d: i01: 0x%x\n", timestamp/2, s1c88->i01);
+                        prc_state = 1;
+                        stall_cpu = 1;
+                        PRINTD("drawing... %d: i01: 0x%x\n", timestamp, s1c88->i01);
+
                         int outaddr = 0x1000;
                         uint8_t image_data[96*64];
                         for (int yC=0; yC<8; yC++)
@@ -480,7 +504,7 @@ int main(int argc, char** argv, char** env)
                                 int tiletopaddr = prc_map + memory[tileidxaddr & 0xFFF] * 8;
 
                                 // Read tile data
-                                uint8_t data = memory[(tiletopaddr + (tx & 7)) & 0xFFF];
+                                uint8_t data = ~memory[(tiletopaddr + (tx & 7)) & 0xFFF];
                                 for(int i = 0; i < 8; ++i)
                                     image_data[96 * (8 * yC + i) + xC] = 255 * ((data >> i) & 1);
 
@@ -499,10 +523,17 @@ int main(int argc, char** argv, char** env)
                 }
                 else if(prc_cnt == 0x39)
                 {
+                    // PRC Copy Trigger
+                    if(prc_state != 2 && prc_mode)
+                    {
+                        prc_state = 2;
+                        stall_cpu = 1;
+                    }
                 }
                 else if(prc_cnt == 0x42)
                 {
-                    prc_cnt = 1;
+                    stall_cpu = 0;
+                    prc_cnt = 0x1;
                     prc_rate &= 0xF;
                     registers[0x27] |= 0x40;
                 }
@@ -510,7 +541,7 @@ int main(int argc, char** argv, char** env)
             else if(prc_cnt == 0x42)
             {
                 // Non-active frame
-                prc_cnt = 1;
+                prc_cnt = 0x1;
                 prc_rate += 0x10;
             }
         }
@@ -532,28 +563,28 @@ int main(int argc, char** argv, char** env)
         if(s1c88->rootp->s1c88__DOT__state == 2 && s1c88->pl == 0)
         {
             if(s1c88->rootp->s1c88__DOT__microaddress == 0)
-                printf("** Instruction 0x%x not implemented **\n", s1c88->rootp->s1c88__DOT__extended_opcode);
+                PRINTE("** Instruction 0x%x not implemented at 0x%x**\n", s1c88->rootp->s1c88__DOT__extended_opcode, s1c88->rootp->s1c88__DOT__top_address);
         }
 
         // Check for errors
         {
             if(s1c88->rootp->s1c88__DOT__not_implemented_addressing_error == 1 && s1c88->pl == 0)
-                printf(" ** Addressing not implemented error ** \n");
+                PRINTE(" ** Addressing not implemented error: 0x%x ** \n", (s1c88->rootp->s1c88__DOT__micro_op & 0x3F00000) >> 20);
 
             if(s1c88->rootp->s1c88__DOT__not_implemented_jump_error == 1 && s1c88->pl == 0)
-                printf(" ** Jump not implemented error ** \n");
+                PRINTE(" ** Jump not implemented error ** \n");
 
             if(s1c88->rootp->s1c88__DOT__not_implemented_data_out_error == 1 && s1c88->pl == 1)
-                printf(" ** Data-out not implemented error ** \n");
+                PRINTE(" ** Data-out not implemented error ** \n");
 
             if(s1c88->rootp->s1c88__DOT__not_implemented_mov_src_error == 1 && s1c88->pl == 0)
-                printf(" ** Mov src not implemented error ** \n");
+                PRINTE(" ** Mov src not implemented error ** \n");
 
             if(s1c88->rootp->s1c88__DOT__not_implemented_write_error == 1 && s1c88->pl == 0)
-                printf(" ** Write not implemented error ** \n");
+                PRINTE(" ** Write not implemented error ** \n");
 
             if(s1c88->rootp->s1c88__DOT__alu_op_error == 1 && s1c88->pl == 0)
-                printf(" ** Alu not implemented error ** \n");
+                PRINTE(" ** Alu not implemented error ** \n");
         }
 
         if(timestamp >= 8)
@@ -574,8 +605,10 @@ int main(int argc, char** argv, char** env)
             // memory read
             if(s1c88->address_out < 0x1000)
             {
-                //if(s1c88->sync == 1 && s1c88->pl == 0)
-                //    printf("___ 0x%x, %d, 0x%x\n", s1c88->rootp->address_out, timestamp, s1c88->i01);
+                if(s1c88->sync == 1 && s1c88->pl == 0)
+                {
+                    printf("___ 0x%x\n", s1c88->rootp->address_out);
+                }
                 // read from bios
                 bios_touched[s1c88->address_out & (file_size - 1)] = 1;
                 s1c88->data_in = *(bios + (s1c88->address_out & (file_size - 1)));
@@ -605,7 +638,7 @@ int main(int argc, char** argv, char** env)
             // memory write
             if(s1c88->address_out < 0x1000)
             {
-                printf("Program trying to write to bios at 0x%x!\n", s1c88->address_out);
+                PRINTD("Program trying to write to bios at 0x%x!\n", s1c88->address_out);
             }
             else if(s1c88->address_out < 0x2000)
             {
@@ -621,7 +654,7 @@ int main(int argc, char** argv, char** env)
             }
             else
             {
-                printf("Program trying to write to cartridge at 0x%x!\n", s1c88->address_out);
+                PRINTD("Program trying to write to cartridge at 0x%x!\n", s1c88->address_out);
             }
 
             data_sent = true;
