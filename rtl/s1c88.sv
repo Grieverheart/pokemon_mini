@@ -90,7 +90,6 @@ module s1c88
 
     // @todo:
     //
-    // * Why isn't my screen animating?
     // * Implement alu decimal operations, and unpack operations.
     // * Use the correct page register depending on addressing mode.
 

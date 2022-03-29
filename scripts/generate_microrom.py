@@ -109,6 +109,7 @@ if __name__ == '__main__':
     microinstruction_address = 0
     num_opcodes_implemented = 0
     default_address = 0
+    done_flags_in_instruction = 0
     for line in lines:
         line = line.strip()
 
@@ -120,6 +121,9 @@ if __name__ == '__main__':
             continue
 
         if line[0] == '#':
+            if done_flags_in_instruction > 1:
+                print('Warning: opcode 0x%x has multiple DONE!' % opcode)
+            done_flags_in_instruction = 0
             if line[1:] == 'default':
                 default_address = microinstruction_address
                 for i in range(len(addresses)):
@@ -140,6 +144,8 @@ if __name__ == '__main__':
         else:
             microcommands = line.split(' ')
             microcommands = [x for x in microcommands if len(x) > 0]
+            if 'DONE' in microcommands:
+                done_flags_in_instruction += 1
             microcommands = [
                     localparam_dict[x] if x in localparam_dict else
                     num_string_to_binary_string(x)

@@ -105,7 +105,7 @@ module alu
                     R = R_temp[15:0];
                     flags[ALU_FLAG_C] = R_temp[{1'b0, msb} + 5'd1];
                 end
-                if(alu_op == ALUOP_ADC)
+                else if(alu_op == ALUOP_ADC)
                 begin
                     R_temp = {1'b0, A} + {1'b0, B} + {16'd0, C};
                     R = R_temp[15:0];
