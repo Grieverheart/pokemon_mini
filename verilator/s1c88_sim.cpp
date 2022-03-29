@@ -10,7 +10,7 @@
 #include "stb_image_write.h"
 
 
-#if 0
+#if 1
 #define PRINTD(...) do{ fprintf( stdout, __VA_ARGS__ ); } while( false )
 #define PRINTE(...) do{ fprintf( stderr, __VA_ARGS__ ); } while( false )
 #else
@@ -453,18 +453,18 @@ int main(int argc, char** argv, char** env)
     int prc_state = 0;
     int stall_cpu = 0;
     bool data_sent = false;
-    while (timestamp < 25000000 && !Verilated::gotFinish())
+    while (timestamp < 35000000 && !Verilated::gotFinish())
     {
         if(!stall_cpu)
         {
             s1c88->clk = 1;
             s1c88->eval();
-            if(dump && timestamp > 2200000) tfp->dump(timestamp);
+            if(dump && timestamp < 2293950) tfp->dump(timestamp);
             timestamp++;
 
             s1c88->clk = 0;
             s1c88->eval();
-            if(dump && timestamp > 2200000) tfp->dump(timestamp);
+            if(dump && timestamp < 2293950) tfp->dump(timestamp);
             timestamp++;
         }
         else timestamp += 2;
@@ -585,6 +585,9 @@ int main(int argc, char** argv, char** env)
 
             if(s1c88->rootp->s1c88__DOT__alu_op_error == 1 && s1c88->pl == 0)
                 PRINTE(" ** Alu not implemented error ** \n");
+
+            if(s1c88->rootp->s1c88__DOT__not_implemented_alu_dec_pack_ops_error == 1 && s1c88->pl == 0)
+                PRINTE(" ** Alu decimal and packed operations not implemented error ** \n");
         }
 
         if(timestamp >= 8)
@@ -607,6 +610,8 @@ int main(int argc, char** argv, char** env)
             {
                 if(s1c88->sync == 1 && s1c88->pl == 0)
                 {
+                    if(s1c88->rootp->s1c88__DOT__top_address == 0xd7c) printf("%d\n", s1c88->rootp->s1c88__DOT__BA & 0xFF);
+                    if(s1c88->rootp->s1c88__DOT__top_address == 0xd73) printf("@%d\n", s1c88->rootp->s1c88__DOT__BA);
                     printf("___ 0x%x\n", s1c88->rootp->address_out);
                 }
                 // read from bios
@@ -643,6 +648,7 @@ int main(int argc, char** argv, char** env)
             else if(s1c88->address_out < 0x2000)
             {
                 // write to ram
+                if(s1c88->address_out == 0x152D) printf("= 0x%x, %d\n", s1c88->rootp->s1c88__DOT__top_address, timestamp);
                 uint32_t address = s1c88->address_out & 0xFFF;
                 *(uint8_t*)(memory + address) = s1c88->data_out;
             }

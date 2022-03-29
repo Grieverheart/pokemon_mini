@@ -90,6 +90,7 @@ module s1c88
 
     // @todo:
     //
+    // * Why isn't my screen animating?
     // * Implement alu decimal operations, and unpack operations.
     // * Use the correct page register depending on addressing mode.
 
@@ -359,7 +360,7 @@ module s1c88
     (
         alu_op,
         alu_size,
-        alu_A, alu_B, SC[0], alu_R,
+        alu_A, alu_B, SC[1], alu_R,
         alu_flags
     );
 
@@ -841,10 +842,12 @@ module s1c88
 
     reg branch_taken;
     reg not_implemented_addressing_error;
+    reg not_implemented_alu_dec_pack_ops_error;
     always_ff @ (negedge clk, posedge reset)
     begin
         branch_taken = 0;
         not_implemented_addressing_error <= 0;
+        not_implemented_alu_dec_pack_ops_error <= 0;
 
         if(reset)
         begin
@@ -1044,6 +1047,8 @@ module s1c88
                             end
                             ALUOP_ADD, ALUOP_ADC, ALUOP_SUB, ALUOP_SBC, ALUOP_NEG, ALUOP_SHLA, ALUOP_SHRA:
                             begin
+                                if(alu_op != ALUOP_SHLA || alu_op != ALUOP_SHRA && (SC[5:4] != 0))
+                                    not_implemented_alu_dec_pack_ops_error <= 1;
                                 SC[0] <= alu_flags[ALU_FLAG_Z];
                                 SC[1] <= alu_flags[ALU_FLAG_C];
                                 SC[2] <= alu_flags[ALU_FLAG_V];
