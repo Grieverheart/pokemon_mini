@@ -90,6 +90,9 @@ module s1c88
 
     // @todo:
     //
+    // * Implement HALT.
+    // * Implement bus authority.
+    // * Implement PRC in Verilog.
     // * Implement alu decimal operations, and unpack operations.
     // * Use the correct page register depending on addressing mode.
 
