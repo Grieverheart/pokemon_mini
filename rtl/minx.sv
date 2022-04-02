@@ -34,18 +34,34 @@ module minx
         .data_out(lcd_data_out)
     );
 
-    wire [7:0] cpu_data_out;
-    wire [7:0] cpu_data_in = (
-        (address_out == 24'h20FE || address_out == 24'h20FF) &&
-        (bus_status == cpu.BUS_COMMAND_MEM_READ)
-    )? lcd_data_out: data_in;
+    wire [7:0] prc_data_out;
+    prc prc
+    (
+        .clk(clk),
+        .reset(reset),
+        .pk(pk),
+        .pl(pl),
+        .cpu_write(write),
+        .cpu_read(read),
+        .address_in(address_out),
+        .data_in(cpu_data_out),
+        .data_out(prc_data_out)
+    );
 
-    //wire [7:0] reg_data_out = lcd_data_out; // More to come.
+    wire [7:0] reg_data_out = lcd_data_out | prc_data_out; // More to come.
+    wire [7:0] cpu_data_in = (
+            (address_out == 24'h20FE || address_out == 24'h20FF ||
+            (address_out >= 24'h2080 && address_out <= 24'h8A)
+        ) &&
+        (bus_status == cpu.BUS_COMMAND_MEM_READ)
+    )? reg_data_out: data_in;
+
     //wire [7:0] cpu_data_in = (
     //    (address_out >= 24'h2000 && address_out < 24'h2100) &&
     //    (bus_status == cpu.BUS_COMMAND_MEM_READ)
     //)? reg_data_out: data_in;
 
+    wire [7:0] cpu_data_out;
     s1c88 cpu
     (
         .clk                   (clk),
