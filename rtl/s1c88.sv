@@ -887,7 +887,7 @@ module s1c88
         else
         begin
             bus_request_latch <= bus_request;
-            bus_ack_negedge   <= (pk == 0)? bus_request bus_request_latch;
+            bus_ack_negedge   <= (pk == 0)? bus_request: bus_request_latch;
 
             if(!bus_ack)
             begin

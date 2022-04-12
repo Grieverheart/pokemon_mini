@@ -161,6 +161,8 @@ begin
         begin
             prc_osc_counter <= 10'd0;
             reg_counter <= reg_counter + 1;
+            irq_frame_copy  <= 0;
+            irq_render_done <= 0;
 
             if(reg_rate[7:4] == rate_match)
             begin
@@ -168,8 +170,6 @@ begin
                 if(reg_counter < 7'h18)
                 begin
                     execution_step  <= 0;
-                    irq_frame_copy  <= 0;
-                    irq_render_done <= 0;
                     state           <= PRC_STATE_IDLE;
                 end
                 else if(reg_counter < 7'h42)
