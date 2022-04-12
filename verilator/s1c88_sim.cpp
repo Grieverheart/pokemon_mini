@@ -10,7 +10,7 @@
 #include "stb_image_write.h"
 
 
-#if 0
+#if 1
 #define PRINTD(...) do{ fprintf( stdout, __VA_ARGS__ ); } while( false )
 #define PRINTE(...) do{ fprintf( stderr, __VA_ARGS__ ); } while( false )
 #else
@@ -606,18 +606,18 @@ int main(int argc, char** argv, char** env)
     int prc_state = 0;
     int stall_cpu = 0;
     bool data_sent = false;
-    while (timestamp < 35000000 && !Verilated::gotFinish())
+    while (timestamp < 3000000 && !Verilated::gotFinish())
     {
         if(!stall_cpu)
         {
             s1c88->clk = 1;
             s1c88->eval();
-            if(dump && timestamp < (5669874 + 1000) && timestamp > (5669874 - 1000)) tfp->dump(timestamp);
+            if(dump) tfp->dump(timestamp);
             timestamp++;
 
             s1c88->clk = 0;
             s1c88->eval();
-            if(dump && timestamp < (5669874 + 1000) && timestamp > (5669874 - 1000)) tfp->dump(timestamp);
+            if(dump) tfp->dump(timestamp);
             timestamp++;
         }
         else timestamp += 2;

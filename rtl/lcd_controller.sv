@@ -2,10 +2,8 @@ module lcd_controller
 (
     input clk,
     input reset,
-    input pk,
-    input pl,
-    input cpu_write,
-    input cpu_read,
+    input bus_write,
+    input bus_read,
     input [23:0] address_in,
     input [7:0] data_in,
     output logic [7:0] data_out
@@ -27,6 +25,8 @@ reg row_order;
 reg [5:0] start_line;
 reg [7:0] column;
 reg [3:0] page;
+reg read_latch;
+reg write_latch;
 
 // (0-8, pages 0-7 are 8px high, Page 8 = 1px high)
 reg [7:0] lcd_data[9*132];
@@ -48,10 +48,15 @@ begin
         read_modify_mode         <= 0;
         column                   <= 8'd0;
         page                     <= 4'd0;
+        read_latch               <= 0;
+        write_latch              <= 0;
     end
     else
     begin
-        if(cpu_write)
+        read_latch  <= bus_read;
+        write_latch <= bus_write;
+
+        if(bus_write && !write_latch)
         begin
             case(address_in)
                 24'h20FE:
@@ -159,7 +164,7 @@ begin
 
             endcase
         end
-        else if(cpu_read)
+        else if(bus_read && !read_latch)
         begin
             case(address_in)
                 24'h20FE:
@@ -172,10 +177,8 @@ begin
                 end
                 24'h20FF:
                 begin
-                    if(!read_modify_mode && pk == 1)
+                    if(!read_modify_mode)
                     begin
-                        // How often is it increased? Do we need to receive
-                        // pl/pk and only run this when e.g. pk == 1?
                         column <= (column < 8'd131)? column + 8'd1: 8'd131;
                     end
                 end

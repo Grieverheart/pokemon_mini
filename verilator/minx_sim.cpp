@@ -137,17 +137,16 @@ void write_hardware_register(uint32_t address, uint8_t data)
             PRINTD("Writing hardware register PRC_RATE=");
             if((prc_rate & 0xE) != (data & 0xE)) prc_rate = data & 0xF;
             else prc_rate = (prc_rate & 0xF0) | (data & 0x0F);
-			switch (data & 0xE) {
-				case 0x00: prc_rate_match = 0x20; break;	// Rate /3
-				case 0x02: prc_rate_match = 0x50; break;	// Rate /6
-				case 0x04: prc_rate_match = 0x80; break;	// Rate /9
-				case 0x06: prc_rate_match = 0xB0; break;	// Rate /12
-				case 0x08: prc_rate_match = 0x10; break;	// Rate /2
-				case 0x0A: prc_rate_match = 0x30; break;	// Rate /4
-				case 0x0C: prc_rate_match = 0x50; break;	// Rate /6
-				case 0x0E: prc_rate_match = 0x70; break;	// Rate /8
+            switch (data & 0xE) {
+                case 0x00: prc_rate_match = 0x20; break;    // Rate /3
+                case 0x02: prc_rate_match = 0x50; break;    // Rate /6
+                case 0x04: prc_rate_match = 0x80; break;    // Rate /9
+                case 0x06: prc_rate_match = 0xB0; break;    // Rate /12
+                case 0x08: prc_rate_match = 0x10; break;    // Rate /2
+                case 0x0A: prc_rate_match = 0x30; break;    // Rate /4
+                case 0x0C: prc_rate_match = 0x50; break;    // Rate /6
+                case 0x0E: prc_rate_match = 0x70; break;    // Rate /8
             }
-            
         }
         break;
 
@@ -589,7 +588,7 @@ int main(int argc, char** argv, char** env)
     minx->clk = 0;
     minx->reset = 1;
 
-    bool dump = false;
+    bool dump = true;
     VerilatedVcdC* tfp;
     if(dump)
     {
@@ -606,7 +605,8 @@ int main(int argc, char** argv, char** env)
     int prc_state = 0;
     int stall_cpu = 0;
     bool data_sent = false;
-    while (timestamp < 5000000 && !Verilated::gotFinish())
+    int irq_render_done_old = 0;
+    while (timestamp < 3000000 && !Verilated::gotFinish())
     {
         if(!stall_cpu)
         {
@@ -625,79 +625,13 @@ int main(int argc, char** argv, char** env)
         //if(minx->sync && minx->pl == 0)
         //    printf("-- 0x%x\n", minx->rootp->minx__DOT__cpu__DOT__PC);
 
-        // PRC
-        if((timestamp + 2) % 855 < 2)
+        if(minx->rootp->minx__DOT__irq_render_done && irq_render_done_old == 0)
         {
-            ++prc_cnt;
-            if((prc_rate & 0xF0) == prc_rate_match)
-            {
-                // Active frame
-                if(prc_cnt < 0x18)
-                {
-                    prc_state = 0;
-                }
-                if(prc_cnt == 0x18)
-                {
-                    // PRC BG&SPR Trigger
-                    if(prc_state != 1 && prc_mode & 0x2)
-                    {
-                        prc_state = 1;
-                        stall_cpu = 1;
-                        PRINTD("drawing... %d: i01: 0x%x\n", timestamp, minx->i01);
-
-                        int outaddr = 0x1000;
-                        uint8_t image_data[96*64];
-                        for (int yC=0; yC<8; yC++)
-                        {
-                            int ty = (yC << 3);
-                            for (int xC=0; xC<96; xC++)
-                            {
-                                int tx = xC;
-                                int tileidxaddr = 0x1360 + (ty >> 3) * 12 + (tx >> 3);
-                                int tiletopaddr = prc_map + memory[tileidxaddr & 0xFFF] * 8;
-
-                                // Read tile data
-                                uint8_t data = memory[(tiletopaddr + (tx & 7)) & 0xFFF];
-                                for(int i = 0; i < 8; ++i)
-                                    image_data[96 * (8 * yC + i) + xC] = 255 * ((~data >> i) & 1);
-
-                                // Write to VRAM
-                                memory[outaddr & 0xFFF] = data;
-                                ++outaddr;
-                            }
-                        }
-                        char path[128];
-                        snprintf(path, 128, "temp/frame_%03d.png", frame);
-                        int has_error = !stbi_write_png(path, 96, 64, 1, image_data, 96);
-                        if(has_error) printf("Error saving image %s\n", path);
-
-                        ++frame;
-                    }
-                }
-                else if(prc_cnt == 0x39)
-                {
-                    // PRC Copy Trigger
-                    if(prc_state != 2 && prc_mode)
-                    {
-                        prc_state = 2;
-                        stall_cpu = 1;
-                    }
-                }
-                else if(prc_cnt == 0x42)
-                {
-                    stall_cpu = 0;
-                    prc_cnt = 0x1;
-                    prc_rate &= 0xF;
-                    registers[0x27] |= 0x40;
-                }
-            }
-            else if(prc_cnt == 0x42)
-            {
-                // Non-active frame
-                prc_cnt = 0x1;
-                prc_rate += 0x10;
-            }
+            registers[0x27] |= 0x40;
+            irq_render_done_old = 1;
+            PRINTD("Render done.\n");
         }
+        else if(!minx->rootp->minx__DOT__irq_render_done) irq_render_done_old = 0;
 
         // At rising edge of clock
         if(data_sent)
@@ -716,7 +650,7 @@ int main(int argc, char** argv, char** env)
         if(minx->rootp->minx__DOT__cpu__DOT__state == 2 && minx->pl == 0)
         {
             if(minx->rootp->minx__DOT__cpu__DOT__microaddress == 0)
-                PRINTE("** Instruction 0x%x not implemented at 0x%x**\n", minx->rootp->minx__DOT__cpu__DOT__extended_opcode, minx->rootp->minx__DOT__cpu__DOT__top_address);
+                PRINTE("** Instruction 0x%x not implemented at 0x%x, timestamp: %d**\n", minx->rootp->minx__DOT__cpu__DOT__extended_opcode, minx->rootp->minx__DOT__cpu__DOT__top_address, timestamp);
         }
 
         // Check for errors
