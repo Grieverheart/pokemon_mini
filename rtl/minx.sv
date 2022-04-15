@@ -32,7 +32,7 @@ module minx
         .bus_write(write),
         .bus_read(read),
         .address_in(address_out),
-        .data_in(cpu_data_out),
+        .data_in(data_out),
         .data_out(lcd_data_out)
     );
 
@@ -73,11 +73,6 @@ module minx
         ) &&
         (bus_status == cpu.BUS_COMMAND_MEM_READ)
     )? reg_data_out: data_in;
-
-    //wire [7:0] cpu_data_in = (
-    //    (address_out >= 24'h2000 && address_out < 24'h2100) &&
-    //    (bus_status == cpu.BUS_COMMAND_MEM_READ)
-    //)? reg_data_out: data_in;
 
     wire [7:0] cpu_data_out;
     wire [23:0] cpu_address_out;

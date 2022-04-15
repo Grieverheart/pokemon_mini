@@ -157,7 +157,7 @@ begin
                     end
                     else
                     begin
-                        lcd_data[pixel_address] = data_in;
+                        lcd_data[pixel_address] <= data_in;
                         column <= (column < 8'd131)? column + 8'd1: 8'd131;
                     end
                 end

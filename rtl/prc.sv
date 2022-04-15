@@ -261,8 +261,16 @@ begin
                 PRC_STATE_FRAME_COPY:
                 begin
                     // @todo
-                    state <= next_state;
-                    irq_frame_copy <= 1;
+                    execution_step <= execution_step + 1;
+                    if(!execution_step[0])
+                    begin
+                        // 1 Set LCD column (write 0x10 and 0x00 to 0x20FE).
+                        // 2 Set page (write 0xB0 to 0x20FE).
+                        // 3 Move row of bytes to LCD (write to 0x20FF).
+                        // 4 Goto 2
+                        state <= next_state;
+                        irq_frame_copy <= 1;
+                    end
                 end
 
                 default:
