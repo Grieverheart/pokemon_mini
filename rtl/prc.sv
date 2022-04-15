@@ -8,6 +8,7 @@ module prc
     input [7:0] bus_data_in,
     output logic [7:0] bus_data_out,
     output logic [23:0] bus_address_out,
+    output logic [1:0]  bus_status,
     output logic write,
     output logic read,
     output logic bus_request,
@@ -30,6 +31,12 @@ localparam [1:0]
     PRC_STATE_MAP_DRAW   = 2'd1,
     PRC_STATE_SPR_DRAW   = 2'd2,
     PRC_STATE_FRAME_COPY = 2'd3;
+
+localparam [1:0]
+    BUS_COMMAND_IDLE      = 2'd0,
+    BUS_COMMAND_IRQ_READ  = 2'd1,
+    BUS_COMMAND_MEM_WRITE = 2'd2,
+    BUS_COMMAND_MEM_READ  = 2'd3;
 
 reg [5:0] reg_mode;
 reg [7:0] reg_rate;
@@ -115,6 +122,7 @@ begin
         xC <= 0;
         irq_frame_copy  <= 0;
         irq_render_done <= 0;
+        bus_status      <= BUS_COMMAND_IDLE;
     end
     else
     begin
@@ -203,6 +211,11 @@ begin
                 PRC_STATE_MAP_DRAW:
                 begin
                     execution_step <= execution_step + 1;
+                    if(execution_step % 6 < 4)
+                        bus_status <= BUS_COMMAND_MEM_READ;
+                    else
+                        bus_status <= BUS_COMMAND_MEM_WRITE;
+
                     if(!execution_step[0])
                     begin
                         if(execution_step % 6 == 0)
@@ -218,7 +231,7 @@ begin
                         else
                         begin
                             data_out <= bus_data_in;
-                            bus_address_out <= 24'h1000 + yC * 8 + {16'h0, xC};
+                            bus_address_out <= 24'h1000 + yC * 96 + {16'h0, xC};
 
                             xC <= xC + 1;
                             if(xC == 7'd95)
@@ -276,9 +289,13 @@ begin
                 if(execution_step[0])
                 begin
                     if(execution_step % 6 == 5)
+                    begin
                         write <= 1;
+                    end
                     else
+                    begin
                         read <= 1;
+                    end
                 end
                 else
                 begin

@@ -10,7 +10,7 @@
 #include "stb_image_write.h"
 
 
-#if 1
+#if 0
 #define PRINTD(...) do{ fprintf( stdout, __VA_ARGS__ ); } while( false )
 #define PRINTE(...) do{ fprintf( stderr, __VA_ARGS__ ); } while( false )
 #else
@@ -588,7 +588,7 @@ int main(int argc, char** argv, char** env)
     minx->clk = 0;
     minx->reset = 1;
 
-    bool dump = true;
+    bool dump = false;
     VerilatedVcdC* tfp;
     if(dump)
     {
@@ -603,24 +603,19 @@ int main(int argc, char** argv, char** env)
 
     int timestamp = 0;
     int prc_state = 0;
-    int stall_cpu = 0;
     bool data_sent = false;
     int irq_render_done_old = 0;
-    while (timestamp < 3000000 && !Verilated::gotFinish())
+    while (timestamp < 16000000 && !Verilated::gotFinish())
     {
-        if(!stall_cpu)
-        {
-            minx->clk = 1;
-            minx->eval();
-            if(dump) tfp->dump(timestamp);
-            timestamp++;
+        minx->clk = 1;
+        minx->eval();
+        if(dump && timestamp > 3000000) tfp->dump(timestamp);
+        timestamp++;
 
-            minx->clk = 0;
-            minx->eval();
-            if(dump) tfp->dump(timestamp);
-            timestamp++;
-        }
-        else timestamp += 2;
+        minx->clk = 0;
+        minx->eval();
+        if(dump && timestamp > 3000000) tfp->dump(timestamp);
+        timestamp++;
 
         //if(minx->sync && minx->pl == 0)
         //    printf("-- 0x%x\n", minx->rootp->minx__DOT__cpu__DOT__PC);
@@ -629,13 +624,33 @@ int main(int argc, char** argv, char** env)
         {
             registers[0x27] |= 0x40;
             irq_render_done_old = 1;
-            PRINTD("Render done.\n");
+            PRINTD("Render done %d.\n", timestamp / 2);
+
+            int outaddr = 0x1000;
+            uint8_t image_data[96*64];
+
+            for (int yC=0; yC<8; yC++)
+            {
+                for (int xC=0; xC<96; xC++)
+                {
+                    uint8_t data = memory[outaddr & 0xFFF];
+                    for(int i = 0; i < 8; ++i)
+                        image_data[96 * (8 * yC + i) + xC] = 255 * ((~data >> i) & 1);
+                    ++outaddr;
+                }
+            }
+
+            char path[128];
+            snprintf(path, 128, "temp/frame_%03d.png", frame);
+            int has_error = !stbi_write_png(path, 96, 64, 1, image_data, 96);
+            if(has_error) printf("Error saving image %s\n", path);
+
+            ++frame;
         }
         else if(!minx->rootp->minx__DOT__irq_render_done) irq_render_done_old = 0;
 
         // At rising edge of clock
-        if(data_sent)
-            data_sent = false;
+        data_sent = false;
 
         if(sec_ctrl & 2)
             sec_cnt = 0;
@@ -735,7 +750,7 @@ int main(int argc, char** argv, char** env)
             else if(minx->address_out < 0x2000)
             {
                 // write to ram
-                //if(minx->address_out == 0x137D) printf("= 0x%x, %d\n", minx->rootp->minx__DOT__cpu__DOT__top_address, timestamp);
+                //if(minx->address_out <= 0x12FF) printf("= 0x%x: 0x%x\n", minx->address_out, minx->data_out);
                 //if(minx->address_out >= 0x1360 && minx->address_out < 0x14E0) printf("= 0x%x, 0x%x: 0x%x, 0x%x, %d\n", minx->address_out, minx->data_out, minx->rootp->minx__DOT__cpu__DOT__IX, minx->rootp->minx__DOT__cpu__DOT__IY, (minx->rootp->minx__DOT__cpu__DOT__BA & 0xFF00) >> 8);
                 //if(minx->address_out >= prc_map && minx->address_out < 0x1928) printf("= 0x%x, 0x%x\n", minx->address_out, minx->data_out);
                 uint32_t address = minx->address_out & 0xFFF;
@@ -754,7 +769,7 @@ int main(int argc, char** argv, char** env)
 
             data_sent = true;
         }
-        minx->eval();
+        //minx->eval();
     }
 
     if(dump) tfp->close();
