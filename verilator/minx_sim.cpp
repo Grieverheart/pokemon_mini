@@ -9,13 +9,17 @@
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
 
+#define VERBOSE 1
 
-#if 0
-#define PRINTD(...) do{ fprintf( stdout, __VA_ARGS__ ); } while( false )
-#define PRINTE(...) do{ fprintf( stderr, __VA_ARGS__ ); } while( false )
-#else
-#define PRINTD(...) do{ } while ( false )
+#if VERBOSE == 0
 #define PRINTE(...) do{ } while ( false )
+#define PRINTD(...) do{ } while ( false )
+#elif VERBOSE == 1
+#define PRINTE(...) do{ fprintf( stderr, __VA_ARGS__ ); } while( false )
+#define PRINTD(...) do{ } while ( false )
+#else
+#define PRINTE(...) do{ fprintf( stderr, __VA_ARGS__ ); } while( false )
+#define PRINTD(...) do{ fprintf( stdout, __VA_ARGS__ ); } while( false )
 #endif
 
 
@@ -582,6 +586,17 @@ int main(int argc, char** argv, char** env)
 
     uint8_t* memory = (uint8_t*) calloc(1, 4*1024);
 
+    // Load a cartridge.
+    uint8_t* cartridge = (uint8_t*) calloc(1, 0x200000);
+    {
+        FILE* fp = fopen("data/party_j.min", "rb");
+        fseek(fp, 0, SEEK_END);
+        size_t file_size = ftell(fp);
+        fseek(fp, 0, SEEK_SET);  /* same as rewind(f); */
+        fread(cartridge, 1, file_size, fp);
+        fclose(fp);
+    }
+
     Verilated::commandArgs(argc, argv);
 
     Vminx* minx = new Vminx;
@@ -609,13 +624,16 @@ int main(int argc, char** argv, char** env)
     {
         minx->clk = 1;
         minx->eval();
-        if(dump && timestamp > 3000000) tfp->dump(timestamp);
+        if(dump && timestamp > 2427390 - 100000 && timestamp < 2427390 + 100000) tfp->dump(timestamp);
         timestamp++;
 
         minx->clk = 0;
         minx->eval();
-        if(dump && timestamp > 3000000) tfp->dump(timestamp);
+        if(dump && timestamp > 2427390 - 100000 && timestamp < 2427390 + 100000) tfp->dump(timestamp);
         timestamp++;
+
+        if(minx->rootp->minx__DOT__prc__DOT__state == 2)
+            PRINTE("Sprite rendering not implemented!\n");
 
         //if(minx->sync && minx->pl == 0)
         //    printf("-- 0x%x\n", minx->rootp->minx__DOT__cpu__DOT__PC);
@@ -733,7 +751,9 @@ int main(int argc, char** argv, char** env)
             else
             {
                 // read from cartridge
-                minx->data_in = 0;//*(memory + (minx->address_out & 0x003FFF));
+                //printf("0x%x, 0x%x\n", minx->rootp->minx__DOT__cpu__DOT__top_address, minx->rootp->minx__DOT__cpu__DOT__extended_opcode);
+                //printf("0x%x\n", minx->address_out);
+                minx->data_in = *(uint8_t*)(cartridge + (minx->address_out & 0x1FFFFF));
             }
 
             data_sent = true;

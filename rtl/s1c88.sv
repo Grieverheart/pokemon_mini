@@ -92,9 +92,10 @@ module s1c88
 
     // @todo:
     //
+    // * Implement more 16-bit load instructions.
+    // * Implement EXCEPTION_TYPE_DIVZERO.
     // * Implement HALT.
-    // * Implement bus authority.
-    // * Implement PRC in Verilog.
+    // * Implement PRC sprite rendering.
     // * Implement alu decimal operations, and unpack operations.
     // * Use the correct page register depending on addressing mode.
 
@@ -271,7 +272,9 @@ module s1c88
         MICRO_ALU_OP_SLA  = 5'h11,
         MICRO_ALU_OP_SRL  = 5'h12,
         MICRO_ALU_OP_SRA  = 5'h13,
-        MICRO_ALU_OP_CPL  = 5'h14;
+        MICRO_ALU_OP_CPL  = 5'h14,
+        MICRO_ALU_OP_DIV  = 5'h15,
+        MICRO_ALU_OP_MUL  = 5'h16;
 
     localparam
         MICRO_ALU8  = 1'b0,
@@ -639,6 +642,12 @@ module s1c88
 
                 MICRO_ALU_OP_NEG:
                     alu_op <= ALUOP_NEG;
+
+                MICRO_ALU_OP_DIV:
+                    alu_op <= ALUOP_DIV;
+
+                MICRO_ALU_OP_MUL:
+                    alu_op <= ALUOP_MUL;
 
                 MICRO_ALU_OP_RL:
                     alu_op <= ALUOP_ROLC;
@@ -1055,7 +1064,7 @@ module s1c88
                                     SC[1] <= alu_flags[ALU_FLAG_C];
                                     SC[3] <= alu_flags[ALU_FLAG_S];
                                 end
-                                ALUOP_ADD, ALUOP_ADC, ALUOP_SUB, ALUOP_SBC, ALUOP_NEG, ALUOP_SHLA, ALUOP_SHRA:
+                                ALUOP_ADD, ALUOP_ADC, ALUOP_SUB, ALUOP_SBC, ALUOP_NEG, ALUOP_SHLA, ALUOP_SHRA, ALUOP_DIV, ALUOP_MUL:
                                 begin
                                     if(alu_op != ALUOP_SHLA && alu_op != ALUOP_SHRA && (SC[5:4] != 0))
                                         not_implemented_alu_dec_pack_ops_error <= 1;

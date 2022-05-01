@@ -21,7 +21,10 @@ enum [4:0]
     ALUOP_INC2 = 5'd17,
     ALUOP_DEC  = 5'd18,
     ALUOP_DEC2 = 5'd19,
-    ALUOP_NEG  = 5'd20
+    ALUOP_NEG  = 5'd20,
+
+    ALUOP_DIV  = 5'd21,
+    ALUOP_MUL  = 5'd22
 } AluOp;
 
 enum [1:0]
@@ -147,6 +150,27 @@ module alu
                 flags[ALU_FLAG_V] = (A[msb] & ~B[msb] & ~R[msb]) | (~A[msb] & B[msb] & R[msb]);
                 flags[ALU_FLAG_Z] = (R == 0);
                 flags[ALU_FLAG_S] = R[msb];
+            end
+
+            ALUOP_DIV:
+            begin
+                R_temp[15:0] = A / {{8{B[7]}}, B[7:0]};
+                R = flags[ALU_FLAG_V]? A: {A[7:0] % B[7:0], R_temp[7:0]};
+
+                flags[ALU_FLAG_Z] = (B[7:0] != 0)? (R == 0): 0;
+                flags[ALU_FLAG_C] = 0;
+                flags[ALU_FLAG_V] = (B[7:0] != 0)? (R_temp[15:8] != 0): 1;
+                flags[ALU_FLAG_S] = (B[7:0] != 0)? R[7]: 1;
+            end
+
+            ALUOP_MUL:
+            begin
+                R = A[7:0] * B[7:0];
+
+                flags[ALU_FLAG_Z] = (R == 0);
+                flags[ALU_FLAG_C] = 0;
+                flags[ALU_FLAG_V] = 0;
+                flags[ALU_FLAG_S] = R[15];
             end
 
             ALUOP_ROL:
