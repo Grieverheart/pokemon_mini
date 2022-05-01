@@ -32,7 +32,7 @@ reg write_latch;
 reg [7:0] lcd_data[9*132];
 
 
-wire [10:0] pixel_address = (11'd132 << page) + (
+wire [10:0] pixel_address = page * 11'd132 + (
     (segment_driver_direction)?
         131 - {3'd0, column}:
         {3'd0, column});

@@ -22,6 +22,11 @@ module prc
 // system clock. Some work is required to actually run simulations with
 // multiple clocks.
 
+// @todo: Make PRC work only on posedge. Do we really need set the read/write
+// at negedge? Are we going to make use of these 'read'/'write's?
+
+// @todo: What about page 8?
+
 reg [7:0] data_out;
 reg [7:0] reg_data_out;
 assign bus_data_out = bus_ack? data_out: reg_data_out;
@@ -31,6 +36,13 @@ localparam [1:0]
     PRC_STATE_MAP_DRAW   = 2'd1,
     PRC_STATE_SPR_DRAW   = 2'd2,
     PRC_STATE_FRAME_COPY = 2'd3;
+
+localparam [2:0]
+    FRAME_COPY_STATE_COLUMN_SET1 = 3'd0,
+    FRAME_COPY_STATE_COLUMN_SET2 = 3'd1,
+    FRAME_COPY_STATE_PAGE_SET    = 3'd2,
+    FRAME_COPY_STATE_MEM_READ    = 3'd3,
+    FRAME_COPY_STATE_LCD_WRITE   = 3'd4;
 
 localparam [1:0]
     BUS_COMMAND_IDLE      = 2'd0,
@@ -54,7 +66,7 @@ wire [1:0] next_state =
                                                    PRC_STATE_IDLE));
 
 reg [9:0] prc_osc_counter;
-reg [7:0] execution_step;
+reg [8:0] execution_step;
 
 reg [4:0] map_width;
 reg [4:0] map_height;
@@ -232,23 +244,29 @@ begin
                         begin
                             data_out <= bus_data_in;
                             bus_address_out <= 24'h1000 + yC * 96 + {16'h0, xC};
-
-                            xC <= xC + 1;
-                            if(xC == 7'd95)
-                            begin
-                                xC <= 0;
-
-                                if(yC == 3'd7)
-                                begin
-                                    yC <= 0;
-                                    state <= next_state;
-                                    execution_step <= 0;
-                                end
-                                else
-                                    yC <= yC + 1;
-                            end
                         end
 
+                    end
+                    else if(execution_step % 6 == 5)
+                    begin
+                        // @note: Perform this at the last posedge step to
+                        // avoid changing stuff too early. Ideally I should
+                        // either do it on the last negedge, or even better,
+                        // make it work only on posedge.
+                        xC <= xC + 1;
+                        if(xC == 7'd95)
+                        begin
+                            xC <= 0;
+
+                            if(yC == 3'd7)
+                            begin
+                                yC <= 0;
+                                state <= next_state;
+                                execution_step <= 0;
+                            end
+                            else
+                                yC <= yC + 1;
+                        end
                     end
                 end
 
@@ -260,16 +278,65 @@ begin
 
                 PRC_STATE_FRAME_COPY:
                 begin
-                    // @todo
                     execution_step <= execution_step + 1;
                     if(!execution_step[0])
                     begin
-                        // 1 Set LCD column (write 0x10 and 0x00 to 0x20FE).
-                        // 2 Set page (write 0xB0 to 0x20FE).
-                        // 3 Move row of bytes to LCD (write to 0x20FF).
-                        // 4 Goto 2
-                        state <= next_state;
-                        irq_frame_copy <= 1;
+                        case(frame_copy_state)
+                            FRAME_COPY_STATE_COLUMN_SET1:
+                            begin
+                                data_out        <= 8'h10;
+                                bus_address_out <= 24'h20FE;
+                                bus_status      <= BUS_COMMAND_MEM_WRITE;
+                            end
+                            FRAME_COPY_STATE_COLUMN_SET2:
+                            begin
+                                data_out        <= 8'h0;
+                                bus_address_out <= 24'h20FE;
+                                bus_status      <= BUS_COMMAND_MEM_WRITE;
+                            end
+                            FRAME_COPY_STATE_PAGE_SET:
+                            begin
+                                data_out        <= {4'hB, 1'h0, yC};
+                                bus_address_out <= 24'h20FE;
+                                bus_status      <= BUS_COMMAND_MEM_WRITE;
+                            end
+                            FRAME_COPY_STATE_MEM_READ:
+                            begin
+                                bus_address_out <= 24'h1000 + yC * 96 + {16'h0, xC};
+                                bus_status      <= BUS_COMMAND_MEM_READ;
+                            end
+                            FRAME_COPY_STATE_LCD_WRITE:
+                            begin
+                                // Write the data to lcd
+                                data_out        <= bus_data_in;
+                                bus_address_out <= 24'h20FF;
+                                bus_status      <= BUS_COMMAND_MEM_WRITE;
+                            end
+                            default:
+                            begin
+                            end
+                        endcase
+                    end
+                    else if(frame_copy_state == FRAME_COPY_STATE_LCD_WRITE)
+                    begin
+                        // @note: Perform this at the last posedge step to
+                        // avoid changing stuff too early. Ideally I should
+                        // either do it on the last negedge, or even better,
+                        // make it work only on posedge.
+                        xC <= xC + 1;
+                        if(xC == 7'd95)
+                        begin
+                            xC <= 0;
+
+                            if(yC == 3'd7)
+                            begin
+                                yC <= 0;
+                                state <= next_state;
+                                execution_step <= 0;
+                            end
+                            else
+                                yC <= yC + 1;
+                        end
                     end
                 end
 
@@ -282,12 +349,15 @@ begin
 end
 
 reg [7:0] tile_data;
+reg [2:0] frame_copy_state;
 always_ff @ (negedge clk, posedge reset)
 begin
+    read  <= 0;
+    write <= 0;
+
     if(reset)
     begin
-        read  <= 0;
-        write <= 0;
+        frame_copy_state <= FRAME_COPY_STATE_COLUMN_SET1;
     end
     else
     begin
@@ -296,6 +366,7 @@ begin
             begin
                 if(execution_step[0])
                 begin
+                    frame_copy_state <= FRAME_COPY_STATE_COLUMN_SET1;
                     if(execution_step % 6 == 5)
                     begin
                         write <= 1;
@@ -305,10 +376,52 @@ begin
                         read <= 1;
                     end
                 end
-                else
+            end
+            PRC_STATE_FRAME_COPY:
+            begin
+                // @todo: Can even set the read/write based on the bus status,
+                // and move the frame_copy_state logic to the posedge.
+                if(execution_step[0])
                 begin
-                    read  <= 0;
-                    write <= 0;
+                    case(frame_copy_state)
+                        FRAME_COPY_STATE_COLUMN_SET1:
+                        begin
+                            write <= 1;
+                            frame_copy_state <= FRAME_COPY_STATE_COLUMN_SET2;
+                        end
+
+                        FRAME_COPY_STATE_COLUMN_SET2:
+                        begin
+                            write <= 1;
+                            frame_copy_state <= FRAME_COPY_STATE_PAGE_SET;
+                        end
+
+                        FRAME_COPY_STATE_PAGE_SET:
+                        begin
+                            write <= 1;
+                            frame_copy_state <= FRAME_COPY_STATE_MEM_READ;
+                        end
+
+                        FRAME_COPY_STATE_MEM_READ:
+                        begin
+                            read <= 1;
+                            frame_copy_state <= FRAME_COPY_STATE_LCD_WRITE;
+                        end
+
+                        FRAME_COPY_STATE_LCD_WRITE:
+                        begin
+                            write <= 1;
+                            frame_copy_state <= FRAME_COPY_STATE_MEM_READ;
+
+                            if(xC == 7'd0)
+                            begin
+                                frame_copy_state <= FRAME_COPY_STATE_COLUMN_SET1;
+                            end
+                        end
+                        default:
+                        begin
+                        end
+                    endcase
                 end
             end
             default:

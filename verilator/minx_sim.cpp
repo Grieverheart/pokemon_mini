@@ -588,7 +588,7 @@ int main(int argc, char** argv, char** env)
     minx->clk = 0;
     minx->reset = 1;
 
-    bool dump = false;
+    bool dump = true;
     VerilatedVcdC* tfp;
     if(dump)
     {
@@ -605,7 +605,7 @@ int main(int argc, char** argv, char** env)
     int prc_state = 0;
     bool data_sent = false;
     int irq_render_done_old = 0;
-    while (timestamp < 16000000 && !Verilated::gotFinish())
+    while (timestamp < 4000000 && !Verilated::gotFinish())
     {
         minx->clk = 1;
         minx->eval();
@@ -626,17 +626,15 @@ int main(int argc, char** argv, char** env)
             irq_render_done_old = 1;
             PRINTD("Render done %d.\n", timestamp / 2);
 
-            int outaddr = 0x1000;
             uint8_t image_data[96*64];
 
             for (int yC=0; yC<8; yC++)
             {
                 for (int xC=0; xC<96; xC++)
                 {
-                    uint8_t data = memory[outaddr & 0xFFF];
+                    uint8_t data = minx->rootp->minx__DOT__lcd__DOT__lcd_data[yC * 132 + xC];
                     for(int i = 0; i < 8; ++i)
                         image_data[96 * (8 * yC + i) + xC] = 255 * ((~data >> i) & 1);
-                    ++outaddr;
                 }
             }
 

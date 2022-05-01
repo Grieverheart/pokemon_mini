@@ -1,15 +1,15 @@
 [*]
 [*] GTKWave Analyzer v3.3.111 (w)1999-2020 BSI
-[*] Fri Apr 15 09:38:57 2022
+[*] Sat Apr 30 19:19:14 2022
 [*]
 [dumpfile] "/home/nicktasios/Programming/fpga/pokemon_mini/verilator/sim.vcd"
-[dumpfile_mtime] "Fri Apr 15 09:29:22 2022"
-[dumpfile_size] 81948457
+[dumpfile_mtime] "Sat Apr 30 19:18:16 2022"
+[dumpfile_size] 82788349
 [savefile] "/home/nicktasios/Programming/fpga/pokemon_mini/verilator/sim.gtkw"
-[timestart] 3000001
+[timestart] 3095967
 [size] 2560 1371
 [pos] -1 -1
-*-16.965784 3092248 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-9.965784 3098105 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] minx.
 [sst_width] 334
 [signals_width] 486
@@ -49,20 +49,9 @@ minx.prc.reg_mode[5:0]
 (5)minx.prc.reg_mode[5:0]
 @1401200
 -group_end
+@24
+minx.prc.execution_step[8:0]
 @c00024
-minx.prc.execution_step[7:0]
-@28
-(0)minx.prc.execution_step[7:0]
-(1)minx.prc.execution_step[7:0]
-(2)minx.prc.execution_step[7:0]
-(3)minx.prc.execution_step[7:0]
-(4)minx.prc.execution_step[7:0]
-(5)minx.prc.execution_step[7:0]
-(6)minx.prc.execution_step[7:0]
-(7)minx.prc.execution_step[7:0]
-@1401200
--group_end
-@c00022
 minx.prc.xC[6:0]
 @28
 (0)minx.prc.xC[6:0]
@@ -78,11 +67,15 @@ minx.prc.xC[6:0]
 minx.prc.yC[2:0]
 @28
 minx.irq_render_done
+@24
+minx.prc.frame_copy_state[2:0]
 @200
 -lcd
 @22
 minx.lcd.pixel_address[10:0]
+@23
 minx.lcd.page[3:0]
+@24
 minx.lcd.column[7:0]
 @200
 -error
