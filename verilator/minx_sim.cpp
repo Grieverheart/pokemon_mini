@@ -632,9 +632,6 @@ int main(int argc, char** argv, char** env)
         if(dump && timestamp > 2427390 - 100000 && timestamp < 2427390 + 100000) tfp->dump(timestamp);
         timestamp++;
 
-        if(minx->rootp->minx__DOT__prc__DOT__state == 2)
-            PRINTE("Sprite rendering not implemented!\n");
-
         //if(minx->sync && minx->pl == 0)
         //    printf("-- 0x%x\n", minx->rootp->minx__DOT__cpu__DOT__PC);
 
@@ -687,25 +684,31 @@ int main(int argc, char** argv, char** env)
         // Check for errors
         {
             if(minx->rootp->minx__DOT__cpu__DOT__not_implemented_addressing_error == 1 && minx->pl == 0)
-                PRINTE(" ** Addressing not implemented error: 0x%x ** \n", (minx->rootp->minx__DOT__cpu__DOT__micro_op & 0x3F00000) >> 20);
+                PRINTE(" ** Addressing not implemented error: 0x%x, timestamp: %d** \n", (minx->rootp->minx__DOT__cpu__DOT__micro_op & 0x3F00000) >> 20, timestamp);
 
             if(minx->rootp->minx__DOT__cpu__DOT__not_implemented_jump_error == 1 && minx->pl == 0)
-                PRINTE(" ** Jump not implemented error ** \n");
+                PRINTE(" ** Jump not implemented error, timestamp: %d** \n", timestamp);
 
             if(minx->rootp->minx__DOT__cpu__DOT__not_implemented_data_out_error == 1 && minx->pl == 1)
-                PRINTE(" ** Data-out not implemented error ** \n");
+                PRINTE(" ** Data-out not implemented error, timestamp: %d** \n", timestamp);
 
             if(minx->rootp->minx__DOT__cpu__DOT__not_implemented_mov_src_error == 1 && minx->pl == 0)
-                PRINTE(" ** Mov src not implemented error ** \n");
+                PRINTE(" ** Mov src not implemented error, timestamp: %d** \n", timestamp);
 
             if(minx->rootp->minx__DOT__cpu__DOT__not_implemented_write_error == 1 && minx->pl == 0)
-                PRINTE(" ** Write not implemented error ** \n");
+                PRINTE(" ** Write not implemented error, timestamp: %d** \n", timestamp);
 
             if(minx->rootp->minx__DOT__cpu__DOT__alu_op_error == 1 && minx->pl == 0)
-                PRINTE(" ** Alu not implemented error ** \n");
+                PRINTE(" ** Alu not implemented error, timestamp: %d** \n", timestamp);
 
             if(minx->rootp->minx__DOT__cpu__DOT__not_implemented_alu_dec_pack_ops_error == 1 && minx->pl == 0)
-                PRINTE(" ** Alu decimal and packed operations not implemented error ** \n");
+                PRINTE(" ** Alu decimal and packed operations not implemented error, timestamp: %d** \n", timestamp);
+
+            if(minx->rootp->minx__DOT__cpu__DOT__divzero_not_implemented_error == 1 && minx->pl == 0)
+                PRINTE("** Division by zero exception not implemented error, timestamp: %d**\n", timestamp);
+
+            if(minx->rootp->minx__DOT__prc__DOT__state == 2)
+                PRINTE("** Sprite rendering not implemented error, timestamp: %d**\n", timestamp);
         }
 
         if(timestamp >= 8)

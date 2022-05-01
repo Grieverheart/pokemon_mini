@@ -92,7 +92,7 @@ module s1c88
 
     // @todo:
     //
-    // * Implement more 16-bit load instructions.
+    // * Implement INT (0xFC).
     // * Implement EXCEPTION_TYPE_DIVZERO.
     // * Implement HALT.
     // * Implement PRC sprite rendering.
@@ -601,6 +601,7 @@ module s1c88
         {2'd0, opcode};
 
     reg alu_op_error;
+    reg divzero_not_implemented_error;
     always_ff @ (negedge clk, posedge reset)
     begin
         if(reset)
@@ -609,6 +610,7 @@ module s1c88
         else if(pk == 0)
         begin
             alu_op_error <= 0;
+            divzero_not_implemented_error <= 0;
             alu_size <= micro_alu_size;
             alu_flag_update <= micro_alu_flag_update;
 
@@ -644,7 +646,11 @@ module s1c88
                     alu_op <= ALUOP_NEG;
 
                 MICRO_ALU_OP_DIV:
+                begin
                     alu_op <= ALUOP_DIV;
+                    if(A == 0)
+                        divzero_not_implemented_error <= 1;
+                end
 
                 MICRO_ALU_OP_MUL:
                     alu_op <= ALUOP_MUL;
