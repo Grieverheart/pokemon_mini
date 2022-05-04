@@ -247,9 +247,10 @@ module s1c88
         MICRO_ADD_HH_LL  = 6'h0C,
         MICRO_ADD_HH_LL1 = 6'h0D,
         MICRO_ADD_KK     = 6'h0E,
-        MICRO_ADD_SP     = 6'h0F,
-        MICRO_ADD_SP_DD  = 6'h10,
-        MICRO_ADD_SP_DD1 = 6'h11;
+        MICRO_ADD_KK1    = 6'h0F,
+        MICRO_ADD_SP     = 6'h10,
+        MICRO_ADD_SP_DD  = 6'h11,
+        MICRO_ADD_SP_DD1 = 6'h12;
 
     localparam [4:0]
         MICRO_ALU_OP_NONE = 5'h00,
@@ -1196,6 +1197,11 @@ module s1c88
                             MICRO_ADD_KK:
                             begin
                                 address_out <= {16'd0, imm[7:0]};
+                            end
+
+                            MICRO_ADD_KK1:
+                            begin
+                                address_out <= {8'd0, {8'd0, imm[7:0]}+16'd1};
                             end
 
                             MICRO_ADD_SP:

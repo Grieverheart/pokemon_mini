@@ -624,12 +624,13 @@ int main(int argc, char** argv, char** env)
     {
         minx->clk = 1;
         minx->eval();
-        if(dump && timestamp > 2427390 - 100000 && timestamp < 2427390 + 100000) tfp->dump(timestamp);
+        // @todo: Check that INT instruction is working properly at the timestamp below.
+        if(dump && timestamp > 2535918 - 100000 && timestamp < 2535918 + 100000) tfp->dump(timestamp);
         timestamp++;
 
         minx->clk = 0;
         minx->eval();
-        if(dump && timestamp > 2427390 - 100000 && timestamp < 2427390 + 100000) tfp->dump(timestamp);
+        if(dump && timestamp > 2535918 - 100000 && timestamp < 2535918 + 100000) tfp->dump(timestamp);
         timestamp++;
 
         //if(minx->sync && minx->pl == 0)
