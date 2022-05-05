@@ -624,7 +624,6 @@ int main(int argc, char** argv, char** env)
     {
         minx->clk = 1;
         minx->eval();
-        // @todo: Check that INT instruction is working properly at the timestamp below.
         if(dump && timestamp > 2535918 - 100000 && timestamp < 2535918 + 100000) tfp->dump(timestamp);
         timestamp++;
 
@@ -705,7 +704,7 @@ int main(int argc, char** argv, char** env)
             if(minx->rootp->minx__DOT__cpu__DOT__not_implemented_alu_dec_pack_ops_error == 1 && minx->pl == 0)
                 PRINTE(" ** Alu decimal and packed operations not implemented error, timestamp: %d** \n", timestamp);
 
-            if(minx->rootp->minx__DOT__cpu__DOT__divzero_not_implemented_error == 1 && minx->pl == 0)
+            if(minx->rootp->minx__DOT__cpu__DOT__not_implemented_divzero_error  == 1 && minx->pl == 0)
                 PRINTE("** Division by zero exception not implemented error, timestamp: %d**\n", timestamp);
 
             if(minx->rootp->minx__DOT__prc__DOT__state == 2)

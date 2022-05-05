@@ -92,10 +92,11 @@ module s1c88
 
     // @todo:
     //
-    // * Implement INT (0xFC).
+    // * Add more error checking, for example reading some clocks that are not
+    //   implemented.
+    // * Implement PRC sprite rendering.
     // * Implement EXCEPTION_TYPE_DIVZERO.
     // * Implement HALT.
-    // * Implement PRC sprite rendering.
     // * Implement alu decimal operations, and unpack operations.
     // * Use the correct page register depending on addressing mode.
 
@@ -551,11 +552,12 @@ module s1c88
     reg [15:0] src_reg;
     reg [15:0] src_reg_sec;
     reg not_implemented_mov_src_error;
-    reg not_implemented_mov_src_sec_error;
+    reg temp_not_implemented_mov_src_sec_error;
+    wire not_implemented_mov_src_sec_error = (micro_op_type == MICRO_TYPE_MISC)? temp_not_implemented_mov_src_sec_error: 0;
     always_comb
     begin
         map_microinstruction_register(micro_mov_src, src_reg, not_implemented_mov_src_error);
-        map_microinstruction_register(micro_mov_src_sec, src_reg_sec, not_implemented_mov_src_sec_error);
+        map_microinstruction_register(micro_mov_src_sec, src_reg_sec, temp_not_implemented_mov_src_sec_error);
     end
 
 
@@ -602,7 +604,7 @@ module s1c88
         {2'd0, opcode};
 
     reg alu_op_error;
-    reg divzero_not_implemented_error;
+    reg not_implemented_divzero_error;
     always_ff @ (negedge clk, posedge reset)
     begin
         if(reset)
@@ -611,7 +613,7 @@ module s1c88
         else if(pk == 0)
         begin
             alu_op_error <= 0;
-            divzero_not_implemented_error <= 0;
+            not_implemented_divzero_error <= 0;
             alu_size <= micro_alu_size;
             alu_flag_update <= micro_alu_flag_update;
 
@@ -650,7 +652,7 @@ module s1c88
                 begin
                     alu_op <= ALUOP_DIV;
                     if(A == 0)
-                        divzero_not_implemented_error <= 1;
+                        not_implemented_divzero_error <= 1;
                 end
 
                 MICRO_ALU_OP_MUL:
