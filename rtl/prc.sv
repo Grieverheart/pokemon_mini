@@ -44,6 +44,12 @@ localparam [2:0]
     FRAME_COPY_STATE_MEM_READ    = 3'd3,
     FRAME_COPY_STATE_LCD_WRITE   = 3'd4;
 
+localparam [2:0]
+    SPRITE_DRAW_STATE_READ_INFO  = 3'd0,
+    SPRITE_DRAW_STATE_READ_TILE  = 3'd1,
+    SPRITE_DRAW_STATE_READ_POS_Y = 3'd2,
+    SPRITE_DRAW_STATE_READ_POS_X = 3'd3;
+
 localparam [1:0]
     BUS_COMMAND_IDLE      = 2'd0,
     BUS_COMMAND_IRQ_READ  = 2'd1,
@@ -116,6 +122,7 @@ end
 
 reg [2:0] yC;
 reg [6:0] xC;
+reg [4:0] current_sprite_id;
 always_ff @ (posedge clk, posedge reset)
 begin
     if(reset)
@@ -272,7 +279,38 @@ begin
 
                 PRC_STATE_SPR_DRAW:
                 begin
-                    // @todo
+                    execution_step <= execution_step + 1;
+                    if(!execution_step[0])
+                    begin
+                        case(sprite_draw_state)
+                            SPRITE_DRAW_STATE_READ_INFO:
+                            begin
+                                bus_address_out <= 24'h1300 + {17'd0, current_sprite_id, 2'd3};
+                                bus_status      <= BUS_COMMAND_MEM_READ;
+                            end
+                            SPRITE_DRAW_STATE_READ_TILE:
+                            begin
+                                //sprite_info     <= bus_data_in;
+                                bus_address_out <= 24'h1300 + {17'd0, current_sprite_id, 2'd2};
+                                bus_status      <= BUS_COMMAND_MEM_READ;
+                            end
+                            SPRITE_DRAW_STATE_READ_POS_Y:
+                            begin
+                                //tile_address    <= bus_data_in;
+                                bus_address_out <= 24'h1300 + {17'd0, current_sprite_id, 2'd1};
+                                bus_status      <= BUS_COMMAND_MEM_READ;
+                            end
+                            SPRITE_DRAW_STATE_READ_POS_X:
+                            begin
+                                //sprite_pos_y    <= bus_data_in;
+                                bus_address_out <= 24'h1300 + {17'd0, current_sprite_id, 2'd0};
+                                bus_status      <= BUS_COMMAND_MEM_READ;
+                            end
+                            default:
+                            begin
+                            end
+                        endcase
+                    end
                     state <= next_state;
                 end
 
@@ -350,85 +388,81 @@ end
 
 reg [7:0] tile_data;
 reg [2:0] frame_copy_state;
+reg [2:0] sprite_draw_state;
 always_ff @ (negedge clk, posedge reset)
 begin
     read  <= 0;
     write <= 0;
 
-    if(reset)
-    begin
-        frame_copy_state <= FRAME_COPY_STATE_COLUMN_SET1;
-    end
-    else
-    begin
-        case(state)
-            PRC_STATE_MAP_DRAW:
+    frame_copy_state  <= FRAME_COPY_STATE_COLUMN_SET1;
+    sprite_draw_state <= SPRITE_DRAW_STATE_READ_INFO;
+
+    case(state)
+        PRC_STATE_MAP_DRAW:
+        begin
+            if(execution_step[0])
             begin
-                if(execution_step[0])
+                if(execution_step % 6 == 5)
                 begin
-                    frame_copy_state <= FRAME_COPY_STATE_COLUMN_SET1;
-                    if(execution_step % 6 == 5)
+                    write <= 1;
+                end
+                else
+                begin
+                    read <= 1;
+                end
+            end
+        end
+        PRC_STATE_FRAME_COPY:
+        begin
+            // @todo: Can even set the read/write based on the bus status,
+            // and move the frame_copy_state logic to the posedge.
+            if(execution_step[0])
+            begin
+                case(frame_copy_state)
+                    FRAME_COPY_STATE_COLUMN_SET1:
                     begin
                         write <= 1;
+                        frame_copy_state <= FRAME_COPY_STATE_COLUMN_SET2;
                     end
-                    else
+
+                    FRAME_COPY_STATE_COLUMN_SET2:
+                    begin
+                        write <= 1;
+                        frame_copy_state <= FRAME_COPY_STATE_PAGE_SET;
+                    end
+
+                    FRAME_COPY_STATE_PAGE_SET:
+                    begin
+                        write <= 1;
+                        frame_copy_state <= FRAME_COPY_STATE_MEM_READ;
+                    end
+
+                    FRAME_COPY_STATE_MEM_READ:
                     begin
                         read <= 1;
+                        frame_copy_state <= FRAME_COPY_STATE_LCD_WRITE;
                     end
-                end
+
+                    FRAME_COPY_STATE_LCD_WRITE:
+                    begin
+                        write <= 1;
+                        frame_copy_state <= FRAME_COPY_STATE_MEM_READ;
+
+                        if(xC == 7'd0)
+                        begin
+                            frame_copy_state <= FRAME_COPY_STATE_COLUMN_SET1;
+                        end
+                    end
+                    default:
+                    begin
+                    end
+                endcase
             end
-            PRC_STATE_FRAME_COPY:
-            begin
-                // @todo: Can even set the read/write based on the bus status,
-                // and move the frame_copy_state logic to the posedge.
-                if(execution_step[0])
-                begin
-                    case(frame_copy_state)
-                        FRAME_COPY_STATE_COLUMN_SET1:
-                        begin
-                            write <= 1;
-                            frame_copy_state <= FRAME_COPY_STATE_COLUMN_SET2;
-                        end
-
-                        FRAME_COPY_STATE_COLUMN_SET2:
-                        begin
-                            write <= 1;
-                            frame_copy_state <= FRAME_COPY_STATE_PAGE_SET;
-                        end
-
-                        FRAME_COPY_STATE_PAGE_SET:
-                        begin
-                            write <= 1;
-                            frame_copy_state <= FRAME_COPY_STATE_MEM_READ;
-                        end
-
-                        FRAME_COPY_STATE_MEM_READ:
-                        begin
-                            read <= 1;
-                            frame_copy_state <= FRAME_COPY_STATE_LCD_WRITE;
-                        end
-
-                        FRAME_COPY_STATE_LCD_WRITE:
-                        begin
-                            write <= 1;
-                            frame_copy_state <= FRAME_COPY_STATE_MEM_READ;
-
-                            if(xC == 7'd0)
-                            begin
-                                frame_copy_state <= FRAME_COPY_STATE_COLUMN_SET1;
-                            end
-                        end
-                        default:
-                        begin
-                        end
-                    endcase
-                end
-            end
-            default:
-            begin
-            end
-        endcase
-    end
+        end
+        default:
+        begin
+        end
+    endcase
 end
 
 always_comb

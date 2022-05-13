@@ -427,6 +427,8 @@ module s1c88
     reg [3:0] microprogram_counter;
     reg [10:0] microaddress;
 
+    // @todo: Bundle all errors into one wide register.
+
     task map_microinstruction_register(input [5:0] reg_id, output logic [15:0] register, output logic not_implemented_error);
         not_implemented_error = 0;
         case(reg_id)
