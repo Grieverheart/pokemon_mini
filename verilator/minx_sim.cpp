@@ -468,6 +468,18 @@ uint8_t read_hardware_register(uint32_t address)
         }
         break;
 
+        case 0x36:
+        case 0x37:
+        case 0x3E:
+        case 0x3F:
+        case 0x41:
+        case 0x4E:
+        case 0x4F:
+        {
+            PRINTE("** Reading hardware register 0x%x which is a timer register and is not implemented! **\n", address);
+        }
+        break;
+
         case 0x60:
         {
             PRINTD("Reading hardware register IO_DIR=");
@@ -620,16 +632,17 @@ int main(int argc, char** argv, char** env)
     int prc_state = 0;
     bool data_sent = false;
     int irq_render_done_old = 0;
-    while (timestamp < 4000000 && !Verilated::gotFinish())
+    int irq_copy_complete_old = 0;
+    while (timestamp < 5000000 && !Verilated::gotFinish())
     {
         minx->clk = 1;
         minx->eval();
-        if(dump && timestamp > 2535918 - 100000 && timestamp < 2535918 + 100000) tfp->dump(timestamp);
+        if(dump && timestamp > 4113360 - 100000 && timestamp < 4113360 + 100000) tfp->dump(timestamp);
         timestamp++;
 
         minx->clk = 0;
         minx->eval();
-        if(dump && timestamp > 2535918 - 100000 && timestamp < 2535918 + 100000) tfp->dump(timestamp);
+        if(dump && timestamp > 4113360 - 100000 && timestamp < 4113360 + 100000) tfp->dump(timestamp);
         timestamp++;
 
         //if(minx->sync && minx->pl == 0)
@@ -662,6 +675,14 @@ int main(int argc, char** argv, char** env)
         }
         else if(!minx->rootp->minx__DOT__irq_render_done) irq_render_done_old = 0;
 
+        if(minx->rootp->minx__DOT__irq_copy_complete && irq_copy_complete_old == 0)
+        {
+            registers[0x27] |= 0x80;
+            irq_copy_complete_old = 1;
+            PRINTD("Copy complete %d.\n", timestamp / 2);
+        }
+        else if(!minx->rootp->minx__DOT__irq_copy_complete) irq_copy_complete_old = 0;
+
         // At rising edge of clock
         data_sent = false;
 
@@ -684,7 +705,7 @@ int main(int argc, char** argv, char** env)
         // Check for errors
         {
             if(minx->rootp->minx__DOT__cpu__DOT__not_implemented_addressing_error == 1 && minx->pl == 0)
-                PRINTE(" ** Addressing not implemented error: 0x%x, timestamp: %d** \n", (minx->rootp->minx__DOT__cpu__DOT__micro_op & 0x3F00000) >> 20, timestamp);
+                PRINTE(" ** Addressing not implemented error: 0x%llx, timestamp: %d** \n", (minx->rootp->minx__DOT__cpu__DOT__micro_op & 0x3F00000) >> 20, timestamp);
 
             if(minx->rootp->minx__DOT__cpu__DOT__not_implemented_jump_error == 1 && minx->pl == 0)
                 PRINTE(" ** Jump not implemented error, timestamp: %d** \n", timestamp);
@@ -707,7 +728,7 @@ int main(int argc, char** argv, char** env)
             if(minx->rootp->minx__DOT__cpu__DOT__not_implemented_divzero_error  == 1 && minx->pl == 0)
                 PRINTE("** Division by zero exception not implemented error, timestamp: %d**\n", timestamp);
 
-            if(minx->rootp->minx__DOT__prc__DOT__state == 2)
+            if(minx->rootp->minx__DOT__prc__DOT__state == 2 && minx->rootp->minx__DOT__prc__DOT__sprite_enabled == 1)
                 PRINTE("** Sprite rendering not implemented error, timestamp: %d**\n", timestamp);
         }
 
@@ -772,7 +793,7 @@ int main(int argc, char** argv, char** env)
             {
                 // write to ram
                 //if(minx->address_out <= 0x12FF) printf("= 0x%x: 0x%x\n", minx->address_out, minx->data_out);
-                //if(minx->address_out >= 0x1360 && minx->address_out < 0x14E0) printf("= 0x%x, 0x%x: 0x%x, 0x%x, %d\n", minx->address_out, minx->data_out, minx->rootp->minx__DOT__cpu__DOT__IX, minx->rootp->minx__DOT__cpu__DOT__IY, (minx->rootp->minx__DOT__cpu__DOT__BA & 0xFF00) >> 8);
+                if(minx->address_out < 0x1360 && minx->address_out >= 0x1300) printf("= 0x%x, 0x%x, %d\n", minx->address_out, minx->data_out, timestamp);
                 //if(minx->address_out >= prc_map && minx->address_out < 0x1928) printf("= 0x%x, 0x%x\n", minx->address_out, minx->data_out);
                 uint32_t address = minx->address_out & 0xFFF;
                 *(uint8_t*)(memory + address) = minx->data_out;

@@ -92,8 +92,6 @@ module s1c88
 
     // @todo:
     //
-    // * Add more error checking, for example reading some clocks that are not
-    //   implemented.
     // * Implement PRC sprite rendering.
     // * Implement EXCEPTION_TYPE_DIVZERO.
     // * Implement HALT.
