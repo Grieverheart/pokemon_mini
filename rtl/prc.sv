@@ -17,6 +17,14 @@ module prc
     output logic irq_render_done
 );
 
+// @todo: I would probably like to continue using the negedge for all the
+// logic. Here I have switched it around; I'm writing to the registers at the
+// posedge because of the short 'write' pulse the cpu produces. I should
+// either latch the value, or use the bus status? Also try to understand why
+// the write pulse is so short and what is it supposed to convey? After doing
+// that, I could move the latching of some data like the sprite_info, etc. to
+// the posedge so that I don't have to do that on the next bus cycle.
+
 // @todo: Thinking about taking FR (32.768kHz clock divided by 7?) as input.
 // 'reg_counter' will then be driven by this clock, while the rest will run on the
 // system clock. Some work is required to actually run simulations with
@@ -124,6 +132,7 @@ end
 
 reg [2:0] frame_copy_state;
 reg [2:0] sprite_draw_state;
+reg [1:0] sprite_draw_tile_index;
 // @todo: Reuse execution_step? Rename to something else e.g.
 // prc_stage_state.
 task init_next_state(input [1:0] state);
@@ -341,12 +350,11 @@ begin
                                 sprite_y          <= bus_data_in[6:0];
                                 bus_address_out   <= 24'h1300 + {17'd0, current_sprite_id, 2'd0};
                                 bus_status        <= BUS_COMMAND_MEM_READ;
-                                current_sprite_id <= (current_sprite_id > 0)? current_sprite_id - 1: 0;
 
                                 if(sprite_enabled)
                                 begin
                                     sprite_draw_state <= SPRITE_DRAW_STATE_READ_PIXEL;
-                                    current_sprite_id <= current_sprite_id - 1;
+                                    sprite_draw_tile_index <= 0;
                                 end
                                 else
                                 begin
@@ -357,12 +365,19 @@ begin
                                         state <= next_state;
                                         init_next_state(next_state);
                                     end
+                                    else current_sprite_id <= current_sprite_id - 1;
                                 end
 
                             end
                             SPRITE_DRAW_STATE_READ_PIXEL:
                             begin
                                 //bus_address_out <= 24'h1000 + yC * 96 + {16'h0, sprite_x + xC};
+                                //if((sprite_x >= 7'd0) && (sprite_x < 7'd96)
+                                //begin
+                                //end
+                                //else
+                                //begin
+                                //end
                             end
                             default:
                             begin
