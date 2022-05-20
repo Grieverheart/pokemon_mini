@@ -83,6 +83,7 @@ wire [1:0] next_state =
 reg [9:0] prc_osc_counter;
 reg bus_cycle;
 reg [8:0] execution_step;
+reg bus_write_latch;
 
 reg [4:0] map_width;
 reg [4:0] map_height;
@@ -163,7 +164,7 @@ reg [6:0] sprite_y;
 reg [7:0] sprite_tile_address;
 reg [3:0] sprite_info;
 wire sprite_enabled = sprite_info[3];
-always_ff @ (posedge clk, posedge reset)
+always_ff @ (negedge clk, posedge reset)
 begin
     if(reset)
     begin
@@ -185,7 +186,7 @@ begin
     end
     else
     begin
-        if(bus_write)
+        if(bus_write_latch)
         begin
             case(bus_address_in)
                 24'h2080: // PRC Stage Control
@@ -458,10 +459,15 @@ begin
     end
 end
 
-always_ff @ (negedge clk, posedge reset)
+always_ff @ (posedge clk, posedge reset)
 begin
+    bus_write_latch <= 0;
+
     read  <= 0;
     write <= 0;
+
+    if(bus_write) bus_write_latch <= 1;
+
 
     if(bus_cycle)
     begin

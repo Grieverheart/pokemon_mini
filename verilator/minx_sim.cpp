@@ -637,12 +637,12 @@ int main(int argc, char** argv, char** env)
     {
         minx->clk = 1;
         minx->eval();
-        if(dump && timestamp > 4113360 - 100000 && timestamp < 4113360 + 100000) tfp->dump(timestamp);
+        if(dump && timestamp > 451478 - 400000 && timestamp < 451478 + 100000) tfp->dump(timestamp);
         timestamp++;
 
         minx->clk = 0;
         minx->eval();
-        if(dump && timestamp > 4113360 - 100000 && timestamp < 4113360 + 100000) tfp->dump(timestamp);
+        if(dump && timestamp > 451478 - 400000 && timestamp < 451478 + 100000) tfp->dump(timestamp);
         timestamp++;
 
         //if(minx->sync && minx->pl == 0)
@@ -728,8 +728,8 @@ int main(int argc, char** argv, char** env)
             if(minx->rootp->minx__DOT__cpu__DOT__not_implemented_divzero_error  == 1 && minx->pl == 0)
                 PRINTE("** Division by zero exception not implemented error, timestamp: %d**\n", timestamp);
 
-            if(minx->rootp->minx__DOT__prc__DOT__state == 2 && minx->rootp->minx__DOT__prc__DOT__sprite_enabled == 1)
-                PRINTE("** Sprite rendering not implemented error, timestamp: %d**\n", timestamp);
+            //if(minx->rootp->minx__DOT__prc__DOT__state == 2 && minx->rootp->minx__DOT__prc__DOT__sprite_enabled == 1)
+            //    PRINTE("** Sprite rendering not implemented error, timestamp: %d**\n", timestamp);
         }
 
         if(timestamp >= 8)
