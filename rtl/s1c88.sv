@@ -21,9 +21,6 @@ module s1c88
     output bus_ack
 );
 
-    // @todo: bus_ack should be go high at the negative edge and low at the
-    // positive edge. This does not seem to be the case currently.
-
     //In the S1C88, the fetching of the first operation code of the
     //instruction is done overlapping the last cycle of the immediately prior
     //instruction.  Consequently, the execution cycle for 1 instruction of the
@@ -147,7 +144,7 @@ module s1c88
 
 
     reg bus_ack_negedge, bus_ack_posedge, bus_request_latch;
-    assign bus_ack = bus_ack_negedge | bus_ack_posedge;
+    assign bus_ack = bus_ack_negedge & bus_ack_posedge;
     assign i01 = SC[7:6];
 
     localparam [1:0]
