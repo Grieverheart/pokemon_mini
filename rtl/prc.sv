@@ -17,14 +17,6 @@ module prc
     output logic irq_render_done
 );
 
-// @todo: I would probably like to continue using the negedge for all the
-// logic. Here I have switched it around; I'm writing to the registers at the
-// posedge because of the short 'write' pulse the cpu produces. I should
-// either latch the value, or use the bus status? Also try to understand why
-// the write pulse is so short and what is it supposed to convey? After doing
-// that, I could move the latching of some data like the sprite_info, etc. to
-// the posedge so that I don't have to do that on the next bus cycle.
-
 // @todo: Thinking about taking FR (32.768kHz clock divided by 7?) as input.
 // 'reg_counter' will then be driven by this clock, while the rest will run on the
 // system clock. Some work is required to actually run simulations with
@@ -53,11 +45,14 @@ localparam [2:0]
     FRAME_COPY_STATE_LCD_WRITE   = 3'd4;
 
 localparam [2:0]
-    SPRITE_DRAW_STATE_READ_TILE_INFO    = 3'd0,
-    SPRITE_DRAW_STATE_READ_TILE_ADDRESS = 3'd1,
-    SPRITE_DRAW_STATE_READ_POS_Y        = 3'd2,
-    SPRITE_DRAW_STATE_READ_POS_X        = 3'd3,
-    SPRITE_DRAW_STATE_READ_PIXEL        = 3'd4;
+    SPRITE_DRAW_STATE_READ_TILE_INFO     = 3'd0,
+    SPRITE_DRAW_STATE_READ_TILE_ADDRESS  = 3'd1,
+    SPRITE_DRAW_STATE_READ_POS_Y         = 3'd2,
+    SPRITE_DRAW_STATE_READ_POS_X         = 3'd3,
+    SPRITE_DRAW_STATE_READ_COLUMN        = 3'd4,
+    SPRITE_DRAW_STATE_READ_SPRITE_DATA   = 3'd5,
+    SPRITE_DRAW_STATE_READ_SPRITE_MASK   = 3'd6,
+    SPRITE_DRAW_STATE_DRAW_SPRITE_COLUMN = 3'd7;
 
 localparam [1:0]
     BUS_COMMAND_IDLE      = 2'd0,
@@ -84,6 +79,7 @@ reg [9:0] prc_osc_counter;
 reg bus_cycle;
 reg [8:0] execution_step;
 reg bus_write_latch;
+reg [1:0] sprite_tile_index;
 
 reg [4:0] map_width;
 reg [4:0] map_height;
@@ -133,6 +129,7 @@ end
 
 reg [2:0] frame_copy_state;
 reg [2:0] sprite_draw_state;
+reg [2:0] sprite_draw_state_current;
 reg [1:0] sprite_draw_tile_index;
 // @todo: Reuse execution_step? Rename to something else e.g.
 // prc_stage_state.
@@ -146,8 +143,10 @@ task init_next_state(input [1:0] state);
 
         PRC_STATE_SPR_DRAW:
         begin
-            sprite_draw_state <= SPRITE_DRAW_STATE_READ_TILE_INFO;
-            current_sprite_id <= 5'd23;
+            sprite_draw_state         <= SPRITE_DRAW_STATE_READ_TILE_INFO;
+            sprite_draw_state_current <= SPRITE_DRAW_STATE_READ_TILE_INFO;
+            current_sprite_id         <= 5'd23;
+            sprite_tile_index         <= 2'd0;
         end
 
         default:
@@ -156,14 +155,48 @@ task init_next_state(input [1:0] state);
     endcase
 endtask
 
+reg [6:0] sprite_abs_x;
+reg [6:0] sprite_abs_y;
+always_comb
+begin
+    case(sprite_tile_index)
+        0:
+        begin
+            sprite_abs_x = sprite_x + {2'd0, sprite_info[0], 3'd0};
+            sprite_abs_y = sprite_y + {2'd0, sprite_info[1], 3'd0};
+        end
+        1:
+        begin
+            sprite_abs_x = sprite_x + {2'd0,  sprite_info[0], 3'd0};
+            sprite_abs_y = sprite_y + {2'd0, ~sprite_info[1], 3'd0};
+        end
+        2:
+        begin
+            sprite_abs_x = sprite_x + {2'd0, ~sprite_info[0], 3'd0};
+            sprite_abs_y = sprite_y + {2'd0,  sprite_info[1], 3'd0};
+        end
+        3:
+        begin
+            sprite_abs_x = sprite_x + {2'd0, ~sprite_info[0], 3'd0};
+            sprite_abs_y = sprite_y + {2'd0, ~sprite_info[1], 3'd0};
+        end
+    endcase
+    //sprite_abs_x = sprite_abs_x - 7'd16;
+    //sprite_abs_y = sprite_abs_y - 7'd16;
+end
+
 reg [2:0] yC;
 reg [6:0] xC;
+reg [7:0] column_data;
+reg [7:0] sprite_data;
+reg [7:0] sprite_mask;
 reg [4:0] current_sprite_id;
 reg [6:0] sprite_x;
 reg [6:0] sprite_y;
 reg [7:0] sprite_tile_address;
 reg [3:0] sprite_info;
 wire sprite_enabled = sprite_info[3];
+wire [7:0] sprite_tile_offset = {5'd0, sprite_tile_index[1], 2'd0} + {7'd0, sprite_tile_index[0]};
 always_ff @ (negedge clk, posedge reset)
 begin
     if(reset)
@@ -325,6 +358,8 @@ begin
                 begin
                     if(!bus_cycle)
                     begin
+                        sprite_draw_state_current <= sprite_draw_state;
+
                         case(sprite_draw_state)
                             SPRITE_DRAW_STATE_READ_TILE_INFO:
                             begin
@@ -334,51 +369,109 @@ begin
                             end
                             SPRITE_DRAW_STATE_READ_TILE_ADDRESS:
                             begin
-                                sprite_info       <= bus_data_in[3:0];
                                 bus_address_out   <= 24'h1300 + {17'd0, current_sprite_id, 2'd2};
                                 bus_status        <= BUS_COMMAND_MEM_READ;
                                 sprite_draw_state <= SPRITE_DRAW_STATE_READ_POS_Y;
                             end
                             SPRITE_DRAW_STATE_READ_POS_Y:
                             begin
-                                sprite_tile_address <= bus_data_in;
                                 bus_address_out     <= 24'h1300 + {17'd0, current_sprite_id, 2'd1};
                                 bus_status          <= BUS_COMMAND_MEM_READ;
                                 sprite_draw_state   <= SPRITE_DRAW_STATE_READ_POS_X;
                             end
                             SPRITE_DRAW_STATE_READ_POS_X:
                             begin
-                                sprite_y          <= bus_data_in[6:0];
                                 bus_address_out   <= 24'h1300 + {17'd0, current_sprite_id, 2'd0};
                                 bus_status        <= BUS_COMMAND_MEM_READ;
+                                current_sprite_id <= current_sprite_id - 1;
 
                                 if(sprite_enabled)
                                 begin
-                                    sprite_draw_state <= SPRITE_DRAW_STATE_READ_PIXEL;
+                                    sprite_draw_state <= SPRITE_DRAW_STATE_READ_COLUMN;
                                     sprite_draw_tile_index <= 0;
                                 end
                                 else
                                 begin
                                     sprite_draw_state <= SPRITE_DRAW_STATE_READ_TILE_INFO;
+                                    xC <= 0;
 
                                     if(current_sprite_id == 5'd0)
                                     begin
                                         state <= next_state;
                                         init_next_state(next_state);
                                     end
-                                    else current_sprite_id <= current_sprite_id - 1;
                                 end
 
                             end
-                            SPRITE_DRAW_STATE_READ_PIXEL:
+                            SPRITE_DRAW_STATE_READ_COLUMN:
                             begin
-                                //bus_address_out <= 24'h1000 + yC * 96 + {16'h0, sprite_x + xC};
-                                //if((sprite_x >= 7'd0) && (sprite_x < 7'd96)
-                                //begin
-                                //end
-                                //else
-                                //begin
-                                //end
+                                // @todo: Should I make sprite_abs_x/y 1 bit
+                                // larger?
+                                if(
+                                    (sprite_abs_x < 9) || (sprite_abs_x >= 112) ||
+                                    (sprite_abs_y < 9) || (sprite_abs_y >= 80)
+                                )
+                                begin
+                                    bus_status <= BUS_COMMAND_IDLE;
+                                    xC <= 0;
+                                    if(sprite_tile_index < 3)
+                                        sprite_tile_index <= sprite_tile_index + 1;
+                                    else
+                                    begin
+                                        sprite_tile_index <= 0;
+                                        sprite_draw_state <= SPRITE_DRAW_STATE_READ_TILE_INFO;
+                                    end
+                                end
+                                // @todo: sprite_abs_x + xC?
+                                else if((sprite_abs_y >= 16) && (sprite_abs_x >= 16))
+                                begin
+                                    bus_address_out <= 24'h1000 +
+                                        {19'h0, sprite_abs_y[6:3] - 4'd2} * 96 +
+                                        {16'h0, sprite_abs_x + xC - 7'd16};
+                                    bus_status <= BUS_COMMAND_MEM_READ;
+                                    sprite_draw_state <= SPRITE_DRAW_STATE_READ_SPRITE_DATA;
+                                end
+                            end
+                            SPRITE_DRAW_STATE_READ_SPRITE_DATA:
+                            begin
+                                bus_address_out <= reg_sprite_base + 
+                                    8 * (8 * {16'd0, sprite_tile_address} + {16'd0, sprite_tile_offset} + 24'd2) +
+                                    {21'd0, sprite_info[0]? 3'd7 - xC[2:0]: xC[2:0]};
+                                bus_status <= BUS_COMMAND_MEM_READ;
+                                sprite_draw_state <= SPRITE_DRAW_STATE_READ_SPRITE_MASK;
+                            end
+                            SPRITE_DRAW_STATE_READ_SPRITE_MASK:
+                            begin
+                                bus_address_out <= reg_sprite_base + 
+                                    8 * (8 * {16'd0, sprite_tile_address} + {16'd0, sprite_tile_offset}) +
+                                    {21'd0, sprite_info[0]? 3'd7 - xC[2:0]: xC[2:0]};
+                                bus_status <= BUS_COMMAND_MEM_READ;
+                                sprite_draw_state <= SPRITE_DRAW_STATE_DRAW_SPRITE_COLUMN;
+                            end
+                            SPRITE_DRAW_STATE_DRAW_SPRITE_COLUMN:
+                            begin
+                                // @todo: What exactly do we fill here?
+                                data_out <= sprite_data;//column_data;
+                                bus_address_out <= 24'h1000 +
+                                    {19'h0, sprite_abs_y[6:3] - 4'd2} * 96 +
+                                    {16'h0, sprite_abs_x + xC - 7'd16};
+                                bus_status <= BUS_COMMAND_MEM_WRITE;
+                                sprite_draw_state <= SPRITE_DRAW_STATE_READ_COLUMN;
+                                if(xC < 7)
+                                begin
+                                    xC <= xC + 1;
+                                end
+                                else
+                                begin
+                                    xC <= 0;
+                                    if(sprite_tile_index < 3)
+                                        sprite_tile_index <= sprite_tile_index + 1;
+                                    else
+                                    begin
+                                        sprite_tile_index <= 0;
+                                        sprite_draw_state <= SPRITE_DRAW_STATE_READ_TILE_INFO;
+                                    end
+                                end
                             end
                             default:
                             begin
@@ -475,6 +568,35 @@ begin
             read <= 1;
         else if(bus_status == BUS_COMMAND_MEM_WRITE)
             write <= 1;
+    end
+    else if(state == PRC_STATE_SPR_DRAW)
+    begin
+        case(sprite_draw_state_current)
+            SPRITE_DRAW_STATE_READ_TILE_INFO:
+                sprite_info <= bus_data_in[3:0];
+
+            SPRITE_DRAW_STATE_READ_TILE_ADDRESS:
+                sprite_tile_address <= bus_data_in;
+
+            SPRITE_DRAW_STATE_READ_POS_Y:
+                sprite_y <= bus_data_in[6:0];
+
+            SPRITE_DRAW_STATE_READ_POS_X:
+                sprite_x <= bus_data_in[6:0];
+
+            SPRITE_DRAW_STATE_READ_COLUMN:
+                column_data <= bus_data_in;
+
+            SPRITE_DRAW_STATE_READ_SPRITE_DATA:
+                sprite_data <= bus_data_in;
+
+            SPRITE_DRAW_STATE_READ_SPRITE_MASK:
+                sprite_mask <= bus_data_in;
+
+            default:
+            begin
+            end
+        endcase
     end
 end
 

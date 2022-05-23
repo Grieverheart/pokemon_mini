@@ -1,15 +1,15 @@
 [*]
 [*] GTKWave Analyzer v3.3.107 (w)1999-2020 BSI
-[*] Fri May 20 05:01:39 2022
+[*] Mon May 23 07:29:10 2022
 [*]
 [dumpfile] "/Users/nicktasios/Programming/fpga/pokemon_mini/verilator/sim.vcd"
-[dumpfile_mtime] "Mon May 16 20:57:47 2022"
-[dumpfile_size] 38578040
+[dumpfile_mtime] "Mon May 23 06:52:34 2022"
+[dumpfile_size] 15988790
 [savefile] "/Users/nicktasios/Programming/fpga/pokemon_mini/verilator/sim.gtkw"
-[timestart] 225703
+[timestart] 2646168
 [size] 1280 755
 [pos] -1 -1
-*-3.965784 225730 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-3.965784 2646193 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] minx.
 [sst_width] 208
 [signals_width] 311
@@ -20,16 +20,27 @@ minx.clk
 minx.cpu.pk
 minx.cpu.pl
 minx.read
-@29
 minx.write
-@28
 minx.cpu.sync
 minx.cpu.fetch_opcode
 @22
 minx.address_out[23:0]
 minx.cpu.address_out[23:0]
 minx.cpu.PC[15:0]
+@c00022
 minx.data_in[7:0]
+@28
+(0)minx.data_in[7:0]
+(1)minx.data_in[7:0]
+(2)minx.data_in[7:0]
+(3)minx.data_in[7:0]
+(4)minx.data_in[7:0]
+(5)minx.data_in[7:0]
+(6)minx.data_in[7:0]
+(7)minx.data_in[7:0]
+@1401200
+-group_end
+@22
 minx.data_out[7:0]
 @24
 minx.bus_status[1:0]
@@ -58,7 +69,6 @@ minx.prc.prc_osc_counter[9:0]
 @28
 minx.prc.bus_cycle
 minx.prc.bus_request
-minx.prc.bus_ack
 @c00022
 minx.prc.reg_counter[6:0]
 @28
@@ -104,12 +114,49 @@ minx.prc.yC[2:0]
 minx.irq_render_done
 @24
 minx.prc.frame_copy_state[2:0]
-minx.prc.sprite_draw_state[2:0]
+@c00024
+minx.prc.sprite_draw_state_current[2:0]
 @28
+(0)minx.prc.sprite_draw_state_current[2:0]
+(1)minx.prc.sprite_draw_state_current[2:0]
+(2)minx.prc.sprite_draw_state_current[2:0]
+@1401200
+-group_end
+@24
 minx.prc.state[1:0]
+@28
 minx.prc.sprite_enabled
 @22
 minx.prc.sprite_info[3:0]
+@c00024
+minx.prc.sprite_x[6:0]
+@28
+(0)minx.prc.sprite_x[6:0]
+(1)minx.prc.sprite_x[6:0]
+(2)minx.prc.sprite_x[6:0]
+(3)minx.prc.sprite_x[6:0]
+(4)minx.prc.sprite_x[6:0]
+(5)minx.prc.sprite_x[6:0]
+(6)minx.prc.sprite_x[6:0]
+@1401200
+-group_end
+@c00024
+minx.prc.sprite_abs_x[6:0]
+@28
+(0)minx.prc.sprite_abs_x[6:0]
+(1)minx.prc.sprite_abs_x[6:0]
+(2)minx.prc.sprite_abs_x[6:0]
+(3)minx.prc.sprite_abs_x[6:0]
+(4)minx.prc.sprite_abs_x[6:0]
+(5)minx.prc.sprite_abs_x[6:0]
+(6)minx.prc.sprite_abs_x[6:0]
+@1401200
+-group_end
+@25
+minx.prc.sprite_y[6:0]
+@24
+minx.prc.sprite_abs_y[6:0]
+minx.prc.sprite_tile_index[1:0]
 @200
 -lcd
 @22
