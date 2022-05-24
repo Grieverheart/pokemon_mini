@@ -633,7 +633,7 @@ int main(int argc, char** argv, char** env)
     bool data_sent = false;
     int irq_render_done_old = 0;
     int irq_copy_complete_old = 0;
-    while (timestamp < 5000000 && !Verilated::gotFinish())
+    while (timestamp < 25000000 && !Verilated::gotFinish())
     {
         minx->clk = 1;
         minx->eval();
@@ -727,9 +727,6 @@ int main(int argc, char** argv, char** env)
 
             if(minx->rootp->minx__DOT__cpu__DOT__not_implemented_divzero_error  == 1 && minx->pl == 0)
                 PRINTE("** Division by zero exception not implemented error, timestamp: %d**\n", timestamp);
-
-            //if(minx->rootp->minx__DOT__prc__DOT__state == 2 && minx->rootp->minx__DOT__prc__DOT__sprite_enabled == 1)
-            //    PRINTE("** Sprite rendering not implemented error, timestamp: %d**\n", timestamp);
         }
 
         if(timestamp >= 8)
@@ -793,7 +790,7 @@ int main(int argc, char** argv, char** env)
             {
                 // write to ram
                 //if(minx->address_out <= 0x12FF) printf("= 0x%x: 0x%x\n", minx->address_out, minx->data_out);
-                if(minx->address_out < 0x1360 && minx->address_out >= 0x1300) printf("= 0x%x, 0x%x, %d\n", minx->address_out, minx->data_out, timestamp);
+                //if(minx->address_out < 0x1360 && minx->address_out >= 0x1300) printf("= 0x%x, 0x%x, %d\n", minx->address_out, minx->data_out, timestamp);
                 //if(minx->address_out >= prc_map && minx->address_out < 0x1928) printf("= 0x%x, 0x%x\n", minx->address_out, minx->data_out);
                 uint32_t address = minx->address_out & 0xFFF;
                 *(uint8_t*)(memory + address) = minx->data_out;

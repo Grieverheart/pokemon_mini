@@ -197,6 +197,7 @@ reg [7:0] sprite_tile_address;
 reg [3:0] sprite_info;
 wire sprite_enabled = sprite_info[3];
 wire [7:0] sprite_tile_offset = {5'd0, sprite_tile_index[1], 2'd0} + {7'd0, sprite_tile_index[0]};
+wire [7:0] sprite_color = sprite_info[2]? ~sprite_data: sprite_data;
 always_ff @ (negedge clk, posedge reset)
 begin
     if(reset)
@@ -450,8 +451,7 @@ begin
                             end
                             SPRITE_DRAW_STATE_DRAW_SPRITE_COLUMN:
                             begin
-                                // @todo: What exactly do we fill here?
-                                data_out <= sprite_data;//column_data;
+                                data_out <= (sprite_color & ~sprite_mask) | (column_data & sprite_mask);
                                 bus_address_out <= 24'h1000 +
                                     {19'h0, sprite_abs_y[6:3] - 4'd2} * 96 +
                                     {16'h0, sprite_abs_x + xC - 7'd16};
@@ -529,7 +529,7 @@ begin
 
                                     if(yC == 3'd7)
                                     begin
-                                        irq_copy_complete  <= 1;
+                                        irq_copy_complete <= 1;
                                         yC <= 0;
                                         state <= next_state;
                                     end
