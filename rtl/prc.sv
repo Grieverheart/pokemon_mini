@@ -22,9 +22,6 @@ module prc
 // system clock. Some work is required to actually run simulations with
 // multiple clocks.
 
-// @todo: Make PRC work only on posedge. Do we really need set the read/write
-// at negedge? Are we going to make use of these 'read'/'write's?
-
 // @todo: What about page 8?
 
 reg [7:0] data_out;
@@ -245,7 +242,7 @@ begin
                     reg_scroll_x <= bus_data_in[6:0];
 
                 24'h2087: // PRC Sprite Tile Base Low
-                    reg_sprite_base[7:3] <= bus_data_in[7:3];
+                    reg_sprite_base[7:6] <= bus_data_in[7:6];
                 24'h2088: // PRC Sprite Tile Base Middle
                     reg_sprite_base[15:8] <= bus_data_in;
                 24'h2089: // PRC Sprite Tile Base High
@@ -271,7 +268,7 @@ begin
                 // Active frame
                 if(reg_counter < 7'h18)
                 begin
-                    state           <= PRC_STATE_IDLE;
+                    state <= PRC_STATE_IDLE;
                 end
                 else if(reg_counter < 7'h42)
                 begin
@@ -384,7 +381,6 @@ begin
                             begin
                                 bus_address_out   <= 24'h1300 + {17'd0, current_sprite_id, 2'd0};
                                 bus_status        <= BUS_COMMAND_MEM_READ;
-                                current_sprite_id <= current_sprite_id - 1;
 
                                 if(sprite_enabled)
                                 begin
@@ -393,6 +389,7 @@ begin
                                 end
                                 else
                                 begin
+                                    current_sprite_id <= current_sprite_id - 1;
                                     sprite_draw_state <= SPRITE_DRAW_STATE_READ_TILE_INFO;
                                     xC <= 0;
 
@@ -421,6 +418,12 @@ begin
                                     begin
                                         sprite_tile_index <= 0;
                                         sprite_draw_state <= SPRITE_DRAW_STATE_READ_TILE_INFO;
+                                        current_sprite_id <= current_sprite_id - 1;
+                                        if(current_sprite_id == 5'd0)
+                                        begin
+                                            state <= next_state;
+                                            init_next_state(next_state);
+                                        end
                                     end
                                 end
                                 // @todo: sprite_abs_x + xC?
@@ -470,6 +473,12 @@ begin
                                     begin
                                         sprite_tile_index <= 0;
                                         sprite_draw_state <= SPRITE_DRAW_STATE_READ_TILE_INFO;
+                                        current_sprite_id <= current_sprite_id - 1;
+                                        if(current_sprite_id == 5'd0)
+                                        begin
+                                            state <= next_state;
+                                            init_next_state(next_state);
+                                        end
                                     end
                                 end
                             end

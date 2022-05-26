@@ -584,6 +584,7 @@ uint8_t read_hardware_register(uint32_t address)
     return data;
 }
 
+// @todo: Detect when page registers need to be used (error not implemented). Are they even used?
 int main(int argc, char** argv, char** env)
 {
     FILE* fp = fopen("data/bios.min", "rb");
@@ -637,12 +638,12 @@ int main(int argc, char** argv, char** env)
     {
         minx->clk = 1;
         minx->eval();
-        if(dump && timestamp > 2646180 - 100000 && timestamp < 2646180 + 100000) tfp->dump(timestamp);
+        if(dump && timestamp > 8803088 - 400000 && timestamp < 8803088 + 400000) tfp->dump(timestamp);
         timestamp++;
 
         minx->clk = 0;
         minx->eval();
-        if(dump && timestamp > 2646180 - 100000 && timestamp < 2646180 + 100000) tfp->dump(timestamp);
+        if(dump && timestamp > 8803088 - 400000 && timestamp < 8803088 + 400000) tfp->dump(timestamp);
         timestamp++;
 
         //if(minx->sync && minx->pl == 0)
@@ -668,6 +669,7 @@ int main(int argc, char** argv, char** env)
 
             char path[128];
             snprintf(path, 128, "temp/frame_%03d.png", frame);
+            printf("%d, %d\n", frame, timestamp);
             int has_error = !stbi_write_png(path, 96, 64, 1, image_data, 96);
             if(has_error) printf("Error saving image %s\n", path);
 
@@ -701,6 +703,8 @@ int main(int argc, char** argv, char** env)
             if(minx->rootp->minx__DOT__cpu__DOT__microaddress == 0)
                 PRINTE("** Instruction 0x%x not implemented at 0x%x, timestamp: %d**\n", minx->rootp->minx__DOT__cpu__DOT__extended_opcode, minx->rootp->minx__DOT__cpu__DOT__top_address, timestamp);
         }
+        //if(minx->sync == 1 && minx->pl == 0)
+        //    printf("** Instruction 0x%x not implemented at 0x%x, timestamp: %d**\n", minx->rootp->minx__DOT__cpu__DOT__extended_opcode, minx->rootp->minx__DOT__cpu__DOT__top_address, timestamp);
 
         // Check for errors
         {
@@ -773,7 +777,8 @@ int main(int argc, char** argv, char** env)
             {
                 // read from cartridge
                 //printf("0x%x, 0x%x\n", minx->rootp->minx__DOT__cpu__DOT__top_address, minx->rootp->minx__DOT__cpu__DOT__extended_opcode);
-                //printf("0x%x\n", minx->address_out);
+                if((minx->address_out & 0x8000) && (minx->rootp->minx__DOT__cpu__DOT__CB > 0))
+                    PRINTE("** CB not implemented 0x%x, 0x%x **\n", minx->address_out, minx->rootp->minx__DOT__cpu__DOT__CB);
                 minx->data_in = *(uint8_t*)(cartridge + (minx->address_out & 0x1FFFFF));
             }
 
@@ -784,7 +789,7 @@ int main(int argc, char** argv, char** env)
             // memory write
             if(minx->address_out < 0x1000)
             {
-                PRINTD("Program trying to write to bios at 0x%x!\n", minx->address_out);
+                PRINTD("Program trying to write to bios at 0x%x, timestamp: %d\n", minx->address_out, timestamp);
             }
             else if(minx->address_out < 0x2000)
             {
@@ -803,7 +808,7 @@ int main(int argc, char** argv, char** env)
             }
             else
             {
-                PRINTD("Program trying to write to cartridge at 0x%x!\n", minx->address_out);
+                PRINTD("Program trying to write to cartridge at 0x%x, timestamp: %d\n", minx->address_out, timestamp);
             }
 
             data_sent = true;
