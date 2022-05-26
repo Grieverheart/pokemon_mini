@@ -65,7 +65,6 @@ module alu
     // to check again if it's ADD, INC, etc.
     always_comb
     begin
-        // @todo: Implement OR!
         R_temp = 0;
         flags = 4'h0;
         case(alu_op)
@@ -127,6 +126,7 @@ module alu
 
             ALUOP_DEC,
             ALUOP_DEC2,
+            ALUOP_NEG,
             ALUOP_SUB,
             ALUOP_SBC:
             begin
@@ -241,7 +241,7 @@ module alu
 
             default:
             begin
-                R = 16'hFACE;
+                R = 16'hFECA;
                 flags = 4'd0;
             end
 

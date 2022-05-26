@@ -24,6 +24,47 @@ module prc
 
 // @todo: What about page 8?
 
+// @note: For the sprite rendering basically implemented the folliowing as
+// a finite-state machine:
+// 
+//     if ((X < -7) || (X >= 96)) return;
+//     if ((Y < -7) || (Y >= 64)) return;
+//     
+//     // Pre calculate
+//     vaddr = 0x1000 + ((Y >> 3) * 96) + X;
+//     
+//     // Process top columns
+//     for (xC=0; xC<8; xC++, X++) {
+//         if ((X >= 0) && (X < 96)) {
+//             xP = (cfg & 0x01) ? (7 - xC) : xC;
+//     
+//             sdata = MinxPRC_OnRead(0, MinxPRC.PRCSprBase + (DrawT * 8) + xP);
+//             smask = MinxPRC_OnRead(0, MinxPRC.PRCSprBase + (MaskT * 8) + xP);
+//     
+//             if (cfg & 0x02) {
+//                 sdata = PRCInvertBit[sdata];
+//                 smask = PRCInvertBit[smask];
+//             }
+//             if (cfg & 0x04) sdata = ~sdata;
+//     
+//             if (Y >= 0) {
+//                 vdata = MinxPRC_OnRead(0, vaddr + xC);
+//                 data = vdata & ((smask << (Y & 7)) | (0xFF >> (8 - (Y & 7))));
+//                 data |= (sdata & ~smask) << (Y & 7);
+//     
+//                 MinxPRC_OnWrite(0, vaddr + xC, data);
+//             }
+//             if ((Y < 56) && (Y & 7)) {
+//                 vdata = MinxPRC_OnRead(0, vaddr + 96 + xC);
+//                 data = vdata & ((smask >> (8-(Y & 7))) | (0xFF << (Y & 7)));
+//                 data |= (sdata & ~smask) >> (8-(Y & 7));
+//     
+//                 MinxPRC_OnWrite(0, vaddr + 96 + xC, data);
+//             }
+//         }
+//     }
+//
+
 reg [7:0] data_out;
 reg [7:0] reg_data_out;
 assign bus_data_out = bus_ack? data_out: reg_data_out;
@@ -46,9 +87,9 @@ localparam [2:0]
     SPRITE_DRAW_STATE_READ_TILE_ADDRESS  = 3'd1,
     SPRITE_DRAW_STATE_READ_POS_Y         = 3'd2,
     SPRITE_DRAW_STATE_READ_POS_X         = 3'd3,
-    SPRITE_DRAW_STATE_READ_COLUMN        = 3'd4,
-    SPRITE_DRAW_STATE_READ_SPRITE_DATA   = 3'd5,
-    SPRITE_DRAW_STATE_READ_SPRITE_MASK   = 3'd6,
+    SPRITE_DRAW_STATE_READ_SPRITE_DATA   = 3'd4,
+    SPRITE_DRAW_STATE_READ_SPRITE_MASK   = 3'd5,
+    SPRITE_DRAW_STATE_READ_COLUMN        = 3'd6,
     SPRITE_DRAW_STATE_DRAW_SPRITE_COLUMN = 3'd7;
 
 localparam [1:0]
@@ -181,9 +222,11 @@ begin
     //sprite_abs_x = sprite_abs_x - 7'd16;
     //sprite_abs_y = sprite_abs_y - 7'd16;
 end
+wire [7:0] sprite_row_x = {1'b0, sprite_abs_x} + {1'b0, xC};
 
 reg [2:0] yC;
 reg [6:0] xC;
+reg top_or_bottom;
 reg [7:0] column_data;
 reg [7:0] sprite_data;
 reg [7:0] sprite_mask;
@@ -195,6 +238,13 @@ reg [3:0] sprite_info;
 wire sprite_enabled = sprite_info[3];
 wire [7:0] sprite_tile_offset = {5'd0, sprite_tile_index[1], 2'd0} + {7'd0, sprite_tile_index[0]};
 wire [7:0] sprite_color = sprite_info[2]? ~sprite_data: sprite_data;
+wire [7:0] column_data_masked = column_data & ((top_or_bottom == 0)?
+    (sprite_mask << sprite_abs_y[2:0]) | (8'hFF >> (4'd8 - {1'b0, sprite_abs_y[2:0]})):
+    (8'hFF << sprite_abs_y[2:0]) | (sprite_mask >> (4'd8 - {1'b0, sprite_abs_y[2:0]})));
+wire [7:0] sprite_color_masked_and_shifted = (top_or_bottom == 0)?
+    (sprite_color & ~sprite_mask) << sprite_abs_y[2:0]:
+    (sprite_color & ~sprite_mask) >> (4'd8 - {1'b0, sprite_abs_y[2:0]});
+
 always_ff @ (negedge clk, posedge reset)
 begin
     if(reset)
@@ -224,7 +274,7 @@ begin
                     reg_mode <= bus_data_in[5:0];
 
                 24'h2081: // PRC Rate Control
-                    // Reset the reg_counter when changing the divider.
+                    // @todo? Reset the reg_counter when changing the divider.
                     reg_rate <= (reg_rate[3:1] != bus_data_in[3:1])?
                         {4'd0, bus_data_in[3:0]}:
                         {reg_rate[7:4], bus_data_in[3:0]};
@@ -384,7 +434,7 @@ begin
 
                                 if(sprite_enabled)
                                 begin
-                                    sprite_draw_state <= SPRITE_DRAW_STATE_READ_COLUMN;
+                                    sprite_draw_state <= SPRITE_DRAW_STATE_READ_SPRITE_DATA;
                                     sprite_draw_tile_index <= 0;
                                 end
                                 else
@@ -401,10 +451,8 @@ begin
                                 end
 
                             end
-                            SPRITE_DRAW_STATE_READ_COLUMN:
+                            SPRITE_DRAW_STATE_READ_SPRITE_DATA:
                             begin
-                                // @todo: Should I make sprite_abs_x/y 1 bit
-                                // larger?
                                 if(
                                     (sprite_abs_x < 9) || (sprite_abs_x >= 112) ||
                                     (sprite_abs_y < 9) || (sprite_abs_y >= 80)
@@ -426,23 +474,14 @@ begin
                                         end
                                     end
                                 end
-                                // @todo: sprite_abs_x + xC?
-                                else if((sprite_abs_y >= 16) && (sprite_abs_x >= 16))
+                                else
                                 begin
-                                    bus_address_out <= 24'h1000 +
-                                        {19'h0, sprite_abs_y[6:3] - 4'd2} * 96 +
-                                        {16'h0, sprite_abs_x + xC - 7'd16};
+                                    bus_address_out <= reg_sprite_base + 
+                                        8 * (8 * {16'd0, sprite_tile_address} + {16'd0, sprite_tile_offset} + 24'd2) +
+                                        {21'd0, sprite_info[0]? 3'd7 - xC[2:0]: xC[2:0]};
                                     bus_status <= BUS_COMMAND_MEM_READ;
-                                    sprite_draw_state <= SPRITE_DRAW_STATE_READ_SPRITE_DATA;
+                                    sprite_draw_state <= SPRITE_DRAW_STATE_READ_SPRITE_MASK;
                                 end
-                            end
-                            SPRITE_DRAW_STATE_READ_SPRITE_DATA:
-                            begin
-                                bus_address_out <= reg_sprite_base + 
-                                    8 * (8 * {16'd0, sprite_tile_address} + {16'd0, sprite_tile_offset} + 24'd2) +
-                                    {21'd0, sprite_info[0]? 3'd7 - xC[2:0]: xC[2:0]};
-                                bus_status <= BUS_COMMAND_MEM_READ;
-                                sprite_draw_state <= SPRITE_DRAW_STATE_READ_SPRITE_MASK;
                             end
                             SPRITE_DRAW_STATE_READ_SPRITE_MASK:
                             begin
@@ -450,34 +489,100 @@ begin
                                     8 * (8 * {16'd0, sprite_tile_address} + {16'd0, sprite_tile_offset}) +
                                     {21'd0, sprite_info[0]? 3'd7 - xC[2:0]: xC[2:0]};
                                 bus_status <= BUS_COMMAND_MEM_READ;
-                                sprite_draw_state <= SPRITE_DRAW_STATE_DRAW_SPRITE_COLUMN;
-                            end
-                            SPRITE_DRAW_STATE_DRAW_SPRITE_COLUMN:
-                            begin
-                                data_out <= (sprite_color & ~sprite_mask) | (column_data & sprite_mask);
-                                bus_address_out <= 24'h1000 +
-                                    {19'h0, sprite_abs_y[6:3] - 4'd2} * 96 +
-                                    {16'h0, sprite_abs_x + xC - 7'd16};
-                                bus_status <= BUS_COMMAND_MEM_WRITE;
                                 sprite_draw_state <= SPRITE_DRAW_STATE_READ_COLUMN;
-                                if(xC < 7)
+                                top_or_bottom <= 0;
+                            end
+                            SPRITE_DRAW_STATE_READ_COLUMN:
+                            begin
+                                if(
+                                    (top_or_bottom == 0) &&
+                                    (sprite_abs_y >= 16) &&
+                                    (sprite_row_x >= 16) && (sprite_row_x < 112)
+                                )
                                 begin
-                                    xC <= xC + 1;
+                                    bus_address_out <= 24'h1000 +
+                                        {19'h0, sprite_abs_y[6:3] - 4'd2} * 96 +
+                                        {15'h0, sprite_row_x - 8'd16};
+                                    bus_status <= BUS_COMMAND_MEM_READ;
+                                    sprite_draw_state <= SPRITE_DRAW_STATE_DRAW_SPRITE_COLUMN;
+                                end
+                                else if(
+                                    (sprite_abs_y < 72) && (sprite_abs_y[2:0] != 0) &&
+                                    (sprite_row_x >= 16) && (sprite_row_x < 112)
+                                )
+                                begin
+                                    top_or_bottom <= 1;
+                                    bus_address_out <= 24'h1000 +
+                                        {19'h0, sprite_abs_y[6:3] - 4'd1} * 96 +
+                                        {15'h0, sprite_row_x - 8'd16};
+                                    bus_status <= BUS_COMMAND_MEM_READ;
+                                    sprite_draw_state <= SPRITE_DRAW_STATE_DRAW_SPRITE_COLUMN;
                                 end
                                 else
                                 begin
-                                    xC <= 0;
-                                    if(sprite_tile_index < 3)
-                                        sprite_tile_index <= sprite_tile_index + 1;
+                                    // @todo?
+                                    if(xC < 7)
+                                    begin
+                                        xC <= xC + 1;
+                                    end
                                     else
                                     begin
-                                        sprite_tile_index <= 0;
-                                        sprite_draw_state <= SPRITE_DRAW_STATE_READ_TILE_INFO;
-                                        current_sprite_id <= current_sprite_id - 1;
-                                        if(current_sprite_id == 5'd0)
+                                        xC <= 0;
+                                        if(sprite_tile_index < 3)
+                                            sprite_tile_index <= sprite_tile_index + 1;
+                                        else
                                         begin
-                                            state <= next_state;
-                                            init_next_state(next_state);
+                                            sprite_tile_index <= 0;
+                                            sprite_draw_state <= SPRITE_DRAW_STATE_READ_TILE_INFO;
+                                            current_sprite_id <= current_sprite_id - 1;
+                                            if(current_sprite_id == 5'd0)
+                                            begin
+                                                state <= next_state;
+                                                init_next_state(next_state);
+                                            end
+                                        end
+                                    end
+                                end
+                            end
+                            SPRITE_DRAW_STATE_DRAW_SPRITE_COLUMN:
+                            begin
+                                data_out <= sprite_color_masked_and_shifted | column_data_masked;
+                                bus_address_out <= 24'h1000 +
+                                    {19'h0, (sprite_abs_y[6:3] + {3'd0, top_or_bottom}) - 4'd2} * 96 +
+                                    {15'h0, sprite_row_x - 8'd16};
+                                bus_status <= BUS_COMMAND_MEM_WRITE;
+                                sprite_draw_state <= SPRITE_DRAW_STATE_READ_SPRITE_DATA;
+
+                                if(
+                                    (top_or_bottom == 0) && 
+                                    (sprite_abs_y < 72) && (sprite_abs_y[2:0] != 0) &&
+                                    (sprite_row_x >= 16) && (sprite_row_x < 112)
+                                )
+                                begin
+                                    top_or_bottom <= 1;
+                                    sprite_draw_state <= SPRITE_DRAW_STATE_READ_COLUMN;
+                                end
+                                else
+                                begin
+                                    if(xC < 7)
+                                    begin
+                                        xC <= xC + 1;
+                                    end
+                                    else
+                                    begin
+                                        xC <= 0;
+                                        if(sprite_tile_index < 3)
+                                            sprite_tile_index <= sprite_tile_index + 1;
+                                        else
+                                        begin
+                                            sprite_tile_index <= 0;
+                                            sprite_draw_state <= SPRITE_DRAW_STATE_READ_TILE_INFO;
+                                            current_sprite_id <= current_sprite_id - 1;
+                                            if(current_sprite_id == 5'd0)
+                                            begin
+                                                state <= next_state;
+                                                init_next_state(next_state);
+                                            end
                                         end
                                     end
                                 end

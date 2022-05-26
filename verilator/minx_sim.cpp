@@ -634,16 +634,16 @@ int main(int argc, char** argv, char** env)
     bool data_sent = false;
     int irq_render_done_old = 0;
     int irq_copy_complete_old = 0;
-    while (timestamp < 25000000 && !Verilated::gotFinish())
+    while (timestamp < 35000000 && !Verilated::gotFinish())
     {
         minx->clk = 1;
         minx->eval();
-        if(dump && timestamp > 8803088 - 400000 && timestamp < 8803088 + 400000) tfp->dump(timestamp);
+        if(dump && timestamp > 17606168 - 400000 && timestamp < 17606168 + 400000) tfp->dump(timestamp);
         timestamp++;
 
         minx->clk = 0;
         minx->eval();
-        if(dump && timestamp > 8803088 - 400000 && timestamp < 8803088 + 400000) tfp->dump(timestamp);
+        if(dump && timestamp > 17606168 - 400000 && timestamp < 17606168 + 400000) tfp->dump(timestamp);
         timestamp++;
 
         //if(minx->sync && minx->pl == 0)
@@ -731,6 +731,9 @@ int main(int argc, char** argv, char** env)
 
             if(minx->rootp->minx__DOT__cpu__DOT__not_implemented_divzero_error  == 1 && minx->pl == 0)
                 PRINTE("** Division by zero exception not implemented error, timestamp: %d**\n", timestamp);
+
+            if(minx->rootp->minx__DOT__cpu__DOT__SP > 0x2000 && minx->pl == 0)
+                PRINTE("** Stack overflow, timestamp: %d**\n", timestamp);
         }
 
         if(timestamp >= 8)

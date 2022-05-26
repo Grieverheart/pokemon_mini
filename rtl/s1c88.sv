@@ -93,7 +93,6 @@ module s1c88
 
     // @todo:
     //
-    // * Implement PRC sprite rendering.
     // * Implement EXCEPTION_TYPE_DIVZERO.
     // * Implement HALT.
     // * Implement alu decimal operations, and unpack operations.
