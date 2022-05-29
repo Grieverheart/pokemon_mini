@@ -96,7 +96,6 @@ module s1c88
     // * Implement EXCEPTION_TYPE_DIVZERO.
     // * Implement HALT.
     // * Implement alu decimal operations, and unpack operations.
-    // * Use the correct page register depending on addressing mode.
 
     // For jump instruction we need: condition, offset (TA1/TA2). I think
     // we'll leave the mov instructions in there as common to all
@@ -926,7 +925,7 @@ module s1c88
                 end
                 else if(pk == 0)
                 begin
-                    address_out <= {9'd0, PC[14:0]};
+                    address_out <= {1'd0, (PC[15]? CB: 8'd0), PC[14:0]};
                     bus_status <= BUS_COMMAND_MEM_READ;
                     fetch_opcode <= 0;
                     //bus_status <= BUS_COMMAND_IRQ_READ;
@@ -1048,7 +1047,7 @@ module s1c88
 
                             if(micro_op_type == MICRO_TYPE_JMP && jump_condition_true)
                             begin
-                                address_out <= {9'd0, jump_dest[14:0]};
+                                address_out <= {1'd0, (jump_dest[15]? NB: 8'd0), jump_dest[14:0]};
                                 branch_taken = 1;
                             end
                         end

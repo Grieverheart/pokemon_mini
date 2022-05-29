@@ -104,6 +104,8 @@ if __name__ == '__main__':
 
     lines = open(os.path.join(root, 'rom/microinstructions.txt'), 'r').readlines()
 
+    # @todo: Also check if MOV_DATA is called enough times given the
+    # instruction number of arguments.
     addresses = [-1] * 768
     rom = []
     microinstruction_address = 0

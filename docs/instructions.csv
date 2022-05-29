@@ -542,8 +542,8 @@ AF,"POP F",8
 "CF B5","POP B",12
 "CF B6","POP L",12
 "CF B7","POP H",12
-"CF BC",POPA,32
-"CF BD",POPAX,40
+"CF BC",POPA,44
+"CF BD",POPAX,56
 "E0 ss","CALLCB #ss *1",20
 "E1 ss","CALLNCB #ss *1",20
 "E2 ss","CALLZB #ss *1",20
@@ -555,7 +555,7 @@ AF,"POP F",8
 "F0 ss","CALLB #ss *1",20
 "F2 ss ss","CALLW #ssss *1",24
 "FB nn nn","CALL [#nnnn]",20
-"FC ss","CINT #nn",20
+"FC ss","CINT #nn",32
 "CE F0 ss","CALLL #ss",24
 "CE F1 ss","CALLLE #ss",24
 "CE F2 ss","CALLG #ss",24
@@ -601,8 +601,8 @@ F4,"JMP HL",8
 "CE ED ss","JX1 #ss",12
 "CE EE ss","JX2 #ss",12
 "CE EF ss","JX3 #ss",12
-F8,RET,8
-F9,RETI,8
-FA,RETSKIP,8
+F8,RET,16
+F9,RETI,20
+FA,RETSKIP,24
 "CE AE",HALT,8
 "CE AF",STOP,8

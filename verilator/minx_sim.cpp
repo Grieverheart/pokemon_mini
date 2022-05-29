@@ -6,6 +6,8 @@
 #include <cstring>
 #include <cstdint>
 
+#include "instruction_cycles.h"
+
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
 
@@ -589,26 +591,27 @@ int main(int argc, char** argv, char** env)
 {
     FILE* fp = fopen("data/bios.min", "rb");
     fseek(fp, 0, SEEK_END);
-    size_t file_size = ftell(fp);
+    size_t bios_file_size = ftell(fp);
     fseek(fp, 0, SEEK_SET);  /* same as rewind(f); */
 
-    uint8_t* bios = (uint8_t*) malloc(file_size);
-    uint8_t* bios_touched = (uint8_t*) calloc(file_size, 1);
-    fread(bios, 1, file_size, fp);
+    uint8_t* bios = (uint8_t*) malloc(bios_file_size);
+    uint8_t* bios_touched = (uint8_t*) calloc(bios_file_size, 1);
+    fread(bios, 1, bios_file_size, fp);
     fclose(fp);
 
     uint8_t* memory = (uint8_t*) calloc(1, 4*1024);
 
     // Load a cartridge.
     uint8_t* cartridge = (uint8_t*) calloc(1, 0x200000);
-    {
-        FILE* fp = fopen("data/party_j.min", "rb");
-        fseek(fp, 0, SEEK_END);
-        size_t file_size = ftell(fp);
-        fseek(fp, 0, SEEK_SET);  /* same as rewind(f); */
-        fread(cartridge, 1, file_size, fp);
-        fclose(fp);
-    }
+    fp = fopen("data/party_j.min", "rb");
+    fseek(fp, 0, SEEK_END);
+    size_t cartridge_file_size = ftell(fp);
+    fseek(fp, 0, SEEK_SET);  /* same as rewind(f); */
+    fread(cartridge, 1, cartridge_file_size, fp);
+    fclose(fp);
+    uint8_t* cartridge_touched = (uint8_t*) calloc(1, cartridge_file_size);
+
+    uint8_t* instructions_executed = (uint8_t*) calloc(1, 0x300);
 
     Verilated::commandArgs(argc, argv);
 
@@ -634,7 +637,7 @@ int main(int argc, char** argv, char** env)
     bool data_sent = false;
     int irq_render_done_old = 0;
     int irq_copy_complete_old = 0;
-    while (timestamp < 35000000 && !Verilated::gotFinish())
+    while (timestamp < 18000000 && !Verilated::gotFinish())
     {
         minx->clk = 1;
         minx->eval();
@@ -697,7 +700,6 @@ int main(int argc, char** argv, char** env)
         //minx->eval();
         //tfp->dump(timestamp++);
 
-        // @todo: Translate instructions using instructions.csv.
         if(minx->rootp->minx__DOT__cpu__DOT__state == 2 && minx->pl == 0)
         {
             if(minx->rootp->minx__DOT__cpu__DOT__microaddress == 0)
@@ -708,6 +710,21 @@ int main(int argc, char** argv, char** env)
 
         // Check for errors
         {
+            if((minx->sync == 1) && (minx->pl == 0) && (minx->rootp->minx__DOT__cpu__DOT__micro_op & 0x1000))
+            {
+                uint8_t num_cycles        = 1 + minx->rootp->minx__DOT__cpu__DOT__microprogram_counter;
+                uint16_t extended_opcode  = minx->rootp->minx__DOT__cpu__DOT__extended_opcode;
+                uint8_t num_cycles_actual = instruction_cycles[extended_opcode];
+
+                //if(!instructions_executed[extended_opcode])
+                //    printf("%d, 0x%x\n", timestamp, extended_opcode);
+
+                if(num_cycles != num_cycles_actual)
+                    PRINTE(" ** Descrepancy found in number of cycles of instruction 0x%x: %d, %d, timestamp: %d** \n", extended_opcode, num_cycles, num_cycles_actual, timestamp);
+
+                instructions_executed[extended_opcode] = 1;
+            }
+
             if(minx->rootp->minx__DOT__cpu__DOT__not_implemented_addressing_error == 1 && minx->pl == 0)
                 PRINTE(" ** Addressing not implemented error: 0x%llx, timestamp: %d** \n", (minx->rootp->minx__DOT__cpu__DOT__micro_op & 0x3F00000) >> 20, timestamp);
 
@@ -732,8 +749,8 @@ int main(int argc, char** argv, char** env)
             if(minx->rootp->minx__DOT__cpu__DOT__not_implemented_divzero_error  == 1 && minx->pl == 0)
                 PRINTE("** Division by zero exception not implemented error, timestamp: %d**\n", timestamp);
 
-            if(minx->rootp->minx__DOT__cpu__DOT__SP > 0x2000 && minx->pl == 0)
-                PRINTE("** Stack overflow, timestamp: %d**\n", timestamp);
+            //if(minx->rootp->minx__DOT__cpu__DOT__SP > 0x2000 && minx->pl == 0)
+            //    PRINTE("** Stack overflow, timestamp: %d**\n", timestamp);
         }
 
         if(timestamp >= 8)
@@ -761,8 +778,8 @@ int main(int argc, char** argv, char** env)
                 //    printf("___ 0x%x\n", minx->rootp->address_out);
                 //}
                 // read from bios
-                bios_touched[minx->address_out & (file_size - 1)] = 1;
-                minx->data_in = *(bios + (minx->address_out & (file_size - 1)));
+                bios_touched[minx->address_out & (bios_file_size - 1)] = 1;
+                minx->data_in = *(bios + (minx->address_out & (bios_file_size - 1)));
             }
             else if(minx->address_out < 0x2000)
             {
@@ -779,9 +796,11 @@ int main(int argc, char** argv, char** env)
             else
             {
                 // read from cartridge
-                //printf("0x%x, 0x%x\n", minx->rootp->minx__DOT__cpu__DOT__top_address, minx->rootp->minx__DOT__cpu__DOT__extended_opcode);
-                if((minx->address_out & 0x8000) && (minx->rootp->minx__DOT__cpu__DOT__CB > 0))
-                    PRINTE("** CB not implemented 0x%x, 0x%x **\n", minx->address_out, minx->rootp->minx__DOT__cpu__DOT__CB);
+                //if(!cartridge_touched[(minx->address_out & 0x1FFFFF) & (cartridge_file_size - 1)])
+                //    printf("%d\n", timestamp);
+                cartridge_touched[(minx->address_out & 0x1FFFFF) & (cartridge_file_size - 1)] = 1;
+                //if((minx->rootp->minx__DOT__cpu__DOT__PC & 0x8000) && (minx->rootp->minx__DOT__cpu__DOT__CB > 0))
+                //    PRINTE("** CB not implemented 0x%x, 0x%x **\n", minx->address_out, minx->rootp->minx__DOT__cpu__DOT__CB);
                 minx->data_in = *(uint8_t*)(cartridge + (minx->address_out & 0x1FFFFF));
             }
 
@@ -823,9 +842,19 @@ int main(int argc, char** argv, char** env)
     delete minx;
 
     size_t total_touched = 0;
-    for(size_t i = 0; i < file_size; ++i)
+    for(size_t i = 0; i < bios_file_size; ++i)
         total_touched += bios_touched[i];
-    printf("%zu bytes out of total %zu read from bios.\n", total_touched, file_size);
+    printf("%zu bytes out of total %zu read from bios.\n", total_touched, bios_file_size);
+
+    total_touched = 0;
+    for(size_t i = 0; i < cartridge_file_size; ++i)
+        total_touched += cartridge_touched[i];
+    printf("%zu bytes out of total %zu read from cartridge.\n", total_touched, cartridge_file_size);
+
+    total_touched = 0;
+    for(size_t i = 0; i < 0x300; ++i)
+        total_touched += instructions_executed[i];
+    printf("%zu instructions out of total 608 executed.\n", total_touched);
 
     return 0;
 }
