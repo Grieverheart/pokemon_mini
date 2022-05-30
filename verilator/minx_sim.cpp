@@ -109,13 +109,15 @@ void write_hardware_register(uint32_t address, uint8_t data)
 
         case 0x60:
         {
-            PRINTD("Writing hardware register IO_DIR=");
+            PRINTE("Writing hardware register IO_DIR=");
+            PRINTE("0x%x\n", data);
         }
         break;
 
         case 0x61:
         {
-            PRINTD("Writing hardware register IO_DATA=");
+            PRINTE("Writing hardware register IO_DATA=");
+            PRINTE("0x%x\n", data);
         }
         break;
 
@@ -484,13 +486,15 @@ uint8_t read_hardware_register(uint32_t address)
 
         case 0x60:
         {
-            PRINTD("Reading hardware register IO_DIR=");
+            PRINTE("Reading hardware register IO_DIR=");
+            PRINTE("0x%x\n", data);
         }
         break;
 
         case 0x61:
         {
-            PRINTD("Reading hardware register IO_DATA=");
+            PRINTE("Reading hardware register IO_DATA=");
+            PRINTE("0x%x\n", data);
         }
         break;
 

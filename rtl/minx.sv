@@ -17,6 +17,48 @@ module minx
     output wire sync,
     output logic iack
 );
+    reg [7:0] reg_io_dir;
+    reg [7:0] reg_io_data;
+    reg cpu_write_latch;
+    always_ff @ (negedge clk)
+    begin
+        if(cpu_write_latch)
+        begin
+            if(cpu_address_out == 24'h2060)
+                reg_io_dir <= cpu_data_out;
+
+            if(cpu_address_out == 24'h2061)
+                reg_io_data <= cpu_data_out;
+        end
+    end
+
+    always_ff @ (negedge clk)
+    begin
+        cpu_write_latch <= 0;
+        if(cpu_write) cpu_write_latch <= 1;
+    end
+
+    reg [7:0] io_data_out;
+    always_comb
+    begin
+        case(cpu_address_out)
+            24'h2060:
+                io_data_out = reg_io_dir;
+            24'h2061:
+                io_data_out = reg_io_data;
+            default:
+                io_data_out = 8'd0;
+        endcase
+    end
+
+    //eeprom rom
+    //(
+    //    .clk(clk),
+    //    .reset(reset),
+    //    .data_dir(reg_io_dir[2]),
+    //    .data_in(reg_io_data[2]),
+    //    .data_out()
+    //);
 
     assign data_out    = bus_ack? prc_data_out    : cpu_data_out;
     assign address_out = bus_ack? prc_address_out : cpu_address_out;
@@ -66,7 +108,7 @@ module minx
         .irq_render_done   (irq_render_done)
     );
 
-    wire [7:0] reg_data_out = lcd_data_out | prc_data_out; // More to come.
+    wire [7:0] reg_data_out = lcd_data_out | prc_data_out | io_data_out; // More to come.
     wire [7:0] cpu_data_in = (
             (address_out == 24'h20FE || address_out == 24'h20FF ||
             (address_out >= 24'h2080 && address_out <= 24'h8F)
