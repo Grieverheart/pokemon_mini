@@ -7,20 +7,21 @@ module eeprom
     output data_out
 );
     localparam [2:0]
-        EEPROM_STATE_IDLE           = 3'd0,
-        EEPROM_STATE_START_TRANSFER = 3'd1,
-        EEPROM_STATE_ACKNOWLEDGE    = 3'd2,
-        EEPROM_STATE_READ_ADDRESS   = 3'd3,
-        EEPROM_STATE_DATA_READ      = 3'd4,
-        EEPROM_STATE_DATA_WRITE     = 3'd5;
+        EEPROM_STATE_IDLE              = 3'd0,
+        EEPROM_STATE_START_TRANSFER    = 3'd1,
+        EEPROM_STATE_READ_ADDRESS_HIGH = 3'd2,
+        EEPROM_STATE_READ_ADDRESS_LOW  = 3'd3,
+        EEPROM_STATE_DATA_READ         = 3'd4,
+        EEPROM_STATE_DATA_WRITE        = 3'd5;
 
     reg clock_posedge;
     reg data_latch;
     reg reg_data_out;
-    reg [7:0] control_byte;
+    reg [7:0] input_byte;
     reg [12:0] address;
     reg [2:0] state;
     reg [3:0] bit_count;
+    reg [7:0] rom[0:8191];
 
     assign data_out = reg_data_out & data_latch;
 
@@ -30,8 +31,8 @@ module eeprom
         begin
             clock_posedge <= 0;
             state         <= EEPROM_STATE_IDLE;
-            control_byte  <= 8'd0;
             reg_data_out  <= 1'd1;
+            input_byte    <= 8'd0;
         end
         else
         begin
@@ -44,8 +45,9 @@ module eeprom
                 if(!data_in)
                 begin
                     $display("start");
-                    state <= EEPROM_STATE_START_TRANSFER;
-                    bit_count <= 4'd0;
+                    bit_count  <= 4'd0;
+                    input_byte <= 8'd0;
+                    state      <= EEPROM_STATE_START_TRANSFER;
                 end
                 else
                 begin
@@ -60,47 +62,57 @@ module eeprom
             begin
                 if(ce)
                 begin
-                    reg_data_out <= 1'd1;
-                    // @note: In principle I should probably set data on the
-                    // negative edge and after making sure the data was stable
-                    // for the duration of the high period of the clock
-                    // signal. This is easier, though. Otherwise, I'd have to
-                    // add another Acknowledge state which triggers on the
-                    // positive edge.
-                    if(state == EEPROM_STATE_START_TRANSFER)
-                    begin
-                        control_byte <= {control_byte[6:0], data_in};
-                        bit_count <= bit_count + 1;
-
-                        if(bit_count == 4'd7)
-                        begin
-                            $display("control byte received");
-                            state <= EEPROM_STATE_ACKNOWLEDGE;
-                            bit_count <= 4'd0;
-                            reg_data_out <= 1'd0;
-                        end
-                    end
-                    else if(state == EEPROM_STATE_ACKNOWLEDGE)
-                    begin
-                        $display("acknowledge");
-                        if(control_byte == 8'hA0)
-                        begin
-                            state <= EEPROM_STATE_READ_ADDRESS;
-                            address <= 13'd0;
-                        end
-                        else if(control_byte == 8'hA1)
-                        begin
-                            state <= EEPROM_STATE_DATA_READ;
-                        end
-                    end
-                    else if(state == EEPROM_STATE_READ_ADDRESS)
-                    begin
-                        address <= {address[11:0], data_in};
-                        bit_count <= bit_count + 1;
-                    end
+                    input_byte <= {input_byte[6:0], data_in};
                 end
                 else
                 begin
+                    reg_data_out <= 1'd1;
+                    bit_count <= bit_count + 1;
+
+                    if(bit_count == 4'd8)
+                    begin
+                        bit_count <= 4'd0;
+                        if(state == EEPROM_STATE_START_TRANSFER)
+                        begin
+                            if(input_byte == 8'hA0)
+                            begin
+                                state <= EEPROM_STATE_READ_ADDRESS_HIGH;
+                                address <= 13'd0;
+                                reg_data_out <= 1'd0;
+                            end
+                            else if(input_byte == 8'hA1)
+                            begin
+                                state <= EEPROM_STATE_DATA_READ;
+                                input_byte <= 8'd0;
+                                reg_data_out <= 1'd0;
+                            end
+                            else
+                            begin
+                                $display("wrong constrol byte: stop");
+                                state <= EEPROM_STATE_IDLE;
+                                reg_data_out <= 1'd1;
+                            end
+
+                        end
+                        else if(state == EEPROM_STATE_READ_ADDRESS_HIGH)
+                        begin
+                            address[12:8] <= input_byte[4:0];
+                            state <= EEPROM_STATE_READ_ADDRESS_LOW;
+                            reg_data_out <= 1'd0;
+                        end
+                        else if(state == EEPROM_STATE_READ_ADDRESS_LOW)
+                        begin
+                            address[7:0] <= input_byte;
+                            state <= EEPROM_STATE_DATA_WRITE;
+                            reg_data_out <= 1'd0;
+                        end
+                        else if(state == EEPROM_STATE_DATA_WRITE)
+                        begin
+                            rom[address] <= input_byte;
+                            state <= EEPROM_STATE_DATA_WRITE;
+                            reg_data_out <= 1'd0;
+                        end
+                    end
                 end
             end
         end
