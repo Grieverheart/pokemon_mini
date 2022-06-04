@@ -645,12 +645,12 @@ int main(int argc, char** argv, char** env)
     {
         minx->clk = 1;
         minx->eval();
-        if(dump && timestamp > 225728 - 400000 && timestamp < 225728 + 400000) tfp->dump(timestamp);
+        if(dump && timestamp > 677168 - 400000 && timestamp < 677168 + 400000) tfp->dump(timestamp);
         timestamp++;
 
         minx->clk = 0;
         minx->eval();
-        if(dump && timestamp > 225728 - 400000 && timestamp < 225728 + 400000) tfp->dump(timestamp);
+        if(dump && timestamp > 677168 - 400000 && timestamp < 677168 + 400000) tfp->dump(timestamp);
         timestamp++;
 
         //if(minx->sync && minx->pl == 0)
@@ -796,6 +796,8 @@ int main(int argc, char** argv, char** env)
                 // read from hardware registers
                 //printf("0x%x, 0x%x\n", minx->rootp->minx__DOT__cpu__DOT__top_address, minx->rootp->minx__DOT__cpu__DOT__extended_opcode);
                 minx->data_in = read_hardware_register(minx->address_out & 0x1FFF);
+                //if((minx->address_out & 0x1FFF) == 0x60 | (minx->address_out & 0x1FFF) == 0x61)
+                //    printf("address 0x%x\n", minx->rootp->minx__DOT__cpu__DOT__top_address);
             }
             else
             {

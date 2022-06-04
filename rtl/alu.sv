@@ -176,7 +176,7 @@ module alu
             ALUOP_ROL:
             begin
                 R = {A[14:0], A[7]};
-                flags[ALU_FLAG_C] = R[msb];
+                flags[ALU_FLAG_C] = A[msb];
                 flags[ALU_FLAG_Z] = (R == 0);
                 flags[ALU_FLAG_S] = R[msb];
             end
@@ -192,7 +192,7 @@ module alu
             ALUOP_ROR:
             begin
                 R = {A[15:8], A[0], A[7:1]};
-                flags[ALU_FLAG_C] = R[0];
+                flags[ALU_FLAG_C] = R[msb];
                 flags[ALU_FLAG_Z] = (R == 0);
                 flags[ALU_FLAG_S] = R[msb];
             end

@@ -1,21 +1,21 @@
 [*]
-[*] GTKWave Analyzer v3.3.111 (w)1999-2020 BSI
-[*] Sat Jun  4 07:08:13 2022
+[*] GTKWave Analyzer v3.3.107 (w)1999-2020 BSI
+[*] Sat Jun  4 09:02:27 2022
 [*]
-[dumpfile] "/home/nicktasios/Programming/fpga/pokemon_mini/verilator/sim.vcd"
-[dumpfile_mtime] "Wed Jun  1 23:04:20 2022"
-[dumpfile_size] 53904053
-[savefile] "/home/nicktasios/Programming/fpga/pokemon_mini/verilator/sim.gtkw"
-[timestart] 7542
-[size] 2560 1371
+[dumpfile] "/Users/nicktasios/Programming/fpga/pokemon_mini/verilator/sim.vcd"
+[dumpfile_mtime] "Sat Jun  4 08:55:23 2022"
+[dumpfile_size] 73322180
+[savefile] "/Users/nicktasios/Programming/fpga/pokemon_mini/verilator/sim.gtkw"
+[timestart] 1032994
+[size] 1280 755
 [pos] -1 -1
-*-5.965784 7771 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-6.965784 1033146 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] minx.
 [treeopen] minx.cpu.
 [sst_width] 227
 [signals_width] 289
 [sst_expanded] 1
-[sst_vpaned_height] 774
+[sst_vpaned_height] 422
 @28
 minx.clk
 minx.cpu.pk
@@ -98,17 +98,30 @@ minx.cpu.alu_op[4:0]
 minx.cpu.jump_dest[15:0]
 @28
 minx.cpu_write_latch
-minx.rom.ce
 @22
 minx.reg_io_dir[7:0]
 minx.reg_io_data[7:0]
-@28
+@29
 minx.rom.clock_posedge
-minx.rom.data_in
+@28
 minx.rom.data_latch
+minx.rom.data_out
 minx.rom.state[1:0]
-@23
+@c00022
 minx.rom.control_byte[7:0]
+@28
+(0)minx.rom.control_byte[7:0]
+(1)minx.rom.control_byte[7:0]
+(2)minx.rom.control_byte[7:0]
+(3)minx.rom.control_byte[7:0]
+(4)minx.rom.control_byte[7:0]
+(5)minx.rom.control_byte[7:0]
+(6)minx.rom.control_byte[7:0]
+(7)minx.rom.control_byte[7:0]
+@1401202
+-group_end
+@24
+minx.rom.bit_count[2:0]
 @c00200
 -cpu
 @22

@@ -20,7 +20,8 @@ module minx
     reg [7:0] reg_io_dir;
     reg [7:0] reg_io_data;
     reg cpu_write_latch;
-    wire eeprom_data_out; //@todo
+    wire eeprom_data_out;
+    wire [7:0] eeprom_data = {4'h0, reg_io_data[3], (reg_io_dir[2]? reg_io_data[2]: eeprom_data_out), 2'd0};
     always_ff @ (negedge clk)
     begin
         if(cpu_write_latch)
@@ -46,7 +47,7 @@ module minx
             24'h2060:
                 io_data_out = reg_io_dir;
             24'h2061:
-                io_data_out = {4'd0, reg_io_data[3], (reg_io_dir[2]? eeprom_data_out: reg_io_data[2]), 2'd0};
+                io_data_out = eeprom_data;
             default:
                 io_data_out = 8'd0;
         endcase
@@ -56,7 +57,7 @@ module minx
     (
         .clk(clk),
         .reset(reset),
-        .ce(reg_io_data[3]),
+        .ce(reg_io_data[3] | ~reg_io_dir[3]),
         .data_in(reg_io_data[2] | ~reg_io_dir[2]),
         .data_out(eeprom_data_out)
     );
