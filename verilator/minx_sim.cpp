@@ -645,12 +645,12 @@ int main(int argc, char** argv, char** env)
     {
         minx->clk = 1;
         minx->eval();
-        if(dump && timestamp > 17606168 - 400000 && timestamp < 17606168 + 400000) tfp->dump(timestamp);
+        if(dump && timestamp > 225728 - 400000 && timestamp < 225728 + 400000) tfp->dump(timestamp);
         timestamp++;
 
         minx->clk = 0;
         minx->eval();
-        if(dump && timestamp > 17606168 - 400000 && timestamp < 17606168 + 400000) tfp->dump(timestamp);
+        if(dump && timestamp > 225728 - 400000 && timestamp < 225728 + 400000) tfp->dump(timestamp);
         timestamp++;
 
         //if(minx->sync && minx->pl == 0)

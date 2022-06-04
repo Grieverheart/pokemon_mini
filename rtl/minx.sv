@@ -20,6 +20,7 @@ module minx
     reg [7:0] reg_io_dir;
     reg [7:0] reg_io_data;
     reg cpu_write_latch;
+    wire eeprom_data_out; //@todo
     always_ff @ (negedge clk)
     begin
         if(cpu_write_latch)
@@ -32,7 +33,7 @@ module minx
         end
     end
 
-    always_ff @ (negedge clk)
+    always_ff @ (posedge clk)
     begin
         cpu_write_latch <= 0;
         if(cpu_write) cpu_write_latch <= 1;
@@ -45,20 +46,20 @@ module minx
             24'h2060:
                 io_data_out = reg_io_dir;
             24'h2061:
-                io_data_out = reg_io_data;
+                io_data_out = {4'd0, reg_io_data[3], (reg_io_dir[2]? eeprom_data_out: reg_io_data[2]), 2'd0};
             default:
                 io_data_out = 8'd0;
         endcase
     end
 
-    //eeprom rom
-    //(
-    //    .clk(clk),
-    //    .reset(reset),
-    //    .data_dir(reg_io_dir[2]),
-    //    .data_in(reg_io_data[2]),
-    //    .data_out()
-    //);
+    eeprom rom
+    (
+        .clk(clk),
+        .reset(reset),
+        .ce(reg_io_data[3]),
+        .data_in(reg_io_data[2] | ~reg_io_dir[2]),
+        .data_out(eeprom_data_out)
+    );
 
     assign data_out    = bus_ack? prc_data_out    : cpu_data_out;
     assign address_out = bus_ack? prc_address_out : cpu_address_out;
