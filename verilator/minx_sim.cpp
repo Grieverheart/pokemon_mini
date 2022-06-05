@@ -109,15 +109,15 @@ void write_hardware_register(uint32_t address, uint8_t data)
 
         case 0x60:
         {
-            PRINTE("Writing hardware register IO_DIR=");
-            PRINTE("0x%x\n", data);
+            PRINTD("Writing hardware register IO_DIR=");
+            PRINTD("0x%x\n", data);
         }
         break;
 
         case 0x61:
         {
-            PRINTE("Writing hardware register IO_DATA=");
-            PRINTE("0x%x\n", data);
+            PRINTD("Writing hardware register IO_DATA=");
+            PRINTD("0x%x\n", data);
         }
         break;
 
@@ -480,21 +480,21 @@ uint8_t read_hardware_register(uint32_t address)
         case 0x4E:
         case 0x4F:
         {
-            PRINTE("** Reading hardware register 0x%x which is a timer register and is not implemented! **\n", address);
+            PRINTD("** Reading hardware register 0x%x which is a timer register and is not implemented! **\n", address);
         }
         break;
 
         case 0x60:
         {
-            PRINTE("Reading hardware register IO_DIR=");
-            PRINTE("0x%x\n", data);
+            PRINTD("Reading hardware register IO_DIR=");
+            PRINTD("0x%x\n", data);
         }
         break;
 
         case 0x61:
         {
-            PRINTE("Reading hardware register IO_DATA=");
-            PRINTE("0x%x\n", data);
+            PRINTD("Reading hardware register IO_DATA=");
+            PRINTD("0x%x\n", data);
         }
         break;
 
@@ -641,16 +641,16 @@ int main(int argc, char** argv, char** env)
     bool data_sent = false;
     int irq_render_done_old = 0;
     int irq_copy_complete_old = 0;
-    while (timestamp < 18000000 && !Verilated::gotFinish())
+    while (timestamp < 24000000 && !Verilated::gotFinish())
     {
         minx->clk = 1;
         minx->eval();
-        if(dump && timestamp > 677168 - 400000 && timestamp < 677168 + 400000) tfp->dump(timestamp);
+        if(dump && timestamp > 19637648 - 400000 && timestamp < 19637648 + 400000) tfp->dump(timestamp);
         timestamp++;
 
         minx->clk = 0;
         minx->eval();
-        if(dump && timestamp > 677168 - 400000 && timestamp < 677168 + 400000) tfp->dump(timestamp);
+        if(dump && timestamp > 19637648 - 400000 && timestamp < 19637648 + 400000) tfp->dump(timestamp);
         timestamp++;
 
         //if(minx->sync && minx->pl == 0)
@@ -679,6 +679,12 @@ int main(int argc, char** argv, char** env)
             printf("%d, %d\n", frame, timestamp);
             int has_error = !stbi_write_png(path, 96, 64, 1, image_data, 96);
             if(has_error) printf("Error saving image %s\n", path);
+
+            //for(int bid = 0; bid < 0x2000; ++bid)
+            //{
+            //    if(minx->rootp->minx__DOT__rom__DOT__rom.m_storage[bid] != 0)
+            //        printf("___ 0x%x, 0x%x\n", bid, minx->rootp->minx__DOT__rom__DOT__rom.m_storage[bid]);
+            //}
 
             ++frame;
         }
@@ -753,8 +759,8 @@ int main(int argc, char** argv, char** env)
             if(minx->rootp->minx__DOT__cpu__DOT__not_implemented_divzero_error  == 1 && minx->pl == 0)
                 PRINTE("** Division by zero exception not implemented error, timestamp: %d**\n", timestamp);
 
-            //if(minx->rootp->minx__DOT__cpu__DOT__SP > 0x2000 && minx->pl == 0)
-            //    PRINTE("** Stack overflow, timestamp: %d**\n", timestamp);
+            if(minx->rootp->minx__DOT__cpu__DOT__SP > 0x2000 && minx->pl == 0)
+                PRINTE("** Stack overflow, timestamp: %d**\n", timestamp);
         }
 
         if(timestamp >= 8)

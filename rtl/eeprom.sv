@@ -44,14 +44,12 @@ module eeprom
             begin
                 if(!data_in)
                 begin
-                    $display("start");
                     bit_count  <= 4'd0;
                     input_byte <= 8'd0;
                     state      <= EEPROM_STATE_START_TRANSFER;
                 end
                 else
                 begin
-                    $display("stop");
                     state <= EEPROM_STATE_IDLE;
                     reg_data_out <= 1'd1;
                 end
@@ -62,11 +60,29 @@ module eeprom
             begin
                 if(ce)
                 begin
-                    input_byte <= {input_byte[6:0], data_in};
+                    if(state != EEPROM_STATE_DATA_READ)
+                        input_byte <= {input_byte[6:0], data_latch};
+                    else
+                    begin
+                        if(bit_count == 4'd0)
+                        begin
+                            if(data_out) // Basically (data_latch & reg_io_dir[2]).
+                            begin
+                                state <= EEPROM_STATE_IDLE;
+                                reg_data_out <= 1'd1;
+                            end
+                        end
+                        else
+                        begin
+                            reg_data_out <= input_byte[0];
+                            input_byte <= {1'd0, input_byte[7:1]};
+                        end
+                    end
                 end
                 else
                 begin
-                    reg_data_out <= 1'd1;
+                    if(state != EEPROM_STATE_DATA_READ)
+                        reg_data_out <= 1'd1;
                     bit_count <= bit_count + 1;
 
                     if(bit_count == 4'd8)
@@ -83,12 +99,11 @@ module eeprom
                             else if(input_byte == 8'hA1)
                             begin
                                 state <= EEPROM_STATE_DATA_READ;
-                                input_byte <= 8'd0;
+                                input_byte <= rom[address];
                                 reg_data_out <= 1'd0;
                             end
                             else
                             begin
-                                $display("wrong constrol byte: stop");
                                 state <= EEPROM_STATE_IDLE;
                                 reg_data_out <= 1'd1;
                             end
@@ -109,8 +124,13 @@ module eeprom
                         else if(state == EEPROM_STATE_DATA_WRITE)
                         begin
                             rom[address] <= input_byte;
-                            state <= EEPROM_STATE_DATA_WRITE;
+                            address <= (address + 1) & 13'h1FFF;
                             reg_data_out <= 1'd0;
+                        end
+                        else if(state == EEPROM_STATE_DATA_READ)
+                        begin
+                            address <= (address + 1) & 13'h1FFF;
+                            reg_data_out <= 1'd1;
                         end
                     end
                 end

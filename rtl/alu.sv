@@ -8,14 +8,14 @@ enum [4:0]
     ALUOP_SUB  = 5'd5,
     ALUOP_XOR  = 5'd6,
 
-    ALUOP_ROL  = 5'd8,
-    ALUOP_ROR  = 5'd9,
-    ALUOP_ROLC = 5'd10,
-    ALUOP_RORC = 5'd11,
-    ALUOP_SHL  = 5'd12,
-    ALUOP_SHR  = 5'd13,
-    ALUOP_SHLA = 5'd14,
-    ALUOP_SHRA = 5'd15,
+    ALUOP_RLC  = 5'd8,
+    ALUOP_RRC  = 5'd9,
+    ALUOP_RL   = 5'd10,
+    ALUOP_RR   = 5'd11,
+    ALUOP_SLL  = 5'd12,
+    ALUOP_SRL  = 5'd13,
+    ALUOP_SLA  = 5'd14,
+    ALUOP_SRA  = 5'd15,
 
     ALUOP_INC  = 5'd16,
     ALUOP_INC2 = 5'd17,
@@ -173,15 +173,15 @@ module alu
                 flags[ALU_FLAG_S] = R[15];
             end
 
-            ALUOP_ROL:
+            ALUOP_RLC:
             begin
-                R = {A[14:0], A[7]};
+                R = {A[14:0], A[msb]};
                 flags[ALU_FLAG_C] = A[msb];
                 flags[ALU_FLAG_Z] = (R == 0);
                 flags[ALU_FLAG_S] = R[msb];
             end
 
-            ALUOP_ROLC:
+            ALUOP_RL:
             begin
                 R = {A[14:0], C};
                 flags[ALU_FLAG_C] = A[msb];
@@ -189,15 +189,15 @@ module alu
                 flags[ALU_FLAG_S] = R[msb];
             end
 
-            ALUOP_ROR:
+            ALUOP_RRC:
             begin
                 R = {A[15:8], A[0], A[7:1]};
-                flags[ALU_FLAG_C] = R[msb];
+                flags[ALU_FLAG_C] = A[0];
                 flags[ALU_FLAG_Z] = (R == 0);
                 flags[ALU_FLAG_S] = R[msb];
             end
 
-            ALUOP_RORC:
+            ALUOP_RR:
             begin
                 R = {A[15:8], C, A[7:1]};
                 flags[ALU_FLAG_C] = A[0];
@@ -205,7 +205,7 @@ module alu
                 flags[ALU_FLAG_S] = R[msb];
             end
 
-            ALUOP_SHL:
+            ALUOP_SLL:
             begin
                 R = {A[14:0], 1'b0};
                 flags[ALU_FLAG_C] = A[msb];
@@ -213,7 +213,7 @@ module alu
                 flags[ALU_FLAG_S] = R[msb];
             end
 
-            ALUOP_SHLA:
+            ALUOP_SLA:
             begin
                 R = {A[14:0], 1'b0};
                 flags[ALU_FLAG_C] = A[msb];
@@ -222,7 +222,7 @@ module alu
                 flags[ALU_FLAG_V] = (A[msb] ^ A[msb-1]);
             end
 
-            ALUOP_SHR:
+            ALUOP_SRL:
             begin
                 R = {9'b0, A[7:1]};
                 flags[ALU_FLAG_C] = A[0];
@@ -230,7 +230,7 @@ module alu
                 flags[ALU_FLAG_S] = R[msb];
             end
 
-            ALUOP_SHRA:
+            ALUOP_SRA:
             begin
                 R = {9'b0, A[7:1]};
                 flags[ALU_FLAG_C] = A[0];

@@ -113,6 +113,7 @@ module minx
     wire [7:0] reg_data_out = lcd_data_out | prc_data_out | io_data_out; // More to come.
     wire [7:0] cpu_data_in = (
             (address_out == 24'h20FE || address_out == 24'h20FF ||
+             address_out == 24'h2060 || address_out == 24'h2061 ||
             (address_out >= 24'h2080 && address_out <= 24'h8F)
         ) &&
         (bus_status == cpu.BUS_COMMAND_MEM_READ)

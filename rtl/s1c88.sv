@@ -658,28 +658,28 @@ module s1c88
                     alu_op <= ALUOP_MUL;
 
                 MICRO_ALU_OP_RL:
-                    alu_op <= ALUOP_ROLC;
+                    alu_op <= ALUOP_RL;
 
                 MICRO_ALU_OP_RR:
-                    alu_op <= ALUOP_RORC;
+                    alu_op <= ALUOP_RR;
 
                 MICRO_ALU_OP_RLC:
-                    alu_op <= ALUOP_ROL;
+                    alu_op <= ALUOP_RLC;
 
                 MICRO_ALU_OP_RRC:
-                    alu_op <= ALUOP_ROR;
+                    alu_op <= ALUOP_RRC;
 
                 MICRO_ALU_OP_SLL:
-                    alu_op <= ALUOP_SHL;
+                    alu_op <= ALUOP_SLL;
 
                 MICRO_ALU_OP_SRL:
-                    alu_op <= ALUOP_SHR;
+                    alu_op <= ALUOP_SRL;
 
                 MICRO_ALU_OP_SLA:
-                    alu_op <= ALUOP_SHLA;
+                    alu_op <= ALUOP_SLA;
 
                 MICRO_ALU_OP_SRA:
-                    alu_op <= ALUOP_SHRA;
+                    alu_op <= ALUOP_SRA;
 
                 default:
                 begin
@@ -1066,15 +1066,15 @@ module s1c88
                                     SC[0] <= alu_flags[ALU_FLAG_Z];
                                     SC[3] <= alu_flags[ALU_FLAG_S];
                                 end
-                                ALUOP_ROL, ALUOP_ROR, ALUOP_ROLC, ALUOP_RORC, ALUOP_SHL, ALUOP_SHR:
+                                ALUOP_RLC, ALUOP_RRC, ALUOP_RL, ALUOP_RR, ALUOP_SLL, ALUOP_SRL:
                                 begin
                                     SC[0] <= alu_flags[ALU_FLAG_Z];
                                     SC[1] <= alu_flags[ALU_FLAG_C];
                                     SC[3] <= alu_flags[ALU_FLAG_S];
                                 end
-                                ALUOP_ADD, ALUOP_ADC, ALUOP_SUB, ALUOP_SBC, ALUOP_NEG, ALUOP_SHLA, ALUOP_SHRA, ALUOP_DIV, ALUOP_MUL:
+                                ALUOP_ADD, ALUOP_ADC, ALUOP_SUB, ALUOP_SBC, ALUOP_NEG, ALUOP_SLA, ALUOP_SRA, ALUOP_DIV, ALUOP_MUL:
                                 begin
-                                    if(alu_op != ALUOP_SHLA && alu_op != ALUOP_SHRA && (SC[5:4] != 0))
+                                    if(alu_op != ALUOP_SLA && alu_op != ALUOP_SRA && (SC[5:4] != 0))
                                         not_implemented_alu_dec_pack_ops_error <= 1;
                                     SC[0] <= alu_flags[ALU_FLAG_Z];
                                     SC[1] <= alu_flags[ALU_FLAG_C];
