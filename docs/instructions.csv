@@ -353,10 +353,10 @@ FF, "NOP", 8
 "CE 31 ss","CMP A, [Y+#ss]",16
 "CE 32","CMP A, [X+L]",16
 "CE 33","CMP A, [Y+L]",16
-"CE 34","CMP [HL], A",16
-"CE 35 nn","CMP [HL], #nn",20
-"CE 36","CMP [HL], [X]",20
-"CE 37","CMP [HL], [Y]",20
+"CE 34","CMP [HL], A",12
+"CE 35 nn","CMP [HL], #nn",16
+"CE 36","CMP [HL], [X]",16
+"CE 37","CMP [HL], [Y]",16
 "CE BC nn","CMP B, #nn",12
 "CE BD nn","CMP L, #nn",12
 "CE BE nn","CMP H, #nn",12

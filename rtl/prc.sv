@@ -23,6 +23,8 @@ module prc
 // multiple clocks.
 
 // @todo: What about page 8?
+//
+// @todo: Implement map scrolling and use map_width, map_height.
 
 // @note: For the sprite rendering basically implemented the folliowing as
 // a finite-state machine:

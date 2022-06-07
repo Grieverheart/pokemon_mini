@@ -39,7 +39,6 @@ uint32_t prc_map = 0;
 uint8_t prc_mode = 0;
 uint8_t prc_rate = 0;
 uint8_t prc_cnt  = 1;
-uint8_t prc_rate_match = 0;
 
 uint8_t registers[256] = {};
 
@@ -68,9 +67,14 @@ void write_hardware_register(uint32_t address, uint8_t data)
         }
         break;
 
+        case 0x18:
         case 0x19:
+        case 0x1A:
+        case 0x1B:
+        case 0x1C:
+        case 0x1D:
         {
-            PRINTD("Writing hardware register TMR1_ENA_OSC/TMR1_OSC=");
+            PRINTD("Writing hardware register TMR%d_%s=", (address - 0x16) / 2, (address % 2)? "OSC": "SCALE");
         }
         break;
 
@@ -101,23 +105,58 @@ void write_hardware_register(uint32_t address, uint8_t data)
         }
         break;
 
+        case 0x30:
+        case 0x31:
+        case 0x38:
+        case 0x39:
+        case 0x48:
+        case 0x49:
+        {
+            PRINTD("Writing hardware register TMR%d_CTRL_%s=", (address > 0x40)? 3: (address - 0x28) / 8, address % 2? "H": "L");
+        }
+        break;
+
+        case 0x32:
+        case 0x33:
+        case 0x3A:
+        case 0x3B:
+        case 0x4A:
+        case 0x4B:
+        {
+            PRINTD("Writing hardware register TMR%d_PRE_%s=", (address > 0x40)? 3: (address - 0x28) / 8, address % 2? "H": "L");
+        }
+        break;
+
+        case 0x34:
+        case 0x35:
+        case 0x3C:
+        case 0x3D:
+        {
+            PRINTD("Writing hardware register TMR%d_PVT_%s=", (address > 0x40)? 3: (address - 0x28) / 8, address % 2? "H": "L");
+        }
+        break;
+
         case 0x40:
         {
             PRINTD("Writing hardware register TMR256_CTRL=");
         }
         break;
 
+        case 0x41:
+        {
+            PRINTD("Writing hardware register TMR256_CNT=");
+        }
+        break;
+
         case 0x60:
         {
             PRINTD("Writing hardware register IO_DIR=");
-            PRINTD("0x%x\n", data);
         }
         break;
 
         case 0x61:
         {
             PRINTD("Writing hardware register IO_DATA=");
-            PRINTD("0x%x\n", data);
         }
         break;
 
@@ -145,16 +184,6 @@ void write_hardware_register(uint32_t address, uint8_t data)
             PRINTD("Writing hardware register PRC_RATE=");
             if((prc_rate & 0xE) != (data & 0xE)) prc_rate = data & 0xF;
             else prc_rate = (prc_rate & 0xF0) | (data & 0x0F);
-            switch (data & 0xE) {
-                case 0x00: prc_rate_match = 0x20; break;    // Rate /3
-                case 0x02: prc_rate_match = 0x50; break;    // Rate /6
-                case 0x04: prc_rate_match = 0x80; break;    // Rate /9
-                case 0x06: prc_rate_match = 0xB0; break;    // Rate /12
-                case 0x08: prc_rate_match = 0x10; break;    // Rate /2
-                case 0x0A: prc_rate_match = 0x30; break;    // Rate /4
-                case 0x0C: prc_rate_match = 0x50; break;    // Rate /6
-                case 0x0E: prc_rate_match = 0x70; break;    // Rate /8
-            }
         }
         break;
 
@@ -457,9 +486,31 @@ uint8_t read_hardware_register(uint32_t address)
         }
         break;
 
+        case 0x18:
         case 0x19:
+        case 0x1A:
+        case 0x1B:
+        case 0x1C:
+        case 0x1D:
         {
-            PRINTD("Reading hardware register TMR1_ENA_OSC/TMR1_OSC=");
+            PRINTD("Writing hardware register TMR%d_%s=", (address - 0x16) / 2, (address % 2)? "OSC": "SCALE");
+        }
+        break;
+
+        case 0x20:
+        case 0x21:
+        case 0x22:
+        {
+            PRINTD("Reading hardware register IRQ_PRI%d=", address - 0x1F);
+        }
+        break;
+
+        case 0x23:
+        case 0x24:
+        case 0x25:
+        case 0x26:
+        {
+            PRINTD("Reading hardware register IRQ_ENA%d=", address - 0x22);
         }
         break;
 
@@ -472,29 +523,76 @@ uint8_t read_hardware_register(uint32_t address)
         }
         break;
 
+        case 0x30:
+        case 0x31:
+        case 0x38:
+        case 0x39:
+        case 0x48:
+        case 0x49:
+        {
+            PRINTD("Reading hardware register TMR%d_CTRL_%s=", (address > 0x40)? 3: (address - 0x28) / 8, address % 2? "H": "L");
+        }
+        break;
+
+        case 0x32:
+        case 0x33:
+        case 0x3A:
+        case 0x3B:
+        case 0x4A:
+        case 0x4B:
+        {
+            PRINTD("Reading hardware register TMR%d_PRE_%s=", (address > 0x40)? 3: (address - 0x28) / 8, address % 2? "H": "L");
+        }
+        break;
+
+        case 0x34:
+        case 0x35:
+        case 0x3C:
+        case 0x3D:
+        {
+            PRINTD("Reading hardware register TMR%d_PVT_%s=", (address > 0x40)? 3: (address - 0x28) / 8, address % 2? "H": "L");
+        }
+        break;
+
         case 0x36:
         case 0x37:
         case 0x3E:
         case 0x3F:
-        case 0x41:
         case 0x4E:
         case 0x4F:
         {
-            PRINTD("** Reading hardware register 0x%x which is a timer register and is not implemented! **\n", address);
+            PRINTD("Reading hardware register TMR%d_CNT_%s=", (address > 0x40)? 3: (address - 0x28) / 8, address % 2? "H": "L");
+            PRINTE("** Reading hardware register 0x%x which is a timer register and is not implemented! **\n", address);
+        }
+        break;
+
+        case 0x40:
+        {
+            PRINTD("Reading hardware register TMR256_CTRL=");
+        }
+        break;
+
+        case 0x41:
+        {
+            PRINTD("Reading hardware register TMR256_CNT=");
         }
         break;
 
         case 0x60:
         {
             PRINTD("Reading hardware register IO_DIR=");
-            PRINTD("0x%x\n", data);
         }
         break;
 
         case 0x61:
         {
             PRINTD("Reading hardware register IO_DATA=");
-            PRINTD("0x%x\n", data);
+        }
+        break;
+
+        case 0x70:
+        {
+            PRINTD("Reading hardware register AUD_CTRL=");
         }
         break;
 
@@ -633,6 +731,8 @@ int main(int argc, char** argv, char** env)
         tfp->open("sim.vcd");
     }
 
+    registers[0x52] = 0xFF;
+
     int mem_counter = 0;
     int frame = 0;
 
@@ -645,12 +745,12 @@ int main(int argc, char** argv, char** env)
     {
         minx->clk = 1;
         minx->eval();
-        if(dump && timestamp > 19637648 - 400000 && timestamp < 19637648 + 400000) tfp->dump(timestamp);
+        if(dump && timestamp > 21104828 - 400000 && timestamp < 21104828 + 400000) tfp->dump(timestamp);
         timestamp++;
 
         minx->clk = 0;
         minx->eval();
-        if(dump && timestamp > 19637648 - 400000 && timestamp < 19637648 + 400000) tfp->dump(timestamp);
+        if(dump && timestamp > 21104828 - 400000 && timestamp < 21104828 + 400000) tfp->dump(timestamp);
         timestamp++;
 
         //if(minx->sync && minx->pl == 0)

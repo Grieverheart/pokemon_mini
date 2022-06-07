@@ -906,7 +906,12 @@ module s1c88
             bus_request_latch <= bus_request;
             bus_ack_negedge   <= (pk == 0)? bus_request: bus_request_latch;
 
-            if(!bus_ack)
+            if((pk == 0) && bus_ack_posedge)
+            begin
+                pl          <= 0;
+                address_out <= 0;
+            end
+            else if(!bus_ack)
             begin
                 pl <= pk;
                 if(pk == 1)
@@ -1236,11 +1241,6 @@ module s1c88
                         endcase
                     end
                 end
-            end
-            else
-            begin
-                pl          <= 0;
-                address_out <= 0;
             end
         end
     end

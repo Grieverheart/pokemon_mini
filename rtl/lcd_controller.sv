@@ -65,6 +65,7 @@ begin
                     begin
                         contrast_set <= 0;
                         contrast <= data_in[5:0];
+                        $display("Contrast set to %d", data_in[5:0]);
                     end
                     else
                     begin
