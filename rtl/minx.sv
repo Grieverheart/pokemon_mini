@@ -1,6 +1,7 @@
 module minx
 (
     input clk,
+    input rt_clk,
     input reset,
     input [7:0] data_in,
     input [3:0] irq,
@@ -17,6 +18,9 @@ module minx
     output wire sync,
     output logic iack
 );
+    // @todo: Design question: Move this logic to inside the eeprom module?
+    // The idea of putting this logic here is that eeprom is part of the gpio
+    // and gpio, as a module is not implemented (yet).
     reg [7:0] reg_io_dir;
     reg [7:0] reg_io_data;
     reg cpu_write_latch;
@@ -52,6 +56,19 @@ module minx
                 io_data_out = 8'd0;
         endcase
     end
+
+    wire [7:0] t256;
+    timer256 timer256
+    (
+        .clk            (clk),
+        .rt_clk         (rt_clk),
+        .reset          (reset),
+        .bus_write      (write),
+        .bus_read       (read),
+        .bus_address_in (cpu_address_out),
+        .bus_data_in    (cpu_data_out),
+        .timer          (t256)
+    );
 
     eeprom rom
     (

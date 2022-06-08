@@ -1,21 +1,21 @@
 [*]
-[*] GTKWave Analyzer v3.3.107 (w)1999-2020 BSI
-[*] Sun Jun  5 18:58:35 2022
+[*] GTKWave Analyzer v3.3.111 (w)1999-2020 BSI
+[*] Wed Jun  8 14:47:58 2022
 [*]
-[dumpfile] "/Users/nicktasios/Programming/fpga/pokemon_mini/verilator/sim.vcd"
-[dumpfile_mtime] "Sun Jun  5 18:58:15 2022"
-[dumpfile_size] 68444230
-[savefile] "/Users/nicktasios/Programming/fpga/pokemon_mini/verilator/sim.gtkw"
-[timestart] 19237649
-[size] 1280 755
-[pos] -1 -1
-*-18.338047 19637653 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[dumpfile] "/home/nicktasios/Programming/fpga/pokemon_mini/verilator/sim.vcd"
+[dumpfile_mtime] "Wed Jun  8 14:42:51 2022"
+[dumpfile_size] 68506174
+[savefile] "/home/nicktasios/Programming/fpga/pokemon_mini/verilator/sim.gtkw"
+[timestart] 20861732
+[size] 2560 1371
+[pos] -84 -84
+*-8.338047 20862610 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] minx.
 [treeopen] minx.cpu.
 [sst_width] 227
 [signals_width] 289
 [sst_expanded] 1
-[sst_vpaned_height] 398
+[sst_vpaned_height] 837
 @28
 minx.clk
 minx.cpu.pk
@@ -82,8 +82,23 @@ minx.bus_status[1:0]
 minx.prc.irq_render_done
 @22
 minx.cpu.jump_dest[15:0]
-@29
+@28
 minx.cpu_write_latch
+@c00024
+minx.timer256.timer[7:0]
+@28
+(0)minx.timer256.timer[7:0]
+(1)minx.timer256.timer[7:0]
+(2)minx.timer256.timer[7:0]
+(3)minx.timer256.timer[7:0]
+(4)minx.timer256.timer[7:0]
+(5)minx.timer256.timer[7:0]
+(6)minx.timer256.timer[7:0]
+(7)minx.timer256.timer[7:0]
+@1401204
+-group_end
+@29
+minx.timer256.rt_clk
 @c00200
 -eeprom
 @c00022

@@ -722,6 +722,8 @@ int main(int argc, char** argv, char** env)
     minx->reset = 1;
 
     bool dump = true;
+    int dump_step = 21104828;
+    int dump_range = 400000;
     VerilatedVcdC* tfp;
     if(dump)
     {
@@ -736,6 +738,15 @@ int main(int argc, char** argv, char** env)
     int mem_counter = 0;
     int frame = 0;
 
+    // @todo: Proper multi-clock handling.
+    //uint64_t osc3_clk_ps = 1e9 / (2.0 * 4000000.0) + 0.5;
+    //uint64_t osc1_clk_ps = 1e9 / (2.0 * 32768.0) + 0.5;
+    //uint64_t osc1_next_clock = osc1_clk_ps;
+    //uint64_t osc3_next_clock = osc3_clk_ps;
+
+    uint64_t osc1_clocks = 4000000.0 / 32768.0 + 0.5;
+    uint64_t osc1_next_clock = osc1_clocks;
+
     int timestamp = 0;
     int prc_state = 0;
     bool data_sent = false;
@@ -743,14 +754,29 @@ int main(int argc, char** argv, char** env)
     int irq_copy_complete_old = 0;
     while (timestamp < 24000000 && !Verilated::gotFinish())
     {
+        //322
         minx->clk = 1;
         minx->eval();
-        if(dump && timestamp > 21104828 - 400000 && timestamp < 21104828 + 400000) tfp->dump(timestamp);
+        if(timestamp == osc1_next_clock)
+        {
+            minx->rt_clk = !minx->rt_clk;
+            minx->eval();
+            if(dump && timestamp > dump_step - dump_range && timestamp < dump_step + dump_range) tfp->dump(timestamp);
+            osc1_next_clock += osc1_clocks;
+        }
+        else if(dump && timestamp > dump_step - dump_range && timestamp < dump_step + dump_range) tfp->dump(timestamp);
         timestamp++;
 
         minx->clk = 0;
         minx->eval();
-        if(dump && timestamp > 21104828 - 400000 && timestamp < 21104828 + 400000) tfp->dump(timestamp);
+        if(timestamp == osc1_next_clock)
+        {
+            minx->rt_clk = !minx->rt_clk;
+            minx->eval();
+            if(dump && timestamp > dump_step - dump_range && timestamp < dump_step + dump_range) tfp->dump(timestamp);
+            osc1_next_clock += osc1_clocks;
+        }
+        else if(dump && timestamp > dump_step - dump_range && timestamp < dump_step + dump_range) tfp->dump(timestamp);
         timestamp++;
 
         //if(minx->sync && minx->pl == 0)
