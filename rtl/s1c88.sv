@@ -939,7 +939,7 @@ module s1c88
                         state <= next_state;
 
                     if(next_state == STATE_EXC_PROCESS && exception_process_step == 0 && iack == 1)
-                        bus_status <= BUS_COMMAND_IRQ_READ;
+                        bus_status <= (exception < EXCEPTION_TYPE_NMI)? BUS_COMMAND_IRQ_READ: BUS_COMMAND_MEM_READ;
 
                     else if(exception == EXCEPTION_TYPE_RESET && iack == 0)
                     begin
@@ -1297,7 +1297,7 @@ module s1c88
                     begin
                         if(pk == 0)
                         begin
-                            if(exception_process_step == 0)
+                            if(exception_process_step == 0 && exception < EXCEPTION_TYPE_NMI)
                                 read_interrupt_vector <= 1;
                             else if(exception_process_step == 1)
                                 data_out <= CB;

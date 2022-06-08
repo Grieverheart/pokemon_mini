@@ -58,6 +58,7 @@ module minx
     end
 
     wire [7:0] t256;
+    wire [7:0] timer256_data_out;
     timer256 timer256
     (
         .clk            (clk),
@@ -67,6 +68,7 @@ module minx
         .bus_read       (read),
         .bus_address_in (cpu_address_out),
         .bus_data_in    (cpu_data_out),
+        .bus_data_out   (timer256_data_out),
         .timer          (t256)
     );
 
@@ -127,9 +129,10 @@ module minx
         .irq_render_done   (irq_render_done)
     );
 
-    wire [7:0] reg_data_out = lcd_data_out | prc_data_out | io_data_out; // More to come.
+    wire [7:0] reg_data_out = lcd_data_out | prc_data_out | io_data_out | timer256_data_out; // More to come.
     wire [7:0] cpu_data_in = (
             (address_out == 24'h20FE || address_out == 24'h20FF ||
+             address_out == 24'h2040 || address_out == 24'h2041 ||
              address_out == 24'h2060 || address_out == 24'h2061 ||
             (address_out >= 24'h2080 && address_out <= 24'h8F)
         ) &&
