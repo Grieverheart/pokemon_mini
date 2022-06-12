@@ -1,5 +1,3 @@
-// @todo: Implement interrupts
-
 module irq
 (
     input clk,
@@ -7,7 +5,7 @@ module irq
     input bus_write,
     input bus_read,
     input [31:0] irqs,
-    input [1:0] cpu_i01,
+    input cpu_iack,
     input [23:0] bus_address_in,
     input [7:0] bus_data_in,
     output logic [23:0] bus_address_out,
@@ -33,9 +31,9 @@ module irq
     // $15     $16     $17     $18     $19     $1A     $1B     $1C
     // $0F     $10     ???     ???             $1D     $1E     $1F
     localparam [4:0] irq_reg_map[0:31] = '{
-        8, 9, 28, 0, 1, 2, 3, 4, 5, 6, 7,
-        10, 11, 12, 13, 24, 25, 26, 27, 14, 15,
-        16, 17, 18, 19, 20, 21, 22, 23, 29, 30, 31
+        8, 9, 28, 7, 6, 5, 4, 3, 2, 1, 0,
+        14, 13, 12, 11, 31, 30, 29, 28, 9, 8,
+        23, 22, 21, 20, 19, 18, 17, 16, 26, 25, 24
     };
 
     reg [17:0] reg_irq_priority;
@@ -53,6 +51,12 @@ module irq
         end
         else
         begin
+            foreach(irqs[i])
+            begin
+                if(irqs[i])
+                    reg_irq_active[irq_reg_map[i]] <= 1;
+            end
+
             if(write_latch)
             begin
                 if(bus_address_in == 24'h2020)
@@ -108,14 +112,11 @@ module irq
     // end
     always_comb
     begin
-        cpu_irq         = 4'd0;
         next_irq        = 5'd0;
         next_priority   = 2'd0;
-        bus_address_out = 24'd0;
         foreach(irqs[i])
         begin
             if(
-                irqs[i] &&
                 reg_irq_enabled[irq_reg_map[i]] &&
                 reg_irq_active[irq_reg_map[i]] &&
                 reg_irq_priority[2*irq_group[i]+:2] > next_priority
@@ -125,54 +126,61 @@ module irq
                 next_priority = reg_irq_priority[2*irq_group[i]+:2];
             end
         end
-        if(next_priority > 0)
-        begin
-            cpu_irq[next_priority] = 1;
-            bus_address_out = {19'd0, next_irq};
-        end
     end
 
 
+    // @todo: Check if IRQ_ENA1[7:6]
     always_comb
     begin
-        case(bus_address_in)
-            24'h2020:
-                bus_data_out = reg_irq_priority[7:0];
+        bus_data_out = 8'd0;
+        cpu_irq      = 4'd0;
 
-            24'h2021:
-                bus_data_out = reg_irq_priority[15:8];
+        if(next_priority > 0)
+        begin
+            cpu_irq[next_priority] = 1;
+            bus_data_out = {2'd0, next_irq, 1'd0};
+        end
+        else
+        begin
+            case(bus_address_in)
+                24'h2020:
+                    bus_data_out = reg_irq_priority[7:0];
 
-            24'h2022:
-                bus_data_out = {6'd0, reg_irq_priority[17:16]};
+                24'h2021:
+                    bus_data_out = reg_irq_priority[15:8];
 
-            24'h2023:
-                bus_data_out = reg_irq_enabled[7:0];
+                24'h2022:
+                    bus_data_out = {6'd0, reg_irq_priority[17:16]};
 
-            24'h2024:
-                bus_data_out = reg_irq_enabled[15:8];
+                24'h2023:
+                    bus_data_out = reg_irq_enabled[7:0];
 
-            24'h2025:
-                bus_data_out = reg_irq_enabled[23:16];
+                24'h2024:
+                    bus_data_out = reg_irq_enabled[15:8];
 
-            24'h2026:
-                bus_data_out = reg_irq_enabled[31:24];
+                24'h2025:
+                    bus_data_out = reg_irq_enabled[23:16];
 
-            24'h2027:
-                bus_data_out = reg_irq_active[7:0];
+                24'h2026:
+                    bus_data_out = reg_irq_enabled[31:24];
 
-            24'h2028:
-                bus_data_out = reg_irq_active[15:8];
+                24'h2027:
+                    bus_data_out = reg_irq_active[7:0];
 
-            24'h2029:
-                bus_data_out = reg_irq_active[23:16];
+                24'h2028:
+                    bus_data_out = reg_irq_active[15:8];
 
-            24'h202A:
-                bus_data_out = reg_irq_active[31:24];
+                24'h2029:
+                    bus_data_out = reg_irq_active[23:16];
 
-            default:
-            begin
-            end
-        endcase
+                24'h202A:
+                    bus_data_out = reg_irq_active[31:24];
+
+                default:
+                begin
+                end
+            endcase
+        end
     end
 
 endmodule

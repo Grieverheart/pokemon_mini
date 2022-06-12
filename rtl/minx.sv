@@ -56,7 +56,7 @@ module minx
         endcase
     end
 
-    wire [31:0]  irqs = 32'd0;
+    wire [31:0]  irqs;
     assign irqs[5'h03] = irq_copy_complete;
     assign irqs[5'h04] = irq_render_done;
 
@@ -70,7 +70,7 @@ module minx
         .bus_write       (write),
         .bus_read        (read),
         .irqs            (irqs),
-        .cpu_i01         (i01),
+        .cpu_iack        (iack),
         .bus_address_in  (cpu_address_out),
         .bus_data_in     (cpu_data_out),
         .bus_address_out (irq_address_out),
@@ -150,14 +150,20 @@ module minx
         .irq_render_done   (irq_render_done)
     );
 
-    wire [7:0] reg_data_out = lcd_data_out | prc_data_out | io_data_out | timer256_data_out; // More to come.
-    wire [7:0] cpu_data_in = (
-            (address_out == 24'h20FE || address_out == 24'h20FF ||
-             address_out == 24'h2040 || address_out == 24'h2041 ||
-            (address_out >= 24'h2020 && address_out <= 24'h202A)||
-             address_out == 24'h2060 || address_out == 24'h2061 ||
-            (address_out >= 24'h2080 && address_out <= 24'h208F)
-        ) &&
+    wire [7:0] reg_data_out = 0
+        | lcd_data_out
+        | prc_data_out
+        | io_data_out
+        | timer256_data_out
+        | irq_data_out;
+
+    wire [7:0] cpu_data_in = 
+    (
+        (address_out == 24'h20FE || address_out == 24'h20FF ||
+         address_out == 24'h2040 || address_out == 24'h2041 ||
+        (address_out >= 24'h2020 && address_out <= 24'h202A)||
+         address_out == 24'h2060 || address_out == 24'h2061 ||
+        (address_out >= 24'h2080 && address_out <= 24'h208F)) &&
         (bus_status == cpu.BUS_COMMAND_MEM_READ)
     )? reg_data_out: data_in;
 
@@ -170,7 +176,7 @@ module minx
     (
         .clk                   (clk),
         .reset                 (reset),
-        .data_in               (cpu_data_in),
+        .data_in               ((cpu_bus_status == cpu.BUS_COMMAND_IRQ_READ)? irq_data_out: cpu_data_in),
         .irq                   (cpu_irq),
         .pk                    (pk),
         .pl                    (pl),

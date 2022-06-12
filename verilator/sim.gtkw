@@ -1,21 +1,21 @@
 [*]
-[*] GTKWave Analyzer v3.3.111 (w)1999-2020 BSI
-[*] Wed Jun  8 14:47:58 2022
+[*] GTKWave Analyzer v3.3.107 (w)1999-2020 BSI
+[*] Sun Jun 12 21:50:52 2022
 [*]
-[dumpfile] "/home/nicktasios/Programming/fpga/pokemon_mini/verilator/sim.vcd"
-[dumpfile_mtime] "Wed Jun  8 14:42:51 2022"
-[dumpfile_size] 68506174
-[savefile] "/home/nicktasios/Programming/fpga/pokemon_mini/verilator/sim.gtkw"
-[timestart] 20861732
-[size] 2560 1371
-[pos] -84 -84
-*-8.338047 20862610 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[dumpfile] "/Users/nicktasios/Programming/fpga/pokemon_mini/verilator/sim.vcd"
+[dumpfile_mtime] "Sun Jun 12 21:39:14 2022"
+[dumpfile_size] 0
+[savefile] "/Users/nicktasios/Programming/fpga/pokemon_mini/verilator/sim.gtkw"
+[timestart] 20863664
+[size] 1280 755
+[pos] -1 -1
+*-3.338047 20863676 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] minx.
 [treeopen] minx.cpu.
 [sst_width] 227
 [signals_width] 289
 [sst_expanded] 1
-[sst_vpaned_height] 837
+[sst_vpaned_height] 348
 @28
 minx.clk
 minx.cpu.pk
@@ -50,19 +50,7 @@ minx.cpu.PC[15:0]
 -group_end
 @22
 minx.cpu.extended_opcode[9:0]
-@c00022
-minx.data_in[7:0]
-@28
-(0)minx.data_in[7:0]
-(1)minx.data_in[7:0]
-(2)minx.data_in[7:0]
-(3)minx.data_in[7:0]
-(4)minx.data_in[7:0]
-(5)minx.data_in[7:0]
-(6)minx.data_in[7:0]
-(7)minx.data_in[7:0]
-@1401200
--group_end
+minx.cpu.data_in[7:0]
 @c00022
 minx.data_out[7:0]
 @28
@@ -80,25 +68,122 @@ minx.data_out[7:0]
 minx.bus_status[1:0]
 @28
 minx.prc.irq_render_done
-@22
-minx.cpu.jump_dest[15:0]
-@28
 minx.cpu_write_latch
-@c00024
-minx.timer256.timer[7:0]
+@22
+minx.cpu.microaddress[10:0]
+@c00200
+-irq
 @28
-(0)minx.timer256.timer[7:0]
-(1)minx.timer256.timer[7:0]
-(2)minx.timer256.timer[7:0]
-(3)minx.timer256.timer[7:0]
-(4)minx.timer256.timer[7:0]
-(5)minx.timer256.timer[7:0]
-(6)minx.timer256.timer[7:0]
-(7)minx.timer256.timer[7:0]
-@1401204
+minx.cpu.iack
+@24
+minx.cpu.i01[1:0]
+@22
+minx.cpu.irq[3:0]
+@c00022
+minx.irq.reg_irq_active[31:0]
+@28
+(0)minx.irq.reg_irq_active[31:0]
+(1)minx.irq.reg_irq_active[31:0]
+(2)minx.irq.reg_irq_active[31:0]
+(3)minx.irq.reg_irq_active[31:0]
+(4)minx.irq.reg_irq_active[31:0]
+(5)minx.irq.reg_irq_active[31:0]
+(6)minx.irq.reg_irq_active[31:0]
+(7)minx.irq.reg_irq_active[31:0]
+(8)minx.irq.reg_irq_active[31:0]
+(9)minx.irq.reg_irq_active[31:0]
+(10)minx.irq.reg_irq_active[31:0]
+(11)minx.irq.reg_irq_active[31:0]
+(12)minx.irq.reg_irq_active[31:0]
+(13)minx.irq.reg_irq_active[31:0]
+(14)minx.irq.reg_irq_active[31:0]
+(15)minx.irq.reg_irq_active[31:0]
+(16)minx.irq.reg_irq_active[31:0]
+(17)minx.irq.reg_irq_active[31:0]
+(18)minx.irq.reg_irq_active[31:0]
+(19)minx.irq.reg_irq_active[31:0]
+(20)minx.irq.reg_irq_active[31:0]
+(21)minx.irq.reg_irq_active[31:0]
+(22)minx.irq.reg_irq_active[31:0]
+(23)minx.irq.reg_irq_active[31:0]
+(24)minx.irq.reg_irq_active[31:0]
+(25)minx.irq.reg_irq_active[31:0]
+(26)minx.irq.reg_irq_active[31:0]
+(27)minx.irq.reg_irq_active[31:0]
+(28)minx.irq.reg_irq_active[31:0]
+(29)minx.irq.reg_irq_active[31:0]
+(30)minx.irq.reg_irq_active[31:0]
+(31)minx.irq.reg_irq_active[31:0]
+@1401200
 -group_end
-@29
-minx.timer256.rt_clk
+@22
+minx.irq.reg_irq_enabled[31:0]
+@c00022
+minx.irq.reg_irq_priority[17:0]
+@28
+(0)minx.irq.reg_irq_priority[17:0]
+(1)minx.irq.reg_irq_priority[17:0]
+(2)minx.irq.reg_irq_priority[17:0]
+(3)minx.irq.reg_irq_priority[17:0]
+(4)minx.irq.reg_irq_priority[17:0]
+(5)minx.irq.reg_irq_priority[17:0]
+(6)minx.irq.reg_irq_priority[17:0]
+(7)minx.irq.reg_irq_priority[17:0]
+(8)minx.irq.reg_irq_priority[17:0]
+(9)minx.irq.reg_irq_priority[17:0]
+(10)minx.irq.reg_irq_priority[17:0]
+(11)minx.irq.reg_irq_priority[17:0]
+(12)minx.irq.reg_irq_priority[17:0]
+(13)minx.irq.reg_irq_priority[17:0]
+(14)minx.irq.reg_irq_priority[17:0]
+(15)minx.irq.reg_irq_priority[17:0]
+(16)minx.irq.reg_irq_priority[17:0]
+(17)minx.irq.reg_irq_priority[17:0]
+@1401200
+-group_end
+@c00022
+minx.irq.irqs[31:0]
+@28
+(0)minx.irq.irqs[31:0]
+(1)minx.irq.irqs[31:0]
+(2)minx.irq.irqs[31:0]
+(3)minx.irq.irqs[31:0]
+(4)minx.irq.irqs[31:0]
+(5)minx.irq.irqs[31:0]
+(6)minx.irq.irqs[31:0]
+(7)minx.irq.irqs[31:0]
+(8)minx.irq.irqs[31:0]
+(9)minx.irq.irqs[31:0]
+(10)minx.irq.irqs[31:0]
+(11)minx.irq.irqs[31:0]
+(12)minx.irq.irqs[31:0]
+(13)minx.irq.irqs[31:0]
+(14)minx.irq.irqs[31:0]
+(15)minx.irq.irqs[31:0]
+(16)minx.irq.irqs[31:0]
+(17)minx.irq.irqs[31:0]
+(18)minx.irq.irqs[31:0]
+(19)minx.irq.irqs[31:0]
+(20)minx.irq.irqs[31:0]
+(21)minx.irq.irqs[31:0]
+(22)minx.irq.irqs[31:0]
+(23)minx.irq.irqs[31:0]
+(24)minx.irq.irqs[31:0]
+(25)minx.irq.irqs[31:0]
+(26)minx.irq.irqs[31:0]
+(27)minx.irq.irqs[31:0]
+(28)minx.irq.irqs[31:0]
+(29)minx.irq.irqs[31:0]
+(30)minx.irq.irqs[31:0]
+(31)minx.irq.irqs[31:0]
+@1401200
+-group_end
+@22
+minx.irq.next_irq[4:0]
+@28
+minx.irq.next_priority[1:0]
+@1401200
+-irq
 @c00200
 -eeprom
 @c00022
@@ -153,7 +238,7 @@ minx.rom.state[2:0]
 minx.rom.address[12:0]
 @1401200
 -eeprom
-@c00200
+@c00201
 -cpu
 @c00022
 minx.cpu.SC[7:0]
@@ -168,6 +253,8 @@ minx.cpu.SC[7:0]
 (7)minx.cpu.SC[7:0]
 @1401200
 -group_end
+@22
+minx.cpu.SP[15:0]
 @c00022
 minx.cpu.alu_A[15:0]
 @28
@@ -205,7 +292,20 @@ minx.cpu.alu_flags[3:0]
 minx.cpu.alu_op[4:0]
 @22
 minx.cpu.BA[15:0]
+@c00022
 minx.cpu.BR[7:0]
+@28
+(0)minx.cpu.BR[7:0]
+(1)minx.cpu.BR[7:0]
+(2)minx.cpu.BR[7:0]
+(3)minx.cpu.BR[7:0]
+(4)minx.cpu.BR[7:0]
+(5)minx.cpu.BR[7:0]
+(6)minx.cpu.BR[7:0]
+(7)minx.cpu.BR[7:0]
+@1401200
+-group_end
+@22
 minx.cpu.CB[7:0]
 minx.cpu.EP[7:0]
 minx.cpu.IX[15:0]
@@ -213,10 +313,9 @@ minx.cpu.IY[15:0]
 minx.cpu.HL[15:0]
 minx.cpu.NB[7:0]
 minx.cpu.PC[15:0]
-minx.cpu.SP[15:0]
 minx.cpu.XP[7:0]
 minx.cpu.YP[7:0]
-@1401200
+@1401201
 -cpu
 [pattern_trace] 1
 [pattern_trace] 0

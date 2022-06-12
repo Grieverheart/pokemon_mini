@@ -90,6 +90,12 @@ module s1c88
     // that is left for PC to change on time for an opcode fetch is narrow,
     // leaving (I think) only the possibility of updating PC at PL == 1.
     //
+    //
+    // @todo:
+    // Interrupts are disabled while the instruction to modify the contents of
+    // NB or SC is being executed. The exception processing of the interrupt
+    // generated during that period is started after the following instruction
+    // has been executed.
 
     // @todo:
     //
@@ -935,8 +941,11 @@ module s1c88
                     fetch_opcode <= 0;
                     //bus_status <= BUS_COMMAND_IRQ_READ;
 
-                    if(exception == EXCEPTION_TYPE_NONE || iack == 1)
-                        state <= next_state;
+                    // @note: Do we need to restrict the state setting here?
+                    //if(exception == EXCEPTION_TYPE_NONE || iack == 1)
+                    //    state <= next_state;
+
+                    state <= next_state;
 
                     if(next_state == STATE_EXC_PROCESS && exception_process_step == 0 && iack == 1)
                         bus_status <= (exception < EXCEPTION_TYPE_NMI)? BUS_COMMAND_IRQ_READ: BUS_COMMAND_MEM_READ;
