@@ -145,6 +145,26 @@ module s1c88
     //
     // @note: Perhaps MICRO_MOV_TA1/2 are not required after implementing the
     // jump micro.
+    //
+    //
+    // Different possibilities for correctly implementing conditional calls:
+    //
+    // 1. The jump instruction has quite a few unused bits. We can introduce
+    // a new jump type for branching within the microprogram. Alternatively,
+    // we have space to introduce a new local jump microinstruction. This
+    // would look something like the following:
+    //
+    // TYPE_LJMP 2'd0 ALU_OP_NONE 7'd1 JMP_SHORT COND_ZERO NOT_DONE MOV_IMML MOV_DATA
+    // TYPE_JMP  2'd0 ALU_OP_NONE 7'd0 JMP_SHORT COND_FALSE DONE MOV_IMML MOV_DATA
+    // TYPE_BUS  2'd0 ALU_OP_NONE BUS_MEM_WRITE ADD_SP MOV_CB NOT_DONE MOV_NONE MOV_NONE
+    // TYPE_BUS  2'd0 ALU_OP_NONE BUS_MEM_WRITE ADD_SP MOV_PCH NOT_DONE MOV_NONE MOV_NONE
+    // TYPE_BUS  2'd0 ALU_OP_NONE BUS_MEM_WRITE ADD_SP MOV_PCL NEARLY_DONE MOV_NONE MOV_NONE
+    // TYPE_JMP  2'd0 ALU_OP_NONE 6'd0 JMP_SHORT COND_TRUE DONE MOV_NONE MOV_NONE
+    //
+    // Here we kinda abuse the normal jump by making it take either one of the
+    // branches explicitly using COND_TRUE/FALSE. If we don't do that, shorter
+    // instructions like conditional jumps would need to be 3 microinstructions
+    // instead of 2.
 
 
     reg bus_ack_negedge, bus_ack_posedge, bus_request_latch;
