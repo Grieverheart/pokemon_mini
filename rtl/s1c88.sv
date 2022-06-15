@@ -150,21 +150,58 @@ module s1c88
     // Different possibilities for correctly implementing conditional calls:
     //
     // 1. The jump instruction has quite a few unused bits. We can introduce
-    // a new jump type for branching within the microprogram. Alternatively,
-    // we have space to introduce a new local jump microinstruction. This
-    // would look something like the following:
+    //    a new jump type for branching within the microprogram. Alternatively,
+    //    we have space to introduce a new local jump microinstruction. This
+    //    would look something like the following:
     //
-    // TYPE_LJMP 2'd0 ALU_OP_NONE 7'd1 JMP_SHORT COND_ZERO NOT_DONE MOV_IMML MOV_DATA
-    // TYPE_JMP  2'd0 ALU_OP_NONE 7'd0 JMP_SHORT COND_FALSE DONE MOV_IMML MOV_DATA
-    // TYPE_BUS  2'd0 ALU_OP_NONE BUS_MEM_WRITE ADD_SP MOV_CB NOT_DONE MOV_NONE MOV_NONE
-    // TYPE_BUS  2'd0 ALU_OP_NONE BUS_MEM_WRITE ADD_SP MOV_PCH NOT_DONE MOV_NONE MOV_NONE
-    // TYPE_BUS  2'd0 ALU_OP_NONE BUS_MEM_WRITE ADD_SP MOV_PCL NEARLY_DONE MOV_NONE MOV_NONE
-    // TYPE_JMP  2'd0 ALU_OP_NONE 6'd0 JMP_SHORT COND_TRUE DONE MOV_NONE MOV_NONE
+    //    TYPE_LJMP 2'd0 ALU_OP_NONE 7'd1 JMP_SHORT COND_ZERO NOT_DONE MOV_IMML MOV_DATA
+    //    TYPE_JMP  2'd0 ALU_OP_NONE 7'd0 JMP_SHORT COND_FALSE DONE MOV_IMML MOV_DATA
+    //    TYPE_BUS  2'd0 ALU_OP_NONE BUS_MEM_WRITE ADD_SP MOV_CB NOT_DONE MOV_NONE MOV_NONE
+    //    TYPE_BUS  2'd0 ALU_OP_NONE BUS_MEM_WRITE ADD_SP MOV_PCH NOT_DONE MOV_NONE MOV_NONE
+    //    TYPE_BUS  2'd0 ALU_OP_NONE BUS_MEM_WRITE ADD_SP MOV_PCL NEARLY_DONE MOV_NONE MOV_NONE
+    //    TYPE_JMP  2'd0 ALU_OP_NONE 6'd0 JMP_SHORT COND_NONE DONE MOV_NONE MOV_NONE
     //
-    // Here we kinda abuse the normal jump by making it take either one of the
-    // branches explicitly using COND_TRUE/FALSE. If we don't do that, shorter
-    // instructions like conditional jumps would need to be 3 microinstructions
-    // instead of 2.
+    //    Here we kinda abuse the normal jump by making it take either one of the
+    //    branches explicitly using COND_TRUE/FALSE. If we don't do that, shorter
+    //    instructions like conditional jumps would need to be 3
+    //    microinstructions instead of 2. Btw, we can completely avoid
+    //    introducing a TYPE_LJMP; when a jump instruction is NOT_DONE, skip
+    //    the next micro when the condition is true.
+    //
+    //    TYPE_JMP  2'd0 ALU_OP_NONE 7'd0 JMP_SHORT COND_ZERO NOT_DONE MOV_IMML MOV_DATA
+    //    TYPE_JMP  2'd0 ALU_OP_NONE 7'd0 JMP_SHORT COND_ZERO DONE MOV_IMML MOV_DATA
+    //    TYPE_BUS  2'd0 ALU_OP_NONE BUS_MEM_WRITE ADD_SP MOV_CB NOT_DONE MOV_NONE MOV_NONE
+    //    TYPE_BUS  2'd0 ALU_OP_NONE BUS_MEM_WRITE ADD_SP MOV_PCH NOT_DONE MOV_NONE MOV_NONE
+    //    TYPE_BUS  2'd0 ALU_OP_NONE BUS_MEM_WRITE ADD_SP MOV_PCL NEARLY_DONE MOV_NONE MOV_NONE
+    //    TYPE_JMP  2'd0 ALU_OP_NONE 7'd0 JMP_SHORT COND_ZERO DONE MOV_NONE MOV_NONE
+    //
+    // 2. Do the jump like following:
+    //
+    //    TYPE_MISC 2'd0 ALU_OP_NONE 6'd0 MOV_NONE MOV_NONE DONE MOV_IMML MOV_DATA
+    //    TYPE_JMP 2'd0 ALU_OP_NONE 7'd0 JMP_SHORT COND_ZERO NOT_DONE MOV_NONE MOV_NONE
+    //    TYPE_BUS 2'd0 ALU_OP_NONE BUS_MEM_WRITE ADD_SP MOV_CB NOT_DONE MOV_NONE MOV_NONE
+    //    TYPE_BUS 2'd0 ALU_OP_NONE BUS_MEM_WRITE ADD_SP MOV_PCH NEARLY_DONE MOV_NONE MOV_NONE
+    //    TYPE_BUS 2'd0 ALU_OP_NONE BUS_MEM_WRITE ADD_SP MOV_PCL DONE MOV_NONE MOV_NONE
+    //
+    //    during the jump, if the micro is done it does the jump like
+    //    currently, but if it's not done, it terminates the micro if the
+    //    condition is not true, otherwise it continues running micros and
+    //    sets a flag branch_taken. Problem is that PC needs to modified at
+    //    the end, but the last micro writes the PC to memory. Alternatively,
+    //    we setup the micros like this:
+    //
+    //    TYPE_JMP 2'd0 ALU_OP_NONE 7'd0 JMP_SHORT COND_ZERO NOT_DONE MOV_IMML MOV_DATA
+    //    TYPE_MISC 2'd0 ALU_OP_NONE 6'd0 MOV_NONE MOV_NONE DONE MOV_NONE MOV_NONE
+    //    TYPE_BUS 2'd0 ALU_OP_NONE BUS_MEM_WRITE ADD_SP MOV_CB NOT_DONE MOV_NONE MOV_NONE
+    //    TYPE_BUS 2'd0 ALU_OP_NONE BUS_MEM_WRITE ADD_SP MOV_PCH NEARLY_DONE MOV_NONE MOV_NONE
+    //    TYPE_BUS 2'd0 ALU_OP_NONE BUS_MEM_WRITE ADD_SP MOV_PCL DONE MOV_NONE MOV_NONE
+    //    TYPE_MISC 2'd0 ALU_OP_NONE 6'd0 MOV_NONE MOV_NONE DONE MOV_NONE MOV_NONE
+    //
+    //    in which case, if the jump micro is NOT_DONE, and if the condition
+    //    is true, it skips the following micro and sets branch_taken, or we
+    //    make the second and last micros do the cleanup? All jumps could be
+    //    written like this, but that would increase the micros form 2 to 3.
+    //    This is very similar to the first suggestion!
 
 
     reg bus_ack_negedge, bus_ack_posedge, bus_request_latch;
@@ -1081,8 +1118,11 @@ module s1c88
 
                             if(micro_op_type == MICRO_TYPE_JMP && jump_condition_true)
                             begin
-                                address_out <= {1'd0, (jump_dest[15]? NB: 8'd0), jump_dest[14:0]};
-                                branch_taken = 1;
+                                if(microinstruction_done)
+                                begin
+                                    address_out <= {1'd0, (jump_dest[15]? NB: 8'd0), jump_dest[14:0]};
+                                    branch_taken = 1;
+                                end
                             end
                         end
                     end
@@ -1137,14 +1177,17 @@ module s1c88
 
                         if(micro_op_type == MICRO_TYPE_JMP)
                         begin
-                            if(jump_condition_true)
+                            if(microinstruction_done)
                             begin
-                                branch_taken = 1;
-                                CB <= NB;
-                                PC <= jump_dest+1;
-                                top_address <= jump_dest;
+                                if(jump_condition_true)
+                                begin
+                                    branch_taken = 1;
+                                    CB <= NB;
+                                    PC <= jump_dest+1;
+                                    top_address <= jump_dest;
+                                end
+                                else NB <= CB;
                             end
-                            else NB <= CB;
                         end
 
                         if(micro_op_type == MICRO_TYPE_BUS && micro_bus_op == MICRO_BUS_MEM_READ)
@@ -1367,6 +1410,10 @@ module s1c88
                         if(pk == 1 && !microinstruction_done && !fetch_opcode)
                         begin
                             microprogram_counter <= microprogram_counter + 1;
+                            if(micro_op_type == MICRO_TYPE_JMP && jump_condition_true)
+                            begin
+                                microprogram_counter <= microprogram_counter + 2;
+                            end
                         end
 
                         if(micro_mov_src == MICRO_MOV_DATA && pk == 0)

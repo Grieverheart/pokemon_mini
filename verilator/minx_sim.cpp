@@ -722,7 +722,7 @@ int main(int argc, char** argv, char** env)
     minx->reset = 1;
 
     bool dump = true;
-    int dump_step = 20766248;
+    int dump_step = 22004122;
     int dump_range = 400000;
     VerilatedVcdC* tfp;
     if(dump)
@@ -752,6 +752,7 @@ int main(int argc, char** argv, char** env)
     bool data_sent = false;
     int irq_render_done_old = 0;
     int irq_copy_complete_old = 0;
+    int num_cycles_since_sync = 0;
     while (timestamp < 24000000 && !Verilated::gotFinish())
     {
         //322
@@ -778,9 +779,6 @@ int main(int argc, char** argv, char** env)
         }
         else if(dump && timestamp > dump_step - dump_range && timestamp < dump_step + dump_range) tfp->dump(timestamp);
         timestamp++;
-
-        //if(minx->sync && minx->pl == 0)
-        //    printf("-- 0x%x\n", minx->rootp->minx__DOT__cpu__DOT__PC);
 
         if(minx->rootp->minx__DOT__irq_render_done && irq_render_done_old == 0)
         {
@@ -848,15 +846,16 @@ int main(int argc, char** argv, char** env)
         {
             if((minx->sync == 1) && (minx->pl == 0) && (minx->rootp->minx__DOT__cpu__DOT__micro_op & 0x1000))
             {
-                uint8_t num_cycles        = 1 + minx->rootp->minx__DOT__cpu__DOT__microprogram_counter;
+                uint8_t num_cycles        = num_cycles_since_sync;
                 uint16_t extended_opcode  = minx->rootp->minx__DOT__cpu__DOT__extended_opcode;
+                // @todo: Accomondate conditional calls with two instruction lengths.
                 uint8_t num_cycles_actual = instruction_cycles[extended_opcode];
 
                 //if(!instructions_executed[extended_opcode])
                 //    printf("%d, 0x%x\n", timestamp, extended_opcode);
 
                 if(num_cycles != num_cycles_actual)
-                    PRINTE(" ** Descrepancy found in number of cycles of instruction 0x%x: %d, %d, timestamp: %d** \n", extended_opcode, num_cycles, num_cycles_actual, timestamp);
+                    PRINTE(" ** Discrepancy found in number of cycles of instruction 0x%x: %d, %d, timestamp: %d** \n", extended_opcode, num_cycles, num_cycles_actual, timestamp);
 
                 instructions_executed[extended_opcode] = 1;
             }
@@ -973,6 +972,11 @@ int main(int argc, char** argv, char** env)
 
             data_sent = true;
         }
+
+        if(minx->sync && minx->pl == 1)
+            num_cycles_since_sync = 0;
+        if(minx->pl == 1 && !minx->rootp->minx__DOT__bus_ack)
+            ++num_cycles_since_sync;
         //minx->eval();
     }
 

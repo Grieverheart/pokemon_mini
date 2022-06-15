@@ -23,9 +23,9 @@ if __name__ == '__main__':
     cycles       = [int(x.split(',')[-1]) // 4 for x in lines]
     fp.close()
 
-    is_extended = [int(x[:2] == 'CE' or x[:2] == 'CF') for x in instructions]
-    for i in range(len(cycles)):
-        cycles[i] -= is_extended[i]
+    #is_extended = [int(x[:2] == 'CE' or x[:2] == 'CF') for x in instructions]
+    #for i in range(len(cycles)):
+    #    cycles[i] -= is_extended[i]
 
     cycles_all = [0] * 0x300
     for i in range(len(instructions)):
