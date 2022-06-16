@@ -722,7 +722,7 @@ int main(int argc, char** argv, char** env)
     minx->reset = 1;
 
     bool dump = true;
-    int dump_step = 22004122;
+    int dump_step = 20766248;
     int dump_range = 400000;
     VerilatedVcdC* tfp;
     if(dump)
@@ -733,6 +733,8 @@ int main(int argc, char** argv, char** env)
         tfp->open("sim.vcd");
     }
 
+    // @todo: Problem at 20864171 instruction F9. PC is set to 0x2390, but
+    // that's not an instruction.
     registers[0x52] = 0xFF;
 
     int mem_counter = 0;
@@ -891,15 +893,10 @@ int main(int argc, char** argv, char** env)
         if(timestamp >= 8)
             minx->reset = 0;
 
-        //if(timestamp == 258)
-        //{
-        //    minx->irq = 1 << 3;
-        //}
-        //else if(timestamp > 258 && minx->iack == 1 && minx->pl == 0)
-        //{
-        //    minx->irq = 0;
-        //    minx->data_in = 0x8;
-        //}
+        if(timestamp > 258 && minx->iack == 1 && minx->pl == 0 && minx->sync)
+        {
+            printf("IACK with IRQ=0x%x, timestamp: %d\n", minx->rootp->minx__DOT__irq__DOT__next_irq, timestamp);
+        }
 
         if(minx->bus_status == BUS_MEM_READ && minx->pl == 0) // Check if PL=0 just to reduce spam.
         {
