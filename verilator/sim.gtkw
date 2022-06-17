@@ -1,35 +1,36 @@
 [*]
 [*] GTKWave Analyzer v3.3.107 (w)1999-2020 BSI
-[*] Thu Jun 16 07:09:47 2022
+[*] Fri Jun 17 06:25:40 2022
 [*]
 [dumpfile] "/Users/nicktasios/Programming/fpga/pokemon_mini/verilator/sim.vcd"
-[dumpfile_mtime] "Thu Jun 16 07:03:13 2022"
+[dumpfile_mtime] "Thu Jun 16 22:14:36 2022"
 [dumpfile_size] 73094121
 [savefile] "/Users/nicktasios/Programming/fpga/pokemon_mini/verilator/sim.gtkw"
-[timestart] 20864165
+[timestart] 20863565
 [size] 1280 755
 [pos] -1 -1
-*-3.338047 20864171 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-3.338047 20863579 20864171 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] minx.
 [treeopen] minx.cpu.
 [sst_width] 227
 [signals_width] 289
 [sst_expanded] 1
-[sst_vpaned_height] 462
+[sst_vpaned_height] 380
 @28
 minx.clk
 minx.cpu.pk
 minx.cpu.pl
 minx.read
 minx.write
+minx.cpu.read_interrupt_vector
 minx.cpu.sync
 minx.cpu.fetch_opcode
 @22
 minx.address_out[23:0]
 minx.cpu.address_out[23:0]
-@c00023
+@c00022
 minx.cpu.PC[15:0]
-@29
+@28
 (0)minx.cpu.PC[15:0]
 (1)minx.cpu.PC[15:0]
 (2)minx.cpu.PC[15:0]
@@ -46,7 +47,7 @@ minx.cpu.PC[15:0]
 (13)minx.cpu.PC[15:0]
 (14)minx.cpu.PC[15:0]
 (15)minx.cpu.PC[15:0]
-@1401201
+@1401200
 -group_end
 @22
 minx.cpu.extended_opcode[9:0]
@@ -69,10 +70,30 @@ minx.bus_status[1:0]
 @28
 minx.prc.irq_render_done
 minx.cpu_write_latch
-@22
+@c00022
 minx.cpu.microaddress[10:0]
+@28
+(0)minx.cpu.microaddress[10:0]
+(1)minx.cpu.microaddress[10:0]
+(2)minx.cpu.microaddress[10:0]
+(3)minx.cpu.microaddress[10:0]
+(4)minx.cpu.microaddress[10:0]
+(5)minx.cpu.microaddress[10:0]
+(6)minx.cpu.microaddress[10:0]
+(7)minx.cpu.microaddress[10:0]
+(8)minx.cpu.microaddress[10:0]
+(9)minx.cpu.microaddress[10:0]
+(10)minx.cpu.microaddress[10:0]
+@1401200
+-group_end
+@22
 minx.cpu.imm_low[7:0]
-@c00200
+minx.cpu.exception_process_step[3:0]
+@24
+minx.cpu.state[2:0]
+minx.cpu.next_state[2:0]
+minx.cpu.exception[2:0]
+@800200
 -irq
 @28
 minx.cpu.iack
@@ -225,7 +246,7 @@ minx.irq.irqs[31:0]
 minx.irq.next_irq[4:0]
 @28
 minx.irq.next_priority[1:0]
-@1401200
+@1000200
 -irq
 @c00200
 -eeprom
@@ -281,7 +302,7 @@ minx.rom.state[2:0]
 minx.rom.address[12:0]
 @1401200
 -eeprom
-@800200
+@c00200
 -cpu
 @c00022
 minx.cpu.SC[7:0]
@@ -377,7 +398,7 @@ minx.cpu.NB[7:0]
 minx.cpu.PC[15:0]
 minx.cpu.XP[7:0]
 minx.cpu.YP[7:0]
-@1000200
+@1401200
 -cpu
 [pattern_trace] 1
 [pattern_trace] 0

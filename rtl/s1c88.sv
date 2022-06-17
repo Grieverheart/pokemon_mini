@@ -70,7 +70,7 @@ module s1c88
     // probably also allow to calculate addresses for data operations.
 
     // Microinstruction Design Notes:
-    // 
+    //
     // Currently we allow all microinstructions to set the alu operation.
     // Perhaps it would be better to have microinstructions for the reading of
     // the immediate values too, then you can write the immediate straight
@@ -440,7 +440,7 @@ module s1c88
     // and possibly mov_reg. Also we don't seem to use the nearly done flag so
     // we could potentially save another bit from that.
     //
-    // TYPE_MISC 
+    // TYPE_MISC
     //  2         1            1       5   1    6       6     2    6   6
     //  36        34          33      32   27  26      20     14  12   6
     // type alu_flag_write alu_size alu_op 0 mov_sec mov_sec done mov mov
@@ -860,7 +860,7 @@ module s1c88
         endcase
     endtask
 
-    wire [2:0] exception_factor = 
+    wire [2:0] exception_factor =
          (irq[3])?                    3'd4:
         ((irq[2] && SC[7:6] < 2'd3)?  3'd3:
         ((irq[1] && SC[7:6] < 2'd2)?  3'd2:
@@ -988,7 +988,8 @@ module s1c88
                     begin
                         opcode <= data_in;
                         top_address <= PC;
-                        PC <= PC + 1;
+                        //if(!iack)
+                            PC <= PC + 1;
                     end
                 end
                 else if(pk == 0)
@@ -1002,6 +1003,10 @@ module s1c88
                     //if(exception == EXCEPTION_TYPE_NONE || iack == 1)
                     //    state <= next_state;
 
+                    // @important: While handling an interrupt, if the loaded
+                    // opcode is an extended opcode, then we have a problem
+                    // since the next_state will not be an STATE_EXC_PROCESS,
+                    // but a STATE_EXECUTE.
                     state <= next_state;
 
                     if(next_state == STATE_EXC_PROCESS && exception_process_step == 0 && iack == 1)

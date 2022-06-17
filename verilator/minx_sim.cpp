@@ -721,8 +721,9 @@ int main(int argc, char** argv, char** env)
     minx->clk = 0;
     minx->reset = 1;
 
+    // @todo: Problem at 20863583 when starting IRQ processing.
     bool dump = true;
-    int dump_step = 20766248;
+    int dump_step = 20863583;
     int dump_range = 400000;
     VerilatedVcdC* tfp;
     if(dump)
@@ -733,8 +734,6 @@ int main(int argc, char** argv, char** env)
         tfp->open("sim.vcd");
     }
 
-    // @todo: Problem at 20864171 instruction F9. PC is set to 0x2390, but
-    // that's not an instruction.
     registers[0x52] = 0xFF;
 
     int mem_counter = 0;
@@ -883,11 +882,11 @@ int main(int argc, char** argv, char** env)
             if(minx->rootp->minx__DOT__cpu__DOT__not_implemented_alu_dec_pack_ops_error == 1 && minx->pl == 0)
                 PRINTE(" ** Alu decimal and packed operations not implemented error, timestamp: %d** \n", timestamp);
 
-            if(minx->rootp->minx__DOT__cpu__DOT__not_implemented_divzero_error  == 1 && minx->pl == 0)
-                PRINTE("** Division by zero exception not implemented error, timestamp: %d**\n", timestamp);
+            if(minx->rootp->minx__DOT__cpu__DOT__not_implemented_divzero_error == 1 && minx->pl == 0)
+                PRINTE(" ** Division by zero exception not implemented error, timestamp: %d**\n", timestamp);
 
             if(minx->rootp->minx__DOT__cpu__DOT__SP > 0x2000 && minx->pl == 0)
-                PRINTE("** Stack overflow, timestamp: %d**\n", timestamp);
+                PRINTE(" ** Stack overflow, timestamp: %d**\n", timestamp);
         }
 
         if(timestamp >= 8)
