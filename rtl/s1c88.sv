@@ -92,10 +92,10 @@ module s1c88
     //
     //
     // @todo:
-    // Interrupts are disabled while the instruction to modify the contents of
+    // "Interrupts are disabled while the instruction to modify the contents of
     // NB or SC is being executed. The exception processing of the interrupt
     // generated during that period is started after the following instruction
-    // has been executed.
+    // has been executed."
 
     // @todo:
     //
@@ -635,8 +635,8 @@ module s1c88
                                                 STATE_EXECUTE):
 
         (state == STATE_EXECUTE) ?
+            (iack                             ? STATE_EXC_PROCESS:
             (need_opext                       ? STATE_OPEXT_READ:
-            (exception != EXCEPTION_TYPE_NONE ? STATE_EXC_PROCESS:
                                                 STATE_EXECUTE)):
                                                 STATE_EXECUTE;
 
@@ -984,12 +984,11 @@ module s1c88
 
                     not_implemented_write_error <= 0;
 
-                    if(fetch_opcode)
+                    if(fetch_opcode && !iack)
                     begin
                         opcode <= data_in;
                         top_address <= PC;
-                        //if(!iack)
-                            PC <= PC + 1;
+                        PC <= PC + 1;
                     end
                 end
                 else if(pk == 0)
@@ -1133,10 +1132,6 @@ module s1c88
                     end
                     else
                     begin
-                        // @todo: Need flag for optionally updating SC from alu
-                        // flags, and I need an always_comb block or a wire for
-                        // masking bits of SC to be updated? Alternatively insert
-                        // a big case here.
                         if(alu_flag_update)
                         begin
                             case(alu_op)

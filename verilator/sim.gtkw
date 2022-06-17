@@ -1,19 +1,19 @@
 [*]
 [*] GTKWave Analyzer v3.3.107 (w)1999-2020 BSI
-[*] Fri Jun 17 06:25:40 2022
+[*] Fri Jun 17 20:06:50 2022
 [*]
 [dumpfile] "/Users/nicktasios/Programming/fpga/pokemon_mini/verilator/sim.vcd"
-[dumpfile_mtime] "Thu Jun 16 22:14:36 2022"
-[dumpfile_size] 73094121
+[dumpfile_mtime] "Fri Jun 17 19:38:19 2022"
+[dumpfile_size] 77281973
 [savefile] "/Users/nicktasios/Programming/fpga/pokemon_mini/verilator/sim.gtkw"
-[timestart] 20863565
+[timestart] 20463584
 [size] 1280 755
 [pos] -1 -1
-*-3.338047 20863579 20864171 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-18.338047 21180001 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] minx.
 [treeopen] minx.cpu.
 [sst_width] 227
-[signals_width] 289
+[signals_width] 324
 [sst_expanded] 1
 [sst_vpaned_height] 380
 @28
@@ -22,12 +22,13 @@ minx.cpu.pk
 minx.cpu.pl
 minx.read
 minx.write
+@29
 minx.cpu.read_interrupt_vector
+@28
 minx.cpu.sync
 minx.cpu.fetch_opcode
 @22
 minx.address_out[23:0]
-minx.cpu.address_out[23:0]
 @c00022
 minx.cpu.PC[15:0]
 @28
@@ -67,9 +68,6 @@ minx.data_out[7:0]
 -group_end
 @24
 minx.bus_status[1:0]
-@28
-minx.prc.irq_render_done
-minx.cpu_write_latch
 @c00022
 minx.cpu.microaddress[10:0]
 @28
@@ -87,7 +85,6 @@ minx.cpu.microaddress[10:0]
 @1401200
 -group_end
 @22
-minx.cpu.imm_low[7:0]
 minx.cpu.exception_process_step[3:0]
 @24
 minx.cpu.state[2:0]

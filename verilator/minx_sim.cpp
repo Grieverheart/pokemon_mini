@@ -688,7 +688,6 @@ uint8_t read_hardware_register(uint32_t address)
     return data;
 }
 
-// @todo: Detect when page registers need to be used (error not implemented). Are they even used?
 int main(int argc, char** argv, char** env)
 {
     FILE* fp = fopen("data/bios.min", "rb");
@@ -721,7 +720,6 @@ int main(int argc, char** argv, char** env)
     minx->clk = 0;
     minx->reset = 1;
 
-    // @todo: Problem at 20863583 when starting IRQ processing.
     bool dump = true;
     int dump_step = 20863583;
     int dump_range = 400000;
@@ -751,6 +749,7 @@ int main(int argc, char** argv, char** env)
     int timestamp = 0;
     int prc_state = 0;
     bool data_sent = false;
+    bool irq_processing = false;
     int irq_render_done_old = 0;
     int irq_copy_complete_old = 0;
     int num_cycles_since_sync = 0;
@@ -845,20 +844,25 @@ int main(int argc, char** argv, char** env)
 
         // Check for errors
         {
-            if((minx->sync == 1) && (minx->pl == 0) && (minx->rootp->minx__DOT__cpu__DOT__micro_op & 0x1000))
+            if((minx->sync == 1) && (minx->pl == 0) && (minx->rootp->minx__DOT__cpu__DOT__micro_op & 0x1000) && minx->iack == 0)
             {
-                uint8_t num_cycles        = num_cycles_since_sync;
-                uint16_t extended_opcode  = minx->rootp->minx__DOT__cpu__DOT__extended_opcode;
-                // @todo: Accomondate conditional calls with two instruction lengths.
-                uint8_t num_cycles_actual = instruction_cycles[extended_opcode];
+                if(irq_processing)
+                    irq_processing = false;
+                else
+                {
+                    uint8_t num_cycles        = num_cycles_since_sync;
+                    uint16_t extended_opcode  = minx->rootp->minx__DOT__cpu__DOT__extended_opcode;
+                    // @todo: Accomondate conditional calls with two instruction lengths.
+                    uint8_t num_cycles_actual = instruction_cycles[extended_opcode];
 
-                //if(!instructions_executed[extended_opcode])
-                //    printf("%d, 0x%x\n", timestamp, extended_opcode);
+                    //if(!instructions_executed[extended_opcode])
+                    //    printf("%d, 0x%x\n", timestamp, extended_opcode);
 
-                if(num_cycles != num_cycles_actual)
-                    PRINTE(" ** Discrepancy found in number of cycles of instruction 0x%x: %d, %d, timestamp: %d** \n", extended_opcode, num_cycles, num_cycles_actual, timestamp);
+                    if(num_cycles != num_cycles_actual)
+                        PRINTE(" ** Discrepancy found in number of cycles of instruction 0x%x: %d, %d, timestamp: %d** \n", extended_opcode, num_cycles, num_cycles_actual, timestamp);
 
-                instructions_executed[extended_opcode] = 1;
+                    instructions_executed[extended_opcode] = 1;
+                }
             }
 
             if(minx->rootp->minx__DOT__cpu__DOT__not_implemented_addressing_error == 1 && minx->pl == 0)
@@ -894,6 +898,7 @@ int main(int argc, char** argv, char** env)
 
         if(timestamp > 258 && minx->iack == 1 && minx->pl == 0 && minx->sync)
         {
+            irq_processing = true;
             printf("IACK with IRQ=0x%x, timestamp: %d\n", minx->rootp->minx__DOT__irq__DOT__next_irq, timestamp);
         }
 
