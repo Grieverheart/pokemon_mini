@@ -1,30 +1,28 @@
 [*]
 [*] GTKWave Analyzer v3.3.107 (w)1999-2020 BSI
-[*] Fri Jun 17 20:06:50 2022
+[*] Sat Jun 18 18:40:52 2022
 [*]
 [dumpfile] "/Users/nicktasios/Programming/fpga/pokemon_mini/verilator/sim.vcd"
-[dumpfile_mtime] "Fri Jun 17 19:38:19 2022"
-[dumpfile_size] 77281973
+[dumpfile_mtime] "Sat Jun 18 18:40:16 2022"
+[dumpfile_size] 67717381
 [savefile] "/Users/nicktasios/Programming/fpga/pokemon_mini/verilator/sim.gtkw"
-[timestart] 20463584
+[timestart] 20633011
 [size] 1280 755
 [pos] -1 -1
-*-18.338047 21180001 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-18.338047 21033007 20940887 20942644 20941102 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] minx.
 [treeopen] minx.cpu.
 [sst_width] 227
 [signals_width] 324
 [sst_expanded] 1
-[sst_vpaned_height] 380
+[sst_vpaned_height] 377
 @28
 minx.clk
 minx.cpu.pk
 minx.cpu.pl
 minx.read
 minx.write
-@29
 minx.cpu.read_interrupt_vector
-@28
 minx.cpu.sync
 minx.cpu.fetch_opcode
 @22
@@ -90,7 +88,9 @@ minx.cpu.exception_process_step[3:0]
 minx.cpu.state[2:0]
 minx.cpu.next_state[2:0]
 minx.cpu.exception[2:0]
-@800200
+@22
+minx.t256_irqs[3:0]
+@c00200
 -irq
 @28
 minx.cpu.iack
@@ -243,7 +243,7 @@ minx.irq.irqs[31:0]
 minx.irq.next_irq[4:0]
 @28
 minx.irq.next_priority[1:0]
-@1000200
+@1401200
 -irq
 @c00200
 -eeprom

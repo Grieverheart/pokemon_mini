@@ -46,15 +46,15 @@ void write_hardware_register(uint32_t address, uint8_t data)
 {
     switch(address)
     {
-        case 0x0:
-        case 0x1:
-        case 0x2:
+        case 0x00:
+        case 0x01:
+        case 0x02:
         {
             PRINTD("Writing hardware register SYS_CTRL%d=", address+1);
         }
         break;
 
-        case 0x8:
+        case 0x08:
         {
             PRINTD("Writing hardware register SEC_CTRL=");
             sec_ctrl = data & 3;
@@ -721,7 +721,7 @@ int main(int argc, char** argv, char** env)
     minx->reset = 1;
 
     bool dump = true;
-    int dump_step = 20863583;
+    int dump_step = 21033010;
     int dump_range = 400000;
     VerilatedVcdC* tfp;
     if(dump)
@@ -844,7 +844,12 @@ int main(int argc, char** argv, char** env)
 
         // Check for errors
         {
-            if((minx->sync == 1) && (minx->pl == 0) && (minx->rootp->minx__DOT__cpu__DOT__micro_op & 0x1000) && minx->iack == 0)
+            if(
+                (minx->sync == 1) &&
+                (minx->pl == 0) &&
+                (minx->rootp->minx__DOT__cpu__DOT__micro_op & 0x1000) &&
+                minx->iack == 0 &&
+                !minx->rootp->minx__DOT__bus_ack)
             {
                 if(irq_processing)
                     irq_processing = false;

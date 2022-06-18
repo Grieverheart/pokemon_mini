@@ -59,6 +59,10 @@ module minx
     wire [31:0]  irqs;
     assign irqs[5'h03] = irq_copy_complete;
     assign irqs[5'h04] = irq_render_done;
+    assign irqs[5'h0B] = t256_irqs[0];
+    assign irqs[5'h0C] = t256_irqs[1];
+    assign irqs[5'h0C] = t256_irqs[2];
+    assign irqs[5'h0E] = t256_irqs[3];
 
     wire [23:0] irq_address_out;
     wire [7:0]  irq_data_out;
@@ -78,7 +82,7 @@ module minx
         .cpu_irq         (cpu_irq)
     );
 
-    wire [7:0] t256;
+    wire [3:0] t256_irqs;
     wire [7:0] timer256_data_out;
     timer256 timer256
     (
@@ -90,7 +94,7 @@ module minx
         .bus_address_in (cpu_address_out),
         .bus_data_in    (cpu_data_out),
         .bus_data_out   (timer256_data_out),
-        .timer          (t256)
+        .irqs           (t256_irqs)
     );
 
     eeprom rom

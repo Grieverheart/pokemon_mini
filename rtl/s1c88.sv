@@ -971,8 +971,9 @@ module s1c88
 
             if((pk == 0) && bus_ack_posedge)
             begin
-                pl          <= 0;
-                address_out <= 0;
+                pl           <= 0;
+                address_out  <= 0;
+                fetch_opcode <= 0;
             end
             else if(!bus_ack)
             begin
@@ -1204,7 +1205,7 @@ module s1c88
 
                 if(micro_op_type == MICRO_TYPE_BUS && pk == 0)
                 begin
-                    if((state == STATE_EXECUTE || next_state == STATE_EXECUTE) && !microinstruction_done)
+                    if((state == STATE_EXECUTE || (next_state == STATE_EXECUTE && state != STATE_EXC_PROCESS)) && !microinstruction_done)
                     begin
                         // Don't do any bus ops on the last microinstruction
                         // step.

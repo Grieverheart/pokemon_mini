@@ -10,14 +10,14 @@ module timer256
     input [23:0] bus_address_in,
     input [7:0] bus_data_in,
     output logic [7:0] bus_data_out,
-    output logic [7:0] timer
-    //output reg [3:0] irqs
+    output logic [3:0] irqs
 );
 
 reg reg_enabled;
 reg reg_reset;
+reg [7:0] timer;
 
-//assign irqs = {4{reg_enabled}} & {timer == 0, timer[7], timer[5], timer[3]};
+//assign irqs = {4{reg_enabled}} & {timer == 255, timer[7], timer[5], timer[3]};
 
 reg write_latch;
 always_ff @ (negedge clk)
@@ -64,12 +64,23 @@ end
 always_ff @ (posedge rt_clk)
 begin
     if(reset || reg_reset)
+    begin
         timer <= 8'd0;
+        irqs  <= 4'd0;
+    end
     else if(reg_enabled)
     begin
         timer <= timer + 8'd1;
-        //if(timer == 8'd255)
-        //    irqs[] <= 1;
+        irqs  <= 4'd0;
+
+        if(timer == 8'd255)
+            irqs[3] <= 1;
+        if(timer[6:0] == 7'd127)
+            irqs[2] <= 1;
+        if(timer[4:0] == 5'd31)
+            irqs[1] <= 1;
+        if(timer[2:0] == 3'd7)
+            irqs[0] <= 1;
     end
 end
 
