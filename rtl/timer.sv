@@ -1,6 +1,6 @@
 // @todo: Implement interrupts
 
-module timer256
+module timer
 (
     input clk,
     input rt_clk,
@@ -16,8 +16,6 @@ module timer256
 reg reg_enabled;
 reg reg_reset;
 reg [7:0] timer;
-
-//assign irqs = {4{reg_enabled}} & {timer == 255, timer[7], timer[5], timer[3]};
 
 reg write_latch;
 always_ff @ (negedge clk)
@@ -61,10 +59,6 @@ begin
     endcase
 end
 
-// @todo: rt_clock is 32768Hz. We first need to make a 256Hz signal clock.
-// This means we have to divide the clock by 128, or we need to provide the
-// correct frequency. We need to divide the clock anyway for timer.sv so
-// perhaps we can take the 256Hz frequency as output from there.
 always_ff @ (posedge rt_clk)
 begin
     if(reset || reg_reset)
