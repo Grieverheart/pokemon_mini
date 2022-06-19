@@ -973,7 +973,6 @@ module s1c88
             begin
                 pl           <= 0;
                 address_out  <= 0;
-                fetch_opcode <= 0;
             end
             else if(!bus_ack)
             begin

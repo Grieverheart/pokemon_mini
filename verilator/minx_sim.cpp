@@ -720,8 +720,11 @@ int main(int argc, char** argv, char** env)
     minx->clk = 0;
     minx->reset = 1;
 
+    // @todo: Problem at this timestamp. When coming back from rendering,
+    // because the microinstruction_done flag is set and micro op type is a
+    // jump, it jumps to jump dest.
     bool dump = true;
-    int dump_step = 21033010;
+    int dump_step = 22120570;
     int dump_range = 400000;
     VerilatedVcdC* tfp;
     if(dump)
@@ -857,14 +860,15 @@ int main(int argc, char** argv, char** env)
                 {
                     uint8_t num_cycles        = num_cycles_since_sync;
                     uint16_t extended_opcode  = minx->rootp->minx__DOT__cpu__DOT__extended_opcode;
-                    // @todo: Accomondate conditional calls with two instruction lengths.
-                    uint8_t num_cycles_actual = instruction_cycles[extended_opcode];
+                    uint8_t num_cycles_actual = instruction_cycles[2*extended_opcode];
+                    uint8_t num_cycles_actual_branch = instruction_cycles[2*extended_opcode+1];
 
                     //if(!instructions_executed[extended_opcode])
                     //    printf("%d, 0x%x\n", timestamp, extended_opcode);
 
                     if(num_cycles != num_cycles_actual)
-                        PRINTE(" ** Discrepancy found in number of cycles of instruction 0x%x: %d, %d, timestamp: %d** \n", extended_opcode, num_cycles, num_cycles_actual, timestamp);
+                        if(num_cycles != num_cycles_actual_branch || num_cycles_actual_branch == 0)
+                            PRINTE(" ** Discrepancy found in number of cycles of instruction 0x%x: %d, %d, timestamp: %d** \n", extended_opcode, num_cycles, num_cycles_actual, timestamp);
 
                     instructions_executed[extended_opcode] = 1;
                 }

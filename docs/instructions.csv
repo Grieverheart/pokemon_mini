@@ -1,608 +1,608 @@
-FF, "NOP", 8
-40,"MOV A, A",4
-41,"MOV A, B",4
-42,"MOV A, L",4
-43,"MOV A, H",4
-"44 nn","MOV A, [N+#nn]",12
-45,"MOV A, [HL]",8
-46,"MOV A, [X]",8
-47,"MOV A, [Y]",8
-48,"MOV B, A",4
-49,"MOV B, B",4
-4A,"MOV B, L",4
-4B,"MOV B, H",4
-"4C nn","MOV B, [N+#nn]",12
-4D,"MOV B, [HL]",8
-4E,"MOV B, [X]",8
-4F,"MOV B, [Y]",8
-50,"MOV L, A",4
-51,"MOV L, B",4
-52,"MOV L, L",4
-53,"MOV L, H",4
-"54 nn","MOV L, [N+#nn]",12
-55,"MOV L, [HL]",8
-56,"MOV L, [X]",8
-57,"MOV L, [Y]",8
-58,"MOV H, A",4
-59,"MOV H, B",4
-5A,"MOV H, L",4
-5B,"MOV H, H",4
-"5C nn","MOV H, [N+#nn]",12
-5D,"MOV H, [HL]",8
-5E,"MOV H, [X]",8
-5F,"MOV H, [Y]",8
-60,"MOV [X], A",8
-61,"MOV [X], B",8
-62,"MOV [X], L",8
-63,"MOV [X], H",8
-"64 nn","MOV [X], [N+#nn]",16
-65,"MOV [X], [HL]",12
-66,"MOV [X], [X]",12
-67,"MOV [X], [Y]",12
-68,"MOV [HL], A",8
-69,"MOV [HL], B",8
-6A,"MOV [HL], L",8
-6B,"MOV [HL], H",8
-"6C nn","MOV [HL], [N+#nn]",16
-6D,"MOV [HL], [HL]",12
-6E,"MOV [HL], [X]",12
-6F,"MOV [HL], [Y]",12
-70,"MOV [Y], A",8
-71,"MOV [Y], B",8
-72,"MOV [Y], L",8
-73,"MOV [Y], H",8
-"74 nn","MOV [Y], [N+#nn]",16
-75,"MOV [Y], [HL]",12
-76,"MOV [Y], [X]",12
-77,"MOV [Y], [Y]",12
-"78 nn","MOV [N+#nn], A",12
-"79 nn","MOV [N+#nn], B",12
-"7A nn","MOV [N+#nn], L",12
-"7B nn","MOV [N+#nn], H",12
-"7D nn","MOV [N+#nn], [HL]",16
-"7E nn","MOV [N+#nn], [X]",16
-"7F nn","MOV [N+#nn], [Y]",16
-"9F nn","MOV F, #nn",12
-"B0 nn","MOV A, #nn",8
-"B1 nn","MOV B, #nn",8
-"B2 nn","MOV L, #nn",8
-"B3 nn","MOV H, #nn",8
-"B4 nn","MOV N, #nn",8
-"B5 nn","MOV [HL], #nn",12
-"B6 nn","MOV [X], #nn",12
-"B7 nn","MOV [Y], #nn",12
-"DD nn nn","MOV [N+#nn], #nn",16
-"CE C4 nn","MOV U, #nn",16
-"CE C5 nn","MOV I, #nn",12
-"CE C6 nn","MOV XI, #nn",12
-"CE C7 nn","MOV YI, #nn",12
-"CE 40 ss","MOV A, [X+#ss]",16
-"CE 41 ss","MOV A, [Y+#ss]",16
-"CE 42","MOV A, [X+L]",16
-"CE 43","MOV A, [Y+L]",16
-"CE 48 ss","MOV B, [X+#ss]",16
-"CE 49 ss","MOV B, [Y+#ss]",16
-"CE 4A","MOV B, [X+L]",16
-"CE 4B","MOV B, [Y+L]",16
-"CE 50 ss","MOV L, [X+#ss]",16
-"CE 51 ss","MOV L, [Y+#ss]",16
-"CE 52","MOV L, [X+L]",16
-"CE 53","MOV L, [Y+L]",16
-"CE 58 ss","MOV H, [X+#ss]",16
-"CE 59 ss","MOV H, [Y+#ss]",16
-"CE 5A","MOV H, [X+L]",16
-"CE 5B","MOV H, [Y+L]",16
-"CE 44 ss","MOV [X+#ss], A",16
-"CE 45 ss","MOV [Y+#ss], A",16
-"CE 46","MOV [X+L], A",16
-"CE 47","MOV [Y+L], A",16
-"CE 4C ss","MOV [X+#ss], B",16
-"CE 4D ss","MOV [Y+#ss], B",16
-"CE 4E","MOV [X+L], B",16
-"CE 4F","MOV [Y+L], B",16
-"CE 54 ss","MOV [X+#ss], L",16
-"CE 55 ss","MOV [Y+#ss], L",16
-"CE 56","MOV [X+L], L",16
-"CE 57","MOV [Y+L], L",16
-"CE 5C ss","MOV [X+#ss], H",16
-"CE 5D ss","MOV [Y+#ss], H",16
-"CE 5E","MOV [X+L], H",16
-"CE 5F","MOV [Y+L], H",16
-"CE 60 ss","MOV [HL], [X+#ss]",20
-"CE 61 ss","MOV [HL], [Y+#ss]",20
-"CE 62","MOV [HL], [X+L]",20
-"CE 63","MOV [HL], [Y+L]",20
-"CE 68 ss","MOV [X], [X+#ss]",20
-"CE 69 ss","MOV [X], [Y+#ss]",20
-"CE 6A","MOV [X], [X+L]",20
-"CE 6B","MOV [X], [Y+L]",20
-"CE 78 ss","MOV [Y], [X+#ss]",20
-"CE 79 ss","MOV [Y], [Y+#ss]",20
-"CE 7A","MOV [Y], [X+L]",20
-"CE 7B","MOV [Y], [Y+L]",20
-"B8 nn nn","MOV BA, [#nnnn]",20
-"B9 nn nn","MOV HL, [#nnnn]",20
-"BA nn nn","MOV X, [#nnnn]",20
-"BB nn nn","MOV Y, [#nnnn]",20
-"CF 78 nn nn","MOV SP, [#nnnn]",24
-"BC nn nn","MOV [#nnnn], BA",20
-"BD nn nn","MOV [#nnnn], HL",20
-"BE nn nn","MOV [#nnnn], X",20
-"BF nn nn","MOV [#nnnn], Y",20
-"CF 7C nn nn","MOV [#nnnn], SP",24
-"C4 nn nn","MOV BA, #nnnn",12
-"C5 nn nn","MOV HL, #nnnn",12
-"C6 nn nn","MOV X, #nnnn",12
-"C7 nn nn","MOV Y, #nnnn",12
-"CF 6E nn nn","MOV SP, #nnnn",16
-"CE C0","MOV A, N",8
-"CE C1","MOV A, F",8
-"CE C8","MOV A, V",8
-"CE C9","MOV A, I",8
-"CE CA","MOV A, XI",8
-"CE CB","MOV A, YI",8
-"CE C2","MOV N, A",8
-"CE C3","MOV F, A",12
-"CE CC","MOV U, A",12
-"CE CD","MOV I, A",8
-"CE CE","MOV XI, A",8
-"CE CF","MOV YI, A",8
-"CE D0 nn nn","MOV A, [#nnnn]",20
-"CE D1 nn nn","MOV B, [#nnnn]",20
-"CE D2 nn nn","MOV L, [#nnnn]",20
-"CE D3 nn nn","MOV H, [#nnnn]",20
-"CE D4 nn nn","MOV [#nnnn], A",20
-"CE D5 nn nn","MOV [#nnnn], B",20
-"CE D6 nn nn","MOV [#nnnn], L",20
-"CE D7 nn nn","MOV [#nnnn], H",20
-"CF 70 ss","MOV BA, [SP+#ss]",24
-"CF 71 ss","MOV HL, [SP+#ss]",24
-"CF 72 ss","MOV X, [SP+#ss]",24
-"CF 73 ss","MOV Y, [SP+#ss]",24
-"CF 74 ss","MOV [SP+#ss], BA",24
-"CF 75 ss","MOV [SP+#ss], HL",24
-"CF 76 ss","MOV [SP+#ss], X",24
-"CF 77 ss","MOV [SP+#ss], Y",24
-"CF C0","MOV BA, [HL]",20
-"CF C1","MOV HL, [HL]",20
-"CF C2","MOV X, [HL]",20
-"CF C3","MOV Y, [HL]",20
-"CF D0","MOV BA, [X]",20
-"CF D1","MOV HL, [X]",20
-"CF D2","MOV X, [X]",20
-"CF D3","MOV Y, [X]",20
-"CF D8","MOV BA, [Y]",20
-"CF D9","MOV HL, [Y]",20
-"CF DA","MOV X, [Y]",20
-"CF DB","MOV Y, [Y]",20
-"CF C4","MOV [HL], BA",20
-"CF C5","MOV [HL], HL",20
-"CF C6","MOV [HL], X",20
-"CF C7","MOV [HL], Y",20
-"CF D4","MOV [X], BA",20
-"CF D5","MOV [X], HL",20
-"CF D6","MOV [X], X",20
-"CF D7","MOV [X], Y",20
-"CF DC","MOV [Y], BA",20
-"CF DD","MOV [Y], HL",20
-"CF DE","MOV [Y], X",20
-"CF DF","MOV [Y], Y",20
-"CF E0","MOV BA, BA",8
-"CF E1","MOV BA, HL",8
-"CF E2","MOV BA, X",8
-"CF E3","MOV BA, Y",8
-"CF E4","MOV HL, BA",8
-"CF E5","MOV HL, HL",8
-"CF E6","MOV HL, X",8
-"CF E7","MOV HL, Y",8
-"CF E8","MOV X, BA",8
-"CF E9","MOV X, HL",8
-"CF EA","MOV X, X",8
-"CF EB","MOV X, Y",8
-"CF EC","MOV Y, BA",8
-"CF ED","MOV Y, HL",8
-"CF EE","MOV Y, X",8
-"CF EF","MOV Y, Y",8
-"CF F0","MOV SP, BA",8
-"CF F1","MOV SP, HL",8
-"CF F2","MOV SP, X",8
-"CF F3","MOV SP, Y",8
-"CF F4","MOV HL, SP",8
-"CF F5","MOV HL, PC",8
-"CF F8","MOV BA, SP",8
-"CF F9","MOV BA, PC",8
-"CF FA","MOV X, SP",8
-"CF FE","MOV Y, SP",8
-0,"ADD A, A",8
-1,"ADD A, B",8
-"02 nn","ADD A, #nn",8
-3,"ADD A, [HL]",8
-"04 nn","ADD A, [N+#nn]",12
-"05 nn nn","ADD A, [#nnnn]",16
-6,"ADD A, [X]",8
-7,"ADD A, [Y]",8
-"C0 nn nn","ADD BA, #nnnn",12
-"C1 nn nn","ADD HL, #nnnn",12
-"C2 nn nn","ADD X, #nnnn",12
-"C3 nn nn","ADD Y, #nnnn",12
-"CF 68 nn nn","ADD SP, #nnnn",16
-"CE 00 ss","ADD A, [X+#ss]",16
-"CE 01 ss","ADD A, [Y+#ss]",16
-"CE 02","ADD A, [X+L]",16
-"CE 03","ADD A, [Y+L]",16
-"CE 04","ADD [HL], A",16
-"CE 05 nn","ADD [HL], #nn",20
-"CE 06","ADD [HL], [X]",20
-"CE 07","ADD [HL], [Y]",20
-"CF 00","ADD BA, BA",16
-"CF 01","ADD BA, HL",16
-"CF 02","ADD BA, X",16
-"CF 03","ADD BA, Y",16
-"CF 20","ADD HL, BA",16
-"CF 21","ADD HL, HL",16
-"CF 22","ADD HL, X",16
-"CF 23","ADD HL, Y",16
-"CF 40","ADD X, BA",16
-"CF 41","ADD X, HL",16
-"CF 42","ADD Y, BA",16
-"CF 43","ADD Y, HL",16
-"CF 44","ADD SP, BA",16
-"CF 45","ADD SP, HL",16
-10,"SUB A, A",8
-11,"SUB A, B",8
-"12 nn","SUB A, #nn",8
-13,"SUB A, [HL]",8
-"14 nn","SUB A, [N+#nn]",12
-"15 nn nn","SUB A, [#nnnn]",16
-16,"SUB A, [X]",8
-17,"SUB A, [Y]",8
-"D0 nn nn","SUB BA, #nnnn",12
-"D1 nn nn","SUB HL, #nnnn",12
-"D2 nn nn","SUB X, #nnnn",12
-"D3 nn nn","SUB Y, #nnnn",12
-"CF 6A nn nn","SUB SP, #nnnn",16
-"CE 10 ss","SUB A, [X+#ss]",16
-"CE 11 ss","SUB A, [Y+#ss]",16
-"CE 12","SUB A, [X+L]",16
-"CE 13","SUB A, [Y+L]",16
-"CE 14","SUB [HL], A",16
-"CE 15 nn","SUB [HL], #nn",20
-"CE 16","SUB [HL], [X]",20
-"CE 17","SUB [HL], [Y]",20
-"CF 08","SUB BA, BA",16
-"CF 09","SUB BA, HL",16
-"CF 0A","SUB BA, X",16
-"CF 0B","SUB BA, Y",16
-"CF 28","SUB HL, BA",16
-"CF 29","SUB HL, HL",16
-"CF 2A","SUB HL, X",16
-"CF 2B","SUB HL, Y",16
-"CF 48","SUB X, BA",16
-"CF 49","SUB X, HL",16
-"CF 4A","SUB Y, BA",16
-"CF 4B","SUB Y, HL",16
-"CF 4C","SUB SP, BA",16
-"CF 4D","SUB SP, HL",16
-8,"ADC A, A",8
-9,"ADC A, B",8
-"0A nn","ADC A, #nn",8
-0B,"ADC A, [HL]",8
-"0C nn","ADC A, [N+#nn]",12
-"0D nn nn","ADC A, [#nnnn]",16
-0E,"ADC A, [X]",8
-0F,"ADC A, [Y]",8
-"CE 08 ss","ADC A, [X+#ss]",16
-"CE 09 ss","ADC A, [Y+#ss]",16
-"CE 0A","ADC A, [X+L]",16
-"CE 0B","ADC A, [Y+L]",16
-"CE 0C","ADC [HL], A",16
-"CE 0D nn","ADC [HL], #nn",20
-"CE 0E","ADC [HL], [X]",20
-"CE 0F","ADC [HL], [Y]",20
-"CF 04","ADC BA, BA",16
-"CF 05","ADC BA, HL",16
-"CF 06","ADC BA, X",16
-"CF 07","ADC BA, Y",16
-"CF 24","ADC HL, BA",16
-"CF 25","ADC HL, HL",16
-"CF 26","ADC HL, X",16
-"CF 27","ADC HL, Y",16
-"CF 60 nn nn","ADC BA, #nnnn",16
-"CF 61 nn nn","ADC HL, #nnnn",16
-18,"SBC A, A",8
-19,"SBC A, B",8
-"1A nn","SBC A, #nn",8
-1B,"SBC A, [HL]",8
-"1C nn","SBC A, [N+#nn]",12
-"1D nn nn","SBC A, [#nnnn]",16
-1E,"SBC A, [X]",8
-1F,"SBC A, [Y]",8
-"CE 18 ss","SBC A, [X+#ss]",16
-"CE 19 ss","SBC A, [Y+#ss]",16
-"CE 1A","SBC A, [X+L]",16
-"CE 1B","SBC A, [Y+L]",16
-"CE 1C","SBC [HL], A",16
-"CE 1D nn","SBC [HL], #nn",20
-"CE 1E","SBC [HL], [X]",20
-"CE 1F","SBC [HL], [Y]",20
-"CF 0C","SBC BA, BA",16
-"CF 0D","SBC BA, HL",16
-"CF 0E","SBC BA, X",16
-"CF 0F","SBC BA, Y",16
-"CF 2C","SBC HL, BA",16
-"CF 2D","SBC HL, HL",16
-"CF 2E","SBC HL, X",16
-"CF 2F","SBC HL, Y",16
-"CF 62 nn nn","SBC BA, #nnnn",16
-"CF 63 nn nn","SBC HL, #nnnn",16
-30,"CMP A, A",8
-31,"CMP A, B",8
-"32 nn","CMP A, #nn",8
-33,"CMP A, [HL]",8
-"34 nn","CMP A, [N+#nn]",12
-"35 nn nn","CMP A, [#nnnn]",16
-36,"CMP A, [X]",8
-37,"CMP A, [Y]",8
-"D4 nn nn","CMP BA, #nnnn",12
-"D5 nn nn","CMP HL, #nnnn",12
-"D6 nn nn","CMP X, #nnnn",12
-"D7 nn nn","CMP Y, #nnnn",12
-"CF 6C nn nn","CMP SP, #nnnn",16
-"DB nn nn","CMP [N+#nn], #nn",16
-"CE 30 ss","CMP A, [X+#ss]",16
-"CE 31 ss","CMP A, [Y+#ss]",16
-"CE 32","CMP A, [X+L]",16
-"CE 33","CMP A, [Y+L]",16
-"CE 34","CMP [HL], A",12
-"CE 35 nn","CMP [HL], #nn",16
-"CE 36","CMP [HL], [X]",16
-"CE 37","CMP [HL], [Y]",16
-"CE BC nn","CMP B, #nn",12
-"CE BD nn","CMP L, #nn",12
-"CE BE nn","CMP H, #nn",12
-"CE BF nn","CMP N, #nn",12
-"CF 18","CMP BA, BA",16
-"CF 19","CMP BA, HL",16
-"CF 1A","CMP BA, X",16
-"CF 1B","CMP BA, Y",16
-"CF 38","CMP HL, BA",16
-"CF 39","CMP HL, HL",16
-"CF 3A","CMP HL, X",16
-"CF 3B","CMP HL, Y",16
-"CF 5C","CMP SP, BA",16
-"CF 5D","CMP SP, HL",16
-80,"INC A",8
-81,"INC B",8
-82,"INC L",8
-83,"INC H",8
-84,"INC N",8
-"85 nn","INC [N+#nn]",16
-86,"INC [HL]",12
-87,"INC SP",8
-90,"INC BA",8
-91,"INC HL",8
-92,"INC X",8
-93,"INC Y",8
-88,"DEC A",8
-89,"DEC B",8
-8A,"DEC L",8
-8B,"DEC H",8
-8C,"DEC N",8
-"8D nn","DEC [N+#nn]",16
-8E,"DEC [HL]",12
-8F,"DEC SP",8
-98,"DEC BA",8
-99,"DEC HL",8
-9A,"DEC X",8
-9B,"DEC Y",8
-"CE A4","NEG A",12
-"CE A5","NEG B",12
-"CE A6 nn","NEG [N+#nn]",20
-"CE A7","NEG [HL]",16
-"CE D8","MUL L, A",48
-"CE D9","DIV HL, A",52
-94,"TST A, B",8
-"95 nn","TST [HL], #nn",12
-"96 nn","TST A, #nn",8
-"97 nn","TST B, #nn",8
-"DC nn nn","TST [N+#nn], #nn",16
-20,"AND A, A",8
-21,"AND A, B",8
-"22 nn","AND A, #nn",8
-23,"AND A, [HL]",8
-"24 nn","AND A, [N+#nn]",12
-"25 nn nn","AND A, [#nnnn]",16
-26,"AND A, [X]",8
-27,"AND A, [Y]",8
-"9C nn","AND F, #nn",12
-"CE B0 nn","AND B, #nn",12
-"CE B1 nn","AND L, #nn",12
-"CE B2 nn","AND H, #nn",12
-"D8 nn nn","AND [N+#nn], #nn",20
-"CE 20 ss","AND A, [X+#ss]",16
-"CE 21 ss","AND A, [Y+#ss]",16
-"CE 22","AND A, [X+L]",16
-"CE 23","AND A, [Y+L]",16
-"CE 24","AND [HL], A",16
-"CE 25 nn","AND [HL], #nn",20
-"CE 26","AND [HL], [X]",20
-"CE 27","AND [HL], [Y]",20
-28,"OR A, A",8
-29,"OR A, B",8
-"2A nn","OR A, #nn",8
-2B,"OR A, [HL]",8
-"2C nn","OR A, [N+#nn]",12
-"2D nn nn","OR A, [#nnnn]",16
-2E,"OR A, [X]",8
-2F,"OR A, [Y]",8
-"9D nn","OR F, #nn",12
-"CE B4 nn","OR B, #nn",12
-"CE B5 nn","OR L, #nn",12
-"CE B6 nn","OR H, #nn",12
-"D9 nn nn","OR [N+#nn], #nn",20
-"CE 28 ss","OR A, [X+#ss]",16
-"CE 29 ss","OR A, [Y+#ss]",16
-"CE 2A","OR A, [X+L]",16
-"CE 2B","OR A, [Y+L]",16
-"CE 2C","OR [HL], A",16
-"CE 2D nn","OR [HL], #nn",20
-"CE 2E","OR [HL], [X]",20
-"CE 2F","OR [HL], [Y]",20
-38,"XOR A, A",8
-39,"XOR A, B",8
-"3A nn","XOR A, #nn",8
-3B,"XOR A, [HL]",8
-"3C nn","XOR A, [N+#nn]",12
-"3D nn nn","XOR A, [#nnnn]",16
-3E,"XOR A, [X]",8
-3F,"XOR A, [Y]",8
-"9E nn","XOR F, #nn",12
-"CE B8 nn","XOR B, #nn",12
-"CE B9 nn","XOR L, #nn",12
-"CE BA nn","XOR H, #nn",12
-"DA nn nn","XOR [N+#nn], #nn",20
-"CE 38 ss","XOR A, [X+#ss]",16
-"CE 39 ss","XOR A, [Y+#ss]",16
-"CE 3A","XOR A, [X+L]",16
-"CE 3B","XOR A, [Y+L]",16
-"CE 3C","XOR [HL], A",16
-"CE 3D nn","XOR [HL], #nn",20
-"CE 3E","XOR [HL], [X]",20
-"CE 3F","XOR [HL], [Y]",20
-"CE A0","NOT A",12
-"CE A1","NOT B",12
-"CE A2 nn","NOT [N+#nn]",20
-"CE A3","NOT [HL]",16
-"CE 84","SHL A",12
-"CE 85","SHL B",12
-"CE 86 nn","SHL [N+#nn]",20
-"CE 87","SHL [HL]",16
-"CE 80","SAL A",12
-"CE 81","SAL B",12
-"CE 82 nn","SAL [N+#nn]",20
-"CE 83","SAL [HL]",16
-"CE 8C","SHR A",12
-"CE 8D","SHR B",12
-"CE 8E nn","SHR [N+#nn]",20
-"CE 8F","SHR [HL]",16
-"CE 88","SAR A",12
-"CE 89","SAR B",12
-"CE 8A nn","SAR [N+#nn]",20
-"CE 8B","SAR [HL]",16
-"CE 94","ROL A",12
-"CE 95","ROL B",12
-"CE 96 nn","ROL [N+#nn]",20
-"CE 97","ROL [HL]",16
-"CE 90","ROLC A",12
-"CE 91","ROLC B",12
-"CE 92 nn","ROLC [N+#nn]",20
-"CE 93","ROLC [HL]",16
-"CE 9C","ROR A",12
-"CE 9D","ROR B",12
-"CE 9E nn","ROR [N+#nn]",20
-"CE 9F","ROR [HL]",16
-"CE 98","RORC A",12
-"CE 99","RORC B",12
-"CE 9A nn","RORC [N+#nn]",20
-"CE 9B","RORC [HL]",16
-C8,"XCHG BA, HL",12
-C9,"XCHG BA, X",12
-CA,"XCHG BA, Y",12
-CB,"XCHG BA, SP",12
-CC,"XCHG A, B",8
-CD,"XCHG A, [HL]",12
-DE,PACK,8
-DF,UNPACK,8
-F6,"SWAP A",8
-F7,"SWAP [HL]",12
-"CE A8","EX BA, A",12
-A0,"PUSH BA",16
-A1,"PUSH HL",16
-A2,"PUSH X",16
-A3,"PUSH Y",16
-A4,"PUSH N",12
-A5,"PUSH I",12
-A6,PUSHX,16
-A7,"PUSH F",12
-"CF B0","PUSH A",12
-"CF B1","PUSH B",12
-"CF B2","PUSH L",12
-"CF B3","PUSH H",12
-"CF B8",PUSHA,48
-"CF B9",PUSHAX,60
-A8,"POP BA",12
-A9,"POP HL",12
-AA,"POP X",12
-AB,"POP Y",12
-AC,"POP N",8
-AD,"POP I",8
-AE,POPX,12
-AF,"POP F",8
-"CF B4","POP A",12
-"CF B5","POP B",12
-"CF B6","POP L",12
-"CF B7","POP H",12
-"CF BC",POPA,44
-"CF BD",POPAX,56
-"E0 ss","CALLCB #ss *1",20
-"E1 ss","CALLNCB #ss *1",20
-"E2 ss","CALLZB #ss *1",20
-"E3 ss","CALLNZB #ss *1",20
-"E8 ss ss","CALLCW #ssss *1",24
-"E9 ss ss","CALLNCW #ssss *1",24
-"EA ss ss","CALLZW #ssss *1",24
-"EB ss ss","CALLNZW #ssss *1",24
-"F0 ss","CALLB #ss *1",20
-"F2 ss ss","CALLW #ssss *1",24
-"FB nn nn","CALL [#nnnn]",20
-"FC ss","CINT #nn",32
-"CE F0 ss","CALLL #ss",24
-"CE F1 ss","CALLLE #ss",24
-"CE F2 ss","CALLG #ss",24
-"CE F3 ss","CALLGE #ss",24
-"CE F4 ss","CALLO #ss",24
-"CE F5 ss","CALLNO #ss",24
-"CE F6 ss","CALLNS #ss",24
-"CE F7 ss","CALLS #ss",24
-"CE F8 ss","CALLNX0 #ss",24
-"CE F9 ss","CALLNX1 #ss",24
-"CE FA ss","CALLNX2 #ss",24
-"CE FB ss","CALLNX3 #ss",24
-"CE FC ss","CALLX0 #ss",24
-"CE FD ss","CALLX1 #ss",24
-"CE FE ss","CALLX2 #ss",24
-"CE FF ss","CALLX3 #ss",24
-"E4 ss","JCB #ss *1",8
-"E5 ss","JNCB #ss *1",8
-"E6 ss","JZB #ss *1",8
-"E7 ss","JNZB #ss *1",8
-"EC ss ss","JCW #ssss *1",12
-"ED ss ss","JNCW #ssss *1",12
-"EE ss ss","JZW #ssss *1",12
-"EF ss ss","JNZW #ssss *1",12
-"F1 ss","JMPB #ss *1",8
-"F3 ss ss","JMPW #ssss *1",12
-F4,"JMP HL",8
-"F5 ss","JDBNZ #ss",16
-"FD nn","JINT #nn",8
-"CE E0 ss","JL #ss",12
-"CE E1 ss","JLE #ss",12
-"CE E2 ss","JG #ss",12
-"CE E3 ss","JGE #ss",12
-"CE E4 ss","JO #ss",12
-"CE E5 ss","JNO #ss",12
-"CE E6 ss","JNS #ss",12
-"CE E7 ss","JS #ss",12
-"CE E8 ss","JNX0 #ss",12
-"CE E9 ss","JNX1 #ss",12
-"CE EA ss","JNX2 #ss",12
-"CE EB ss","JNX3 #ss",12
-"CE EC ss","JX0 #ss",12
-"CE ED ss","JX1 #ss",12
-"CE EE ss","JX2 #ss",12
-"CE EF ss","JX3 #ss",12
-F8,RET,16
-F9,RETI,20
-FA,RETSKIP,24
-"CE AE",HALT,8
-"CE AF",STOP,8
+FF, "NOP", 8,0
+40,"MOV A, A",4,0
+41,"MOV A, B",4,0
+42,"MOV A, L",4,0
+43,"MOV A, H",4,0
+"44 nn","MOV A, [N+#nn]",12,0
+45,"MOV A, [HL]",8,0
+46,"MOV A, [X]",8,0
+47,"MOV A, [Y]",8,0
+48,"MOV B, A",4,0
+49,"MOV B, B",4,0
+4A,"MOV B, L",4,0
+4B,"MOV B, H",4,0
+"4C nn","MOV B, [N+#nn]",12,0
+4D,"MOV B, [HL]",8,0
+4E,"MOV B, [X]",8,0
+4F,"MOV B, [Y]",8,0
+50,"MOV L, A",4,0
+51,"MOV L, B",4,0
+52,"MOV L, L",4,0
+53,"MOV L, H",4,0
+"54 nn","MOV L, [N+#nn]",12,0
+55,"MOV L, [HL]",8,0
+56,"MOV L, [X]",8,0
+57,"MOV L, [Y]",8,0
+58,"MOV H, A",4,0
+59,"MOV H, B",4,0
+5A,"MOV H, L",4,0
+5B,"MOV H, H",4,0
+"5C nn","MOV H, [N+#nn]",12,0
+5D,"MOV H, [HL]",8,0
+5E,"MOV H, [X]",8,0
+5F,"MOV H, [Y]",8,0
+60,"MOV [X], A",8,0
+61,"MOV [X], B",8,0
+62,"MOV [X], L",8,0
+63,"MOV [X], H",8,0
+"64 nn","MOV [X], [N+#nn]",16,0
+65,"MOV [X], [HL]",12,0
+66,"MOV [X], [X]",12,0
+67,"MOV [X], [Y]",12,0
+68,"MOV [HL], A",8,0
+69,"MOV [HL], B",8,0
+6A,"MOV [HL], L",8,0
+6B,"MOV [HL], H",8,0
+"6C nn","MOV [HL], [N+#nn]",16,0
+6D,"MOV [HL], [HL]",12,0
+6E,"MOV [HL], [X]",12,0
+6F,"MOV [HL], [Y]",12,0
+70,"MOV [Y], A",8,0
+71,"MOV [Y], B",8,0
+72,"MOV [Y], L",8,0
+73,"MOV [Y], H",8,0
+"74 nn","MOV [Y], [N+#nn]",16,0
+75,"MOV [Y], [HL]",12,0
+76,"MOV [Y], [X]",12,0
+77,"MOV [Y], [Y]",12,0
+"78 nn","MOV [N+#nn], A",12,0
+"79 nn","MOV [N+#nn], B",12,0
+"7A nn","MOV [N+#nn], L",12,0
+"7B nn","MOV [N+#nn], H",12,0
+"7D nn","MOV [N+#nn], [HL]",16,0
+"7E nn","MOV [N+#nn], [X]",16,0
+"7F nn","MOV [N+#nn], [Y]",16,0
+"9F nn","MOV F, #nn",12,0
+"B0 nn","MOV A, #nn",8,0
+"B1 nn","MOV B, #nn",8,0
+"B2 nn","MOV L, #nn",8,0
+"B3 nn","MOV H, #nn",8,0
+"B4 nn","MOV N, #nn",8,0
+"B5 nn","MOV [HL], #nn",12,0
+"B6 nn","MOV [X], #nn",12,0
+"B7 nn","MOV [Y], #nn",12,0
+"DD nn nn","MOV [N+#nn], #nn",16,0
+"CE C4 nn","MOV U, #nn",16,0
+"CE C5 nn","MOV I, #nn",12,0
+"CE C6 nn","MOV XI, #nn",12,0
+"CE C7 nn","MOV YI, #nn",12,0
+"CE 40 ss","MOV A, [X+#ss]",16,0
+"CE 41 ss","MOV A, [Y+#ss]",16,0
+"CE 42","MOV A, [X+L]",16,0
+"CE 43","MOV A, [Y+L]",16,0
+"CE 48 ss","MOV B, [X+#ss]",16,0
+"CE 49 ss","MOV B, [Y+#ss]",16,0
+"CE 4A","MOV B, [X+L]",16,0
+"CE 4B","MOV B, [Y+L]",16,0
+"CE 50 ss","MOV L, [X+#ss]",16,0
+"CE 51 ss","MOV L, [Y+#ss]",16,0
+"CE 52","MOV L, [X+L]",16,0
+"CE 53","MOV L, [Y+L]",16,0
+"CE 58 ss","MOV H, [X+#ss]",16,0
+"CE 59 ss","MOV H, [Y+#ss]",16,0
+"CE 5A","MOV H, [X+L]",16,0
+"CE 5B","MOV H, [Y+L]",16,0
+"CE 44 ss","MOV [X+#ss], A",16,0
+"CE 45 ss","MOV [Y+#ss], A",16,0
+"CE 46","MOV [X+L], A",16,0
+"CE 47","MOV [Y+L], A",16,0
+"CE 4C ss","MOV [X+#ss], B",16,0
+"CE 4D ss","MOV [Y+#ss], B",16,0
+"CE 4E","MOV [X+L], B",16,0
+"CE 4F","MOV [Y+L], B",16,0
+"CE 54 ss","MOV [X+#ss], L",16,0
+"CE 55 ss","MOV [Y+#ss], L",16,0
+"CE 56","MOV [X+L], L",16,0
+"CE 57","MOV [Y+L], L",16,0
+"CE 5C ss","MOV [X+#ss], H",16,0
+"CE 5D ss","MOV [Y+#ss], H",16,0
+"CE 5E","MOV [X+L], H",16,0
+"CE 5F","MOV [Y+L], H",16,0
+"CE 60 ss","MOV [HL], [X+#ss]",20,0
+"CE 61 ss","MOV [HL], [Y+#ss]",20,0
+"CE 62","MOV [HL], [X+L]",20,0
+"CE 63","MOV [HL], [Y+L]",20,0
+"CE 68 ss","MOV [X], [X+#ss]",20,0
+"CE 69 ss","MOV [X], [Y+#ss]",20,0
+"CE 6A","MOV [X], [X+L]",20,0
+"CE 6B","MOV [X], [Y+L]",20,0
+"CE 78 ss","MOV [Y], [X+#ss]",20,0
+"CE 79 ss","MOV [Y], [Y+#ss]",20,0
+"CE 7A","MOV [Y], [X+L]",20,0
+"CE 7B","MOV [Y], [Y+L]",20,0
+"B8 nn nn","MOV BA, [#nnnn]",20,0
+"B9 nn nn","MOV HL, [#nnnn]",20,0
+"BA nn nn","MOV X, [#nnnn]",20,0
+"BB nn nn","MOV Y, [#nnnn]",20,0
+"CF 78 nn nn","MOV SP, [#nnnn]",24,0
+"BC nn nn","MOV [#nnnn], BA",20,0
+"BD nn nn","MOV [#nnnn], HL",20,0
+"BE nn nn","MOV [#nnnn], X",20,0
+"BF nn nn","MOV [#nnnn], Y",20,0
+"CF 7C nn nn","MOV [#nnnn], SP",24,0
+"C4 nn nn","MOV BA, #nnnn",12,0
+"C5 nn nn","MOV HL, #nnnn",12,0
+"C6 nn nn","MOV X, #nnnn",12,0
+"C7 nn nn","MOV Y, #nnnn",12,0
+"CF 6E nn nn","MOV SP, #nnnn",16,0
+"CE C0","MOV A, N",8,0
+"CE C1","MOV A, F",8,0
+"CE C8","MOV A, V",8,0
+"CE C9","MOV A, I",8,0
+"CE CA","MOV A, XI",8,0
+"CE CB","MOV A, YI",8,0
+"CE C2","MOV N, A",8,0
+"CE C3","MOV F, A",12,0
+"CE CC","MOV U, A",12,0
+"CE CD","MOV I, A",8,0
+"CE CE","MOV XI, A",8,0
+"CE CF","MOV YI, A",8,0
+"CE D0 nn nn","MOV A, [#nnnn]",20,0
+"CE D1 nn nn","MOV B, [#nnnn]",20,0
+"CE D2 nn nn","MOV L, [#nnnn]",20,0
+"CE D3 nn nn","MOV H, [#nnnn]",20,0
+"CE D4 nn nn","MOV [#nnnn], A",20,0
+"CE D5 nn nn","MOV [#nnnn], B",20,0
+"CE D6 nn nn","MOV [#nnnn], L",20,0
+"CE D7 nn nn","MOV [#nnnn], H",20,0
+"CF 70 ss","MOV BA, [SP+#ss]",24,0
+"CF 71 ss","MOV HL, [SP+#ss]",24,0
+"CF 72 ss","MOV X, [SP+#ss]",24,0
+"CF 73 ss","MOV Y, [SP+#ss]",24,0
+"CF 74 ss","MOV [SP+#ss], BA",24,0
+"CF 75 ss","MOV [SP+#ss], HL",24,0
+"CF 76 ss","MOV [SP+#ss], X",24,0
+"CF 77 ss","MOV [SP+#ss], Y",24,0
+"CF C0","MOV BA, [HL]",20,0
+"CF C1","MOV HL, [HL]",20,0
+"CF C2","MOV X, [HL]",20,0
+"CF C3","MOV Y, [HL]",20,0
+"CF D0","MOV BA, [X]",20,0
+"CF D1","MOV HL, [X]",20,0
+"CF D2","MOV X, [X]",20,0
+"CF D3","MOV Y, [X]",20,0
+"CF D8","MOV BA, [Y]",20,0
+"CF D9","MOV HL, [Y]",20,0
+"CF DA","MOV X, [Y]",20,0
+"CF DB","MOV Y, [Y]",20,0
+"CF C4","MOV [HL], BA",20,0
+"CF C5","MOV [HL], HL",20,0
+"CF C6","MOV [HL], X",20,0
+"CF C7","MOV [HL], Y",20,0
+"CF D4","MOV [X], BA",20,0
+"CF D5","MOV [X], HL",20,0
+"CF D6","MOV [X], X",20,0
+"CF D7","MOV [X], Y",20,0
+"CF DC","MOV [Y], BA",20,0
+"CF DD","MOV [Y], HL",20,0
+"CF DE","MOV [Y], X",20,0
+"CF DF","MOV [Y], Y",20,0
+"CF E0","MOV BA, BA",8,0
+"CF E1","MOV BA, HL",8,0
+"CF E2","MOV BA, X",8,0
+"CF E3","MOV BA, Y",8,0
+"CF E4","MOV HL, BA",8,0
+"CF E5","MOV HL, HL",8,0
+"CF E6","MOV HL, X",8,0
+"CF E7","MOV HL, Y",8,0
+"CF E8","MOV X, BA",8,0
+"CF E9","MOV X, HL",8,0
+"CF EA","MOV X, X",8,0
+"CF EB","MOV X, Y",8,0
+"CF EC","MOV Y, BA",8,0
+"CF ED","MOV Y, HL",8,0
+"CF EE","MOV Y, X",8,0
+"CF EF","MOV Y, Y",8,0
+"CF F0","MOV SP, BA",8,0
+"CF F1","MOV SP, HL",8,0
+"CF F2","MOV SP, X",8,0
+"CF F3","MOV SP, Y",8,0
+"CF F4","MOV HL, SP",8,0
+"CF F5","MOV HL, PC",8,0
+"CF F8","MOV BA, SP",8,0
+"CF F9","MOV BA, PC",8,0
+"CF FA","MOV X, SP",8,0
+"CF FE","MOV Y, SP",8,0
+0,"ADD A, A",8,0
+1,"ADD A, B",8,0
+"02 nn","ADD A, #nn",8,0
+3,"ADD A, [HL]",8,0
+"04 nn","ADD A, [N+#nn]",12,0
+"05 nn nn","ADD A, [#nnnn]",16,0
+6,"ADD A, [X]",8,0
+7,"ADD A, [Y]",8,0
+"C0 nn nn","ADD BA, #nnnn",12,0
+"C1 nn nn","ADD HL, #nnnn",12,0
+"C2 nn nn","ADD X, #nnnn",12,0
+"C3 nn nn","ADD Y, #nnnn",12,0
+"CF 68 nn nn","ADD SP, #nnnn",16,0
+"CE 00 ss","ADD A, [X+#ss]",16,0
+"CE 01 ss","ADD A, [Y+#ss]",16,0
+"CE 02","ADD A, [X+L]",16,0
+"CE 03","ADD A, [Y+L]",16,0
+"CE 04","ADD [HL], A",16,0
+"CE 05 nn","ADD [HL], #nn",20,0
+"CE 06","ADD [HL], [X]",20,0
+"CE 07","ADD [HL], [Y]",20,0
+"CF 00","ADD BA, BA",16,0
+"CF 01","ADD BA, HL",16,0
+"CF 02","ADD BA, X",16,0
+"CF 03","ADD BA, Y",16,0
+"CF 20","ADD HL, BA",16,0
+"CF 21","ADD HL, HL",16,0
+"CF 22","ADD HL, X",16,0
+"CF 23","ADD HL, Y",16,0
+"CF 40","ADD X, BA",16,0
+"CF 41","ADD X, HL",16,0
+"CF 42","ADD Y, BA",16,0
+"CF 43","ADD Y, HL",16,0
+"CF 44","ADD SP, BA",16,0
+"CF 45","ADD SP, HL",16,0
+10,"SUB A, A",8,0
+11,"SUB A, B",8,0
+"12 nn","SUB A, #nn",8,0
+13,"SUB A, [HL]",8,0
+"14 nn","SUB A, [N+#nn]",12,0
+"15 nn nn","SUB A, [#nnnn]",16,0
+16,"SUB A, [X]",8,0
+17,"SUB A, [Y]",8,0
+"D0 nn nn","SUB BA, #nnnn",12,0
+"D1 nn nn","SUB HL, #nnnn",12,0
+"D2 nn nn","SUB X, #nnnn",12,0
+"D3 nn nn","SUB Y, #nnnn",12,0
+"CF 6A nn nn","SUB SP, #nnnn",16,0
+"CE 10 ss","SUB A, [X+#ss]",16,0
+"CE 11 ss","SUB A, [Y+#ss]",16,0
+"CE 12","SUB A, [X+L]",16,0
+"CE 13","SUB A, [Y+L]",16,0
+"CE 14","SUB [HL], A",16,0
+"CE 15 nn","SUB [HL], #nn",20,0
+"CE 16","SUB [HL], [X]",20,0
+"CE 17","SUB [HL], [Y]",20,0
+"CF 08","SUB BA, BA",16,0
+"CF 09","SUB BA, HL",16,0
+"CF 0A","SUB BA, X",16,0
+"CF 0B","SUB BA, Y",16,0
+"CF 28","SUB HL, BA",16,0
+"CF 29","SUB HL, HL",16,0
+"CF 2A","SUB HL, X",16,0
+"CF 2B","SUB HL, Y",16,0
+"CF 48","SUB X, BA",16,0
+"CF 49","SUB X, HL",16,0
+"CF 4A","SUB Y, BA",16,0
+"CF 4B","SUB Y, HL",16,0
+"CF 4C","SUB SP, BA",16,0
+"CF 4D","SUB SP, HL",16,0
+8,"ADC A, A",8,0
+9,"ADC A, B",8,0
+"0A nn","ADC A, #nn",8,0
+0B,"ADC A, [HL]",8,0
+"0C nn","ADC A, [N+#nn]",12,0
+"0D nn nn","ADC A, [#nnnn]",16,0
+0E,"ADC A, [X]",8,0
+0F,"ADC A, [Y]",8,0
+"CE 08 ss","ADC A, [X+#ss]",16,0
+"CE 09 ss","ADC A, [Y+#ss]",16,0
+"CE 0A","ADC A, [X+L]",16,0
+"CE 0B","ADC A, [Y+L]",16,0
+"CE 0C","ADC [HL], A",16,0
+"CE 0D nn","ADC [HL], #nn",20,0
+"CE 0E","ADC [HL], [X]",20,0
+"CE 0F","ADC [HL], [Y]",20,0
+"CF 04","ADC BA, BA",16,0
+"CF 05","ADC BA, HL",16,0
+"CF 06","ADC BA, X",16,0
+"CF 07","ADC BA, Y",16,0
+"CF 24","ADC HL, BA",16,0
+"CF 25","ADC HL, HL",16,0
+"CF 26","ADC HL, X",16,0
+"CF 27","ADC HL, Y",16,0
+"CF 60 nn nn","ADC BA, #nnnn",16,0
+"CF 61 nn nn","ADC HL, #nnnn",16,0
+18,"SBC A, A",8,0
+19,"SBC A, B",8,0
+"1A nn","SBC A, #nn",8,0
+1B,"SBC A, [HL]",8,0
+"1C nn","SBC A, [N+#nn]",12,0
+"1D nn nn","SBC A, [#nnnn]",16,0
+1E,"SBC A, [X]",8,0
+1F,"SBC A, [Y]",8,0
+"CE 18 ss","SBC A, [X+#ss]",16,0
+"CE 19 ss","SBC A, [Y+#ss]",16,0
+"CE 1A","SBC A, [X+L]",16,0
+"CE 1B","SBC A, [Y+L]",16,0
+"CE 1C","SBC [HL], A",16,0
+"CE 1D nn","SBC [HL], #nn",20,0
+"CE 1E","SBC [HL], [X]",20,0
+"CE 1F","SBC [HL], [Y]",20,0
+"CF 0C","SBC BA, BA",16,0
+"CF 0D","SBC BA, HL",16,0
+"CF 0E","SBC BA, X",16,0
+"CF 0F","SBC BA, Y",16,0
+"CF 2C","SBC HL, BA",16,0
+"CF 2D","SBC HL, HL",16,0
+"CF 2E","SBC HL, X",16,0
+"CF 2F","SBC HL, Y",16,0
+"CF 62 nn nn","SBC BA, #nnnn",16,0
+"CF 63 nn nn","SBC HL, #nnnn",16,0
+30,"CMP A, A",8,0
+31,"CMP A, B",8,0
+"32 nn","CMP A, #nn",8,0
+33,"CMP A, [HL]",8,0
+"34 nn","CMP A, [N+#nn]",12,0
+"35 nn nn","CMP A, [#nnnn]",16,0
+36,"CMP A, [X]",8,0
+37,"CMP A, [Y]",8,0
+"D4 nn nn","CMP BA, #nnnn",12,0
+"D5 nn nn","CMP HL, #nnnn",12,0
+"D6 nn nn","CMP X, #nnnn",12,0
+"D7 nn nn","CMP Y, #nnnn",12,0
+"CF 6C nn nn","CMP SP, #nnnn",16,0
+"DB nn nn","CMP [N+#nn], #nn",16,0
+"CE 30 ss","CMP A, [X+#ss]",16,0
+"CE 31 ss","CMP A, [Y+#ss]",16,0
+"CE 32","CMP A, [X+L]",16,0
+"CE 33","CMP A, [Y+L]",16,0
+"CE 34","CMP [HL], A",12,0
+"CE 35 nn","CMP [HL], #nn",16,0
+"CE 36","CMP [HL], [X]",16,0
+"CE 37","CMP [HL], [Y]",16,0
+"CE BC nn","CMP B, #nn",12,0
+"CE BD nn","CMP L, #nn",12,0
+"CE BE nn","CMP H, #nn",12,0
+"CE BF nn","CMP N, #nn",12,0
+"CF 18","CMP BA, BA",16,0
+"CF 19","CMP BA, HL",16,0
+"CF 1A","CMP BA, X",16,0
+"CF 1B","CMP BA, Y",16,0
+"CF 38","CMP HL, BA",16,0
+"CF 39","CMP HL, HL",16,0
+"CF 3A","CMP HL, X",16,0
+"CF 3B","CMP HL, Y",16,0
+"CF 5C","CMP SP, BA",16,0
+"CF 5D","CMP SP, HL",16,0
+80,"INC A",8,0
+81,"INC B",8,0
+82,"INC L",8,0
+83,"INC H",8,0
+84,"INC N",8,0
+"85 nn","INC [N+#nn]",16,0
+86,"INC [HL]",12,0
+87,"INC SP",8,0
+90,"INC BA",8,0
+91,"INC HL",8,0
+92,"INC X",8,0
+93,"INC Y",8,0
+88,"DEC A",8,0
+89,"DEC B",8,0
+8A,"DEC L",8,0
+8B,"DEC H",8,0
+8C,"DEC N",8,0
+"8D nn","DEC [N+#nn]",16,0
+8E,"DEC [HL]",12,0
+8F,"DEC SP",8,0
+98,"DEC BA",8,0
+99,"DEC HL",8,0
+9A,"DEC X",8,0
+9B,"DEC Y",8,0
+"CE A4","NEG A",12,0
+"CE A5","NEG B",12,0
+"CE A6 nn","NEG [N+#nn]",20,0
+"CE A7","NEG [HL]",16,0
+"CE D8","MUL L, A",48,0
+"CE D9","DIV HL, A",52,0
+94,"TST A, B",8,0
+"95 nn","TST [HL], #nn",12,0
+"96 nn","TST A, #nn",8,0
+"97 nn","TST B, #nn",8,0
+"DC nn nn","TST [N+#nn], #nn",16,0
+20,"AND A, A",8,0
+21,"AND A, B",8,0
+"22 nn","AND A, #nn",8,0
+23,"AND A, [HL]",8,0
+"24 nn","AND A, [N+#nn]",12,0
+"25 nn nn","AND A, [#nnnn]",16,0
+26,"AND A, [X]",8,0
+27,"AND A, [Y]",8,0
+"9C nn","AND F, #nn",12,0
+"CE B0 nn","AND B, #nn",12,0
+"CE B1 nn","AND L, #nn",12,0
+"CE B2 nn","AND H, #nn",12,0
+"D8 nn nn","AND [N+#nn], #nn",20,0
+"CE 20 ss","AND A, [X+#ss]",16,0
+"CE 21 ss","AND A, [Y+#ss]",16,0
+"CE 22","AND A, [X+L]",16,0
+"CE 23","AND A, [Y+L]",16,0
+"CE 24","AND [HL], A",16,0
+"CE 25 nn","AND [HL], #nn",20,0
+"CE 26","AND [HL], [X]",20,0
+"CE 27","AND [HL], [Y]",20,0
+28,"OR A, A",8,0
+29,"OR A, B",8,0
+"2A nn","OR A, #nn",8,0
+2B,"OR A, [HL]",8,0
+"2C nn","OR A, [N+#nn]",12,0
+"2D nn nn","OR A, [#nnnn]",16,0
+2E,"OR A, [X]",8,0
+2F,"OR A, [Y]",8,0
+"9D nn","OR F, #nn",12,0
+"CE B4 nn","OR B, #nn",12,0
+"CE B5 nn","OR L, #nn",12,0
+"CE B6 nn","OR H, #nn",12,0
+"D9 nn nn","OR [N+#nn], #nn",20,0
+"CE 28 ss","OR A, [X+#ss]",16,0
+"CE 29 ss","OR A, [Y+#ss]",16,0
+"CE 2A","OR A, [X+L]",16,0
+"CE 2B","OR A, [Y+L]",16,0
+"CE 2C","OR [HL], A",16,0
+"CE 2D nn","OR [HL], #nn",20,0
+"CE 2E","OR [HL], [X]",20,0
+"CE 2F","OR [HL], [Y]",20,0
+38,"XOR A, A",8,0
+39,"XOR A, B",8,0
+"3A nn","XOR A, #nn",8,0
+3B,"XOR A, [HL]",8,0
+"3C nn","XOR A, [N+#nn]",12,0
+"3D nn nn","XOR A, [#nnnn]",16,0
+3E,"XOR A, [X]",8,0
+3F,"XOR A, [Y]",8,0
+"9E nn","XOR F, #nn",12,0
+"CE B8 nn","XOR B, #nn",12,0
+"CE B9 nn","XOR L, #nn",12,0
+"CE BA nn","XOR H, #nn",12,0
+"DA nn nn","XOR [N+#nn], #nn",20,0
+"CE 38 ss","XOR A, [X+#ss]",16,0
+"CE 39 ss","XOR A, [Y+#ss]",16,0
+"CE 3A","XOR A, [X+L]",16,0
+"CE 3B","XOR A, [Y+L]",16,0
+"CE 3C","XOR [HL], A",16,0
+"CE 3D nn","XOR [HL], #nn",20,0
+"CE 3E","XOR [HL], [X]",20,0
+"CE 3F","XOR [HL], [Y]",20,0
+"CE A0","NOT A",12,0
+"CE A1","NOT B",12,0
+"CE A2 nn","NOT [N+#nn]",20,0
+"CE A3","NOT [HL]",16,0
+"CE 84","SHL A",12,0
+"CE 85","SHL B",12,0
+"CE 86 nn","SHL [N+#nn]",20,0
+"CE 87","SHL [HL]",16,0
+"CE 80","SAL A",12,0
+"CE 81","SAL B",12,0
+"CE 82 nn","SAL [N+#nn]",20,0
+"CE 83","SAL [HL]",16,0
+"CE 8C","SHR A",12,0
+"CE 8D","SHR B",12,0
+"CE 8E nn","SHR [N+#nn]",20,0
+"CE 8F","SHR [HL]",16,0
+"CE 88","SAR A",12,0
+"CE 89","SAR B",12,0
+"CE 8A nn","SAR [N+#nn]",20,0
+"CE 8B","SAR [HL]",16,0
+"CE 94","ROL A",12,0
+"CE 95","ROL B",12,0
+"CE 96 nn","ROL [N+#nn]",20,0
+"CE 97","ROL [HL]",16,0
+"CE 90","ROLC A",12,0
+"CE 91","ROLC B",12,0
+"CE 92 nn","ROLC [N+#nn]",20,0
+"CE 93","ROLC [HL]",16,0
+"CE 9C","ROR A",12,0
+"CE 9D","ROR B",12,0
+"CE 9E nn","ROR [N+#nn]",20,0
+"CE 9F","ROR [HL]",16,0
+"CE 98","RORC A",12,0
+"CE 99","RORC B",12,0
+"CE 9A nn","RORC [N+#nn]",20,0
+"CE 9B","RORC [HL]",16,0
+C8,"XCHG BA, HL",12,0
+C9,"XCHG BA, X",12,0
+CA,"XCHG BA, Y",12,0
+CB,"XCHG BA, SP",12,0
+CC,"XCHG A, B",8,0
+CD,"XCHG A, [HL]",12,0
+DE,PACK,8,0
+DF,UNPACK,8,0
+F6,"SWAP A",8,0
+F7,"SWAP [HL]",12,0
+"CE A8","EX BA, A",12,0
+A0,"PUSH BA",16,0
+A1,"PUSH HL",16,0
+A2,"PUSH X",16,0
+A3,"PUSH Y",16,0
+A4,"PUSH N",12,0
+A5,"PUSH I",12,0
+A6,PUSHX,16,0
+A7,"PUSH F",12,0
+"CF B0","PUSH A",12,0
+"CF B1","PUSH B",12,0
+"CF B2","PUSH L",12,0
+"CF B3","PUSH H",12,0
+"CF B8",PUSHA,48,0
+"CF B9",PUSHAX,60,0
+A8,"POP BA",12,0
+A9,"POP HL",12,0
+AA,"POP X",12,0
+AB,"POP Y",12,0
+AC,"POP N",8,0
+AD,"POP I",8,0
+AE,POPX,12,0
+AF,"POP F",8,0
+"CF B4","POP A",12,0
+"CF B5","POP B",12,0
+"CF B6","POP L",12,0
+"CF B7","POP H",12,0
+"CF BC",POPA,44,0
+"CF BD",POPAX,56,0
+"E0 ss","CALLCB #ss *1",20,8
+"E1 ss","CALLNCB #ss *1",20,8
+"E2 ss","CALLZB #ss *1",20,8
+"E3 ss","CALLNZB #ss *1",20,8
+"E8 ss ss","CALLCW #ssss *1",24,8
+"E9 ss ss","CALLNCW #ssss *1",24,8
+"EA ss ss","CALLZW #ssss *1",24,8
+"EB ss ss","CALLNZW #ssss *1",24,8
+"F0 ss","CALLB #ss *1",20,0
+"F2 ss ss","CALLW #ssss *1",24,0
+"FB nn nn","CALL [#nnnn]",20,0
+"FC ss","CINT #nn",32,0
+"CE F0 ss","CALLL #ss",24,8
+"CE F1 ss","CALLLE #ss",24,8
+"CE F2 ss","CALLG #ss",24,8
+"CE F3 ss","CALLGE #ss",24,8
+"CE F4 ss","CALLO #ss",24,8
+"CE F5 ss","CALLNO #ss",24,8
+"CE F6 ss","CALLNS #ss",24,8
+"CE F7 ss","CALLS #ss",24,8
+"CE F8 ss","CALLNX0 #ss",24,8
+"CE F9 ss","CALLNX1 #ss",24,8
+"CE FA ss","CALLNX2 #ss",24,8
+"CE FB ss","CALLNX3 #ss",24,8
+"CE FC ss","CALLX0 #ss",24,8
+"CE FD ss","CALLX1 #ss",24,8
+"CE FE ss","CALLX2 #ss",24,8
+"CE FF ss","CALLX3 #ss",24,8
+"E4 ss","JCB #ss *1",8,0
+"E5 ss","JNCB #ss *1",8,0
+"E6 ss","JZB #ss *1",8,0
+"E7 ss","JNZB #ss *1",8,0
+"EC ss ss","JCW #ssss *1",12,0
+"ED ss ss","JNCW #ssss *1",12,0
+"EE ss ss","JZW #ssss *1",12,0
+"EF ss ss","JNZW #ssss *1",12,0
+"F1 ss","JMPB #ss *1",8,0
+"F3 ss ss","JMPW #ssss *1",12,0
+F4,"JMP HL",8,0
+"F5 ss","JDBNZ #ss",16,0
+"FD nn","JINT #nn",8,0
+"CE E0 ss","JL #ss",12,0
+"CE E1 ss","JLE #ss",12,0
+"CE E2 ss","JG #ss",12,0
+"CE E3 ss","JGE #ss",12,0
+"CE E4 ss","JO #ss",12,0
+"CE E5 ss","JNO #ss",12,0
+"CE E6 ss","JNS #ss",12,0
+"CE E7 ss","JS #ss",12,0
+"CE E8 ss","JNX0 #ss",12,0
+"CE E9 ss","JNX1 #ss",12,0
+"CE EA ss","JNX2 #ss",12,0
+"CE EB ss","JNX3 #ss",12,0
+"CE EC ss","JX0 #ss",12,0
+"CE ED ss","JX1 #ss",12,0
+"CE EE ss","JX2 #ss",12,0
+"CE EF ss","JX3 #ss",12,0
+F8,RET,16,0
+F9,RETI,20,0
+FA,RETSKIP,24,0
+"CE AE",HALT,8,0
+"CE AF",STOP,8,0

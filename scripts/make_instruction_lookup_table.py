@@ -20,14 +20,15 @@ if __name__ == '__main__':
     fp = open('docs/instructions.csv')
     lines = fp.readlines()
     instructions = [x.split(',')[0].strip('"') for x in lines]
-    cycles       = [int(x.split(',')[-1]) // 4 for x in lines]
+    cycles       = [x.strip().split(',')[-2:] for x in lines]
+    cycles       = [(int(x[0]) // 4, int(x[1]) // 4) for x in cycles]
     fp.close()
 
     #is_extended = [int(x[:2] == 'CE' or x[:2] == 'CF') for x in instructions]
     #for i in range(len(cycles)):
     #    cycles[i] -= is_extended[i]
 
-    cycles_all = [0] * 0x300
+    cycles_all = [(0,0)] * 0x300
     for i in range(len(instructions)):
         instruction_index = 0
         parts = instructions[i].split(' ')
@@ -41,9 +42,9 @@ if __name__ == '__main__':
         cycles_all[instruction_index] = cycles[i]
 
     with open('instruction_cycles.h', 'w') as fp:
-        fp.write('uint8_t instruction_cycles[%d] = {\n    ' % 0x300)
+        fp.write('uint8_t instruction_cycles[%d] = {\n    ' % (0x300*2))
         for i, c in enumerate(cycles_all):
-            fp.write('%d' % c)
+            fp.write('%d,%d' % c)
             if i < len(cycles_all) - 1:
                 fp.write(',')
             if (i + 1) % 10 == 0:
