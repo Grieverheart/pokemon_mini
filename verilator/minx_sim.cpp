@@ -720,11 +720,8 @@ int main(int argc, char** argv, char** env)
     minx->clk = 0;
     minx->reset = 1;
 
-    // @todo: Problem at this timestamp. When coming back from rendering,
-    // because the microinstruction_done flag is set and micro op type is a
-    // jump, it jumps to jump dest.
     bool dump = true;
-    int dump_step = 22120570;
+    int dump_step = 20881906;
     int dump_range = 400000;
     VerilatedVcdC* tfp;
     if(dump)

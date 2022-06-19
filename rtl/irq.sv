@@ -137,10 +137,10 @@ module irq
         cpu_irq      = 4'd0;
 
         if(next_priority > 0)
-        begin
             cpu_irq[next_priority] = 1;
+
+        if(cpu_iack)
             bus_data_out = {2'd0, next_irq, 1'd0};
-        end
         else
         begin
             case(bus_address_in)
