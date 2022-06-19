@@ -82,6 +82,21 @@ module minx
         .cpu_irq         (cpu_irq)
     );
 
+    wire [1:0] t1_irqs;
+    wire [7:0] timer1_data_out;
+    timer timer1
+    (
+        .clk            (clk),
+        .rt_clk         (rt_clk),
+        .reset          (reset),
+        .bus_write      (write),
+        .bus_read       (read),
+        .bus_address_in (cpu_address_out),
+        .bus_data_in    (cpu_data_out),
+        .bus_data_out   (timer1_data_out),
+        .irqs           (t1_irqs)
+    );
+
     wire [3:0] t256_irqs;
     wire [7:0] timer256_data_out;
     timer256 timer256
