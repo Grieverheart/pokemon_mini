@@ -721,7 +721,7 @@ int main(int argc, char** argv, char** env)
     minx->reset = 1;
 
     bool dump = true;
-    int dump_step = 20881906;
+    int dump_step = 23390346;
     int dump_range = 400000;
     VerilatedVcdC* tfp;
     if(dump)

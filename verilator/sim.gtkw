@@ -1,27 +1,29 @@
 [*]
 [*] GTKWave Analyzer v3.3.107 (w)1999-2020 BSI
-[*] Sun Jun 19 11:14:12 2022
+[*] Tue Jun 21 23:05:21 2022
 [*]
 [dumpfile] "/Users/nicktasios/Programming/fpga/pokemon_mini/verilator/sim.vcd"
-[dumpfile_mtime] "Sun Jun 19 11:05:02 2022"
-[dumpfile_size] 76818236
+[dumpfile_mtime] "Tue Jun 21 23:01:04 2022"
+[dumpfile_size] 78675959
 [savefile] "/Users/nicktasios/Programming/fpga/pokemon_mini/verilator/sim.gtkw"
-[timestart] 20481907
+[timestart] 22990347
 [size] 1280 755
 [pos] -1 -1
-*-18.338047 20922021 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-18.338047 23138585 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] minx.
 [treeopen] minx.cpu.
 [sst_width] 227
 [signals_width] 324
 [sst_expanded] 1
-[sst_vpaned_height] 377
+[sst_vpaned_height] 368
 @28
 minx.clk
 minx.cpu.pk
 minx.cpu.pl
 minx.read
+@29
 minx.write
+@28
 minx.cpu.read_interrupt_vector
 minx.cpu.sync
 minx.cpu.fetch_opcode
@@ -84,7 +86,6 @@ minx.cpu.microaddress[10:0]
 -group_end
 @22
 minx.cpu.microprogram_counter[3:0]
-@23
 minx.cpu.exception_process_step[3:0]
 @24
 minx.cpu.state[2:0]
@@ -102,6 +103,50 @@ minx.t256_irqs[3:0]
 @28
 minx.cpu.iack
 minx.cpu.bus_ack
+minx.t1_irqs[2:0]
+@22
+minx.timer1.reg_compare[15:0]
+minx.timer1.timer[15:0]
+@c00022
+minx.irq.reg_irq_enabled[31:0]
+@28
+(0)minx.irq.reg_irq_enabled[31:0]
+(1)minx.irq.reg_irq_enabled[31:0]
+(2)minx.irq.reg_irq_enabled[31:0]
+(3)minx.irq.reg_irq_enabled[31:0]
+(4)minx.irq.reg_irq_enabled[31:0]
+(5)minx.irq.reg_irq_enabled[31:0]
+(6)minx.irq.reg_irq_enabled[31:0]
+(7)minx.irq.reg_irq_enabled[31:0]
+(8)minx.irq.reg_irq_enabled[31:0]
+(9)minx.irq.reg_irq_enabled[31:0]
+(10)minx.irq.reg_irq_enabled[31:0]
+(11)minx.irq.reg_irq_enabled[31:0]
+(12)minx.irq.reg_irq_enabled[31:0]
+(13)minx.irq.reg_irq_enabled[31:0]
+(14)minx.irq.reg_irq_enabled[31:0]
+(15)minx.irq.reg_irq_enabled[31:0]
+(16)minx.irq.reg_irq_enabled[31:0]
+(17)minx.irq.reg_irq_enabled[31:0]
+(18)minx.irq.reg_irq_enabled[31:0]
+(19)minx.irq.reg_irq_enabled[31:0]
+(20)minx.irq.reg_irq_enabled[31:0]
+(21)minx.irq.reg_irq_enabled[31:0]
+(22)minx.irq.reg_irq_enabled[31:0]
+(23)minx.irq.reg_irq_enabled[31:0]
+(24)minx.irq.reg_irq_enabled[31:0]
+(25)minx.irq.reg_irq_enabled[31:0]
+(26)minx.irq.reg_irq_enabled[31:0]
+(27)minx.irq.reg_irq_enabled[31:0]
+(28)minx.irq.reg_irq_enabled[31:0]
+(29)minx.irq.reg_irq_enabled[31:0]
+(30)minx.irq.reg_irq_enabled[31:0]
+(31)minx.irq.reg_irq_enabled[31:0]
+@1401200
+-group_end
+@22
+minx.irq.reg_irq_active[31:0]
+minx.timer256.timer[7:0]
 @c00200
 -irq
 @24

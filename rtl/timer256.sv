@@ -10,7 +10,8 @@ module timer256
     input [23:0] bus_address_in,
     input [7:0] bus_data_in,
     output logic [7:0] bus_data_out,
-    output logic [3:0] irqs
+    output logic [3:0] irqs,
+    input osc256
 );
 
 reg reg_enabled;
@@ -67,15 +68,15 @@ end
 // perhaps we can take the 256Hz frequency as output from there.
 always_ff @ (posedge rt_clk)
 begin
+    irqs <= 4'd0;
+
     if(reset || reg_reset)
     begin
         timer <= 8'd0;
-        irqs  <= 4'd0;
     end
-    else if(reg_enabled)
+    else if(reg_enabled && osc256)
     begin
         timer <= timer + 8'd1;
-        irqs  <= 4'd0;
 
         if(timer == 8'd255)
             irqs[3] <= 1;
