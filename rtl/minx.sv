@@ -63,8 +63,8 @@ module minx
     assign irqs[5'h0C] = t256_irqs[1];
     assign irqs[5'h0C] = t256_irqs[2];
     assign irqs[5'h0E] = t256_irqs[3];
-    assign irqs[5'h08] = t1_irqs[1];
-    assign irqs[5'h09] = t1_irqs[0];
+    assign irqs[5'h07] = t1_irqs[1];
+    assign irqs[5'h08] = t1_irqs[0];
 
     wire [23:0] irq_address_out;
     wire [7:0]  irq_data_out;
