@@ -703,7 +703,7 @@ int main(int argc, char** argv, char** env)
 
     // Load a cartridge.
     uint8_t* cartridge = (uint8_t*) calloc(1, 0x200000);
-    fp = fopen("data/pichu_bros_mini_j.min", "rb");
+    fp = fopen("data/togepi_no_daibouken_j.min", "rb");
     fseek(fp, 0, SEEK_END);
     size_t cartridge_file_size = ftell(fp);
     fseek(fp, 0, SEEK_SET);  /* same as rewind(f); */
@@ -720,7 +720,7 @@ int main(int argc, char** argv, char** env)
     minx->reset = 1;
 
     bool dump = true;
-    int dump_step = 19565830;
+    int dump_step = 21343502;
     int dump_range = 400000;
     VerilatedVcdC* tfp;
     if(dump)
@@ -753,7 +753,7 @@ int main(int argc, char** argv, char** env)
     int irq_render_done_old = 0;
     int irq_copy_complete_old = 0;
     int num_cycles_since_sync = 0;
-    while (timestamp < 24000000 && !Verilated::gotFinish())
+    while (timestamp < 54000000 && !Verilated::gotFinish())
     {
         //322
         minx->clk = 1;
@@ -911,7 +911,10 @@ int main(int argc, char** argv, char** env)
                 PRINTE(" ** Division by zero exception not implemented error, timestamp: %d**\n", timestamp);
 
             if(minx->rootp->minx__DOT__cpu__DOT__SP > 0x2000 && minx->pl == 0)
+            {
                 PRINTE(" ** Stack overflow, timestamp: %d**\n", timestamp);
+                break;
+            }
         }
 
         if(timestamp >= 8)
@@ -975,7 +978,7 @@ int main(int argc, char** argv, char** env)
             else if(minx->address_out < 0x2000)
             {
                 // write to ram
-                if(minx->address_out == 0x1000 && minx->data_out == 0x55) printf("= 0x%x: 0x%x, timestamp: %d\n", minx->address_out, minx->data_out, timestamp);
+                //if(minx->address_out == 0x1000 && minx->data_out == 0x55) printf("= 0x%x: 0x%x, timestamp: %d\n", minx->address_out, minx->data_out, timestamp);
                 //if(minx->address_out < 0x1360 && minx->address_out >= 0x1300) printf("= 0x%x, 0x%x, %d\n", minx->address_out, minx->data_out, timestamp);
                 //if(minx->address_out >= prc_map && minx->address_out < 0x1928) printf("= 0x%x, 0x%x\n", minx->address_out, minx->data_out);
                 uint32_t address = minx->address_out & 0xFFF;
