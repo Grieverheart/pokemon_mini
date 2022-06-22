@@ -59,12 +59,12 @@ module minx
     wire [31:0]  irqs;
     assign irqs[5'h03] = irq_copy_complete;
     assign irqs[5'h04] = irq_render_done;
+    assign irqs[5'h07] = t1_irqs[1];
+    assign irqs[5'h08] = t1_irqs[0];
     assign irqs[5'h0B] = t256_irqs[0];
     assign irqs[5'h0C] = t256_irqs[1];
     assign irqs[5'h0C] = t256_irqs[2];
     assign irqs[5'h0E] = t256_irqs[3];
-    assign irqs[5'h07] = t1_irqs[1];
-    assign irqs[5'h08] = t1_irqs[0];
 
     wire [23:0] irq_address_out;
     wire [7:0]  irq_data_out;
@@ -187,9 +187,9 @@ module minx
         (address_out == 24'h2018 || address_out == 24'h2019 ||
          address_out == 24'h20FE || address_out == 24'h20FF ||
          address_out == 24'h2040 || address_out == 24'h2041 ||
+         address_out == 24'h2060 || address_out == 24'h2061 ||
         (address_out >= 24'h2020 && address_out <= 24'h202A)||
         (address_out >= 24'h2030 && address_out <= 24'h2037)||
-         address_out == 24'h2060 || address_out == 24'h2061 ||
         (address_out >= 24'h2080 && address_out <= 24'h208F)) &&
         (bus_status == cpu.BUS_COMMAND_MEM_READ)
     )? reg_data_out: data_in;

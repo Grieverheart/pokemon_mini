@@ -99,8 +99,8 @@ module s1c88
 
     // @todo:
     //
-    // * Implement EXCEPTION_TYPE_DIVZERO.
     // * Implement HALT.
+    // * Implement EXCEPTION_TYPE_DIVZERO.
     // * Implement alu decimal operations, and unpack operations.
 
     // For jump instruction we need: condition, offset (TA1/TA2). I think
@@ -1183,7 +1183,9 @@ module s1c88
                                 begin
                                     branch_taken = 1;
                                     CB <= NB;
-                                    PC <= jump_dest+1;
+                                    // @note: Don't pre-increment PC when
+                                    // interrupt acknowledged.
+                                    PC <= iack? jump_dest: jump_dest+1;
                                     top_address <= jump_dest;
                                 end
                                 else NB <= CB;

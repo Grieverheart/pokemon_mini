@@ -1,6 +1,7 @@
 // @todo: Implement interrupts
 
 module timer
+// @todo: parameters.
 (
     input clk,
     input rt_clk,

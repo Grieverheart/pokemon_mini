@@ -38,7 +38,6 @@ uint8_t sec_ctrl = 0;
 uint32_t prc_map = 0;
 uint8_t prc_mode = 0;
 uint8_t prc_rate = 0;
-uint8_t prc_cnt  = 1;
 
 uint8_t registers[256] = {};
 
@@ -704,7 +703,7 @@ int main(int argc, char** argv, char** env)
 
     // Load a cartridge.
     uint8_t* cartridge = (uint8_t*) calloc(1, 0x200000);
-    fp = fopen("data/party_j.min", "rb");
+    fp = fopen("data/pichu_bros_mini_j.min", "rb");
     fseek(fp, 0, SEEK_END);
     size_t cartridge_file_size = ftell(fp);
     fseek(fp, 0, SEEK_SET);  /* same as rewind(f); */
@@ -721,7 +720,7 @@ int main(int argc, char** argv, char** env)
     minx->reset = 1;
 
     bool dump = true;
-    int dump_step = 23390346;
+    int dump_step = 19565830;
     int dump_range = 400000;
     VerilatedVcdC* tfp;
     if(dump)
@@ -733,6 +732,7 @@ int main(int argc, char** argv, char** env)
     }
 
     registers[0x52] = 0xFF;
+    registers[0x10] = 0x18;
 
     int mem_counter = 0;
     int frame = 0;
@@ -782,7 +782,6 @@ int main(int argc, char** argv, char** env)
 
         if(minx->rootp->minx__DOT__irq_render_done && irq_render_done_old == 0)
         {
-            registers[0x27] |= 0x40;
             irq_render_done_old = 1;
             PRINTD("Render done %d.\n", timestamp / 2);
 
@@ -816,7 +815,6 @@ int main(int argc, char** argv, char** env)
 
         if(minx->rootp->minx__DOT__irq_copy_complete && irq_copy_complete_old == 0)
         {
-            registers[0x27] |= 0x80;
             irq_copy_complete_old = 1;
             PRINTD("Copy complete %d.\n", timestamp / 2);
         }
@@ -834,10 +832,27 @@ int main(int argc, char** argv, char** env)
         //minx->eval();
         //tfp->dump(timestamp++);
 
-        if(minx->rootp->minx__DOT__cpu__DOT__state == 2 && minx->pl == 0)
+        if(minx->rootp->minx__DOT__cpu__DOT__state == 2 && minx->pl == 0 && !minx->rootp->minx__DOT__bus_ack)
         {
-            if(minx->rootp->minx__DOT__cpu__DOT__microaddress == 0)
+            if(minx->rootp->minx__DOT__cpu__DOT__microaddress == 0 &&
+               minx->rootp->minx__DOT__cpu__DOT__extended_opcode != 0x1AE
+            ){
+                //if(minx->rootp->minx__DOT__cpu__DOT__extended_opcode == 0x1AE)
+                //{
+                //    PRINTE("** Halting at 0x%x, timestamp: %d**\n", minx->rootp->minx__DOT__cpu__DOT__top_address, timestamp);
+                //    //for(int j = 0; j < 0x1000 / 0x1B; ++j)
+                //    //{
+                //    //    for(int k = 0; k < 0x1B; ++k)
+                //    //        printf("%x ", *(uint8_t*)(memory + ((j * 0x1B + k) & 0xFFF)));
+                //    //    printf("\n");
+                //    //}
+                //    //for(int k = 0; k < 23; ++k)
+                //    //    printf("%x ", minx->rootp->minx__DOT__rom__DOT__rom.m_storage[8192 - 23 + k]);
+                //    //printf("\n");
+                //    break;
+                //}
                 PRINTE("** Instruction 0x%x not implemented at 0x%x, timestamp: %d**\n", minx->rootp->minx__DOT__cpu__DOT__extended_opcode, minx->rootp->minx__DOT__cpu__DOT__top_address, timestamp);
+            }
         }
         //if(minx->sync == 1 && minx->pl == 0)
         //    printf("** Instruction 0x%x not implemented at 0x%x, timestamp: %d**\n", minx->rootp->minx__DOT__cpu__DOT__extended_opcode, minx->rootp->minx__DOT__cpu__DOT__top_address, timestamp);
@@ -960,7 +975,7 @@ int main(int argc, char** argv, char** env)
             else if(minx->address_out < 0x2000)
             {
                 // write to ram
-                //if(minx->address_out <= 0x12FF) printf("= 0x%x: 0x%x\n", minx->address_out, minx->data_out);
+                if(minx->address_out == 0x1000 && minx->data_out == 0x55) printf("= 0x%x: 0x%x, timestamp: %d\n", minx->address_out, minx->data_out, timestamp);
                 //if(minx->address_out < 0x1360 && minx->address_out >= 0x1300) printf("= 0x%x, 0x%x, %d\n", minx->address_out, minx->data_out, timestamp);
                 //if(minx->address_out >= prc_map && minx->address_out < 0x1928) printf("= 0x%x, 0x%x\n", minx->address_out, minx->data_out);
                 uint32_t address = minx->address_out & 0xFFF;

@@ -74,8 +74,8 @@ module eeprom
                         end
                         else
                         begin
-                            reg_data_out <= input_byte[0];
-                            input_byte <= {1'd0, input_byte[7:1]};
+                            reg_data_out <= input_byte[7];
+                            input_byte <= {input_byte[6:0], 1'd0};
                         end
                     end
                 end
@@ -98,6 +98,7 @@ module eeprom
                             end
                             else if(input_byte == 8'hA1)
                             begin
+                                //$display("Reading byte 0x%x at %d", rom[address], address);
                                 state <= EEPROM_STATE_DATA_READ;
                                 input_byte <= rom[address];
                                 reg_data_out <= 1'd0;
@@ -123,6 +124,7 @@ module eeprom
                         end
                         else if(state == EEPROM_STATE_DATA_WRITE)
                         begin
+                            //$display("Wrote byte 0x%x at %d", input_byte, address);
                             rom[address] <= input_byte;
                             address <= (address + 1) & 13'h1FFF;
                             reg_data_out <= 1'd0;
