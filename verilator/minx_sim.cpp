@@ -720,7 +720,7 @@ int main(int argc, char** argv, char** env)
     minx->reset = 1;
 
     bool dump = true;
-    int dump_step = 21987218;
+    int dump_step = 22797728;
     int dump_range = 400000;
     VerilatedVcdC* tfp;
     if(dump)
@@ -753,7 +753,7 @@ int main(int argc, char** argv, char** env)
     int irq_render_done_old = 0;
     int irq_copy_complete_old = 0;
     int num_cycles_since_sync = 0;
-    while (timestamp < 30000000 && !Verilated::gotFinish())
+    while (timestamp < 150000000 && !Verilated::gotFinish())
     {
         //322
         minx->clk = 1;
@@ -785,6 +785,9 @@ int main(int argc, char** argv, char** env)
             irq_render_done_old = 1;
             PRINTD("Render done %d.\n", timestamp / 2);
 
+            uint8_t contrast = minx->rootp->minx__DOT__lcd__DOT__contrast;
+            if(contrast > 0x20) contrast = 0x20;
+
             uint8_t image_data[96*64];
 
             for (int yC=0; yC<8; yC++)
@@ -793,7 +796,7 @@ int main(int argc, char** argv, char** env)
                 {
                     uint8_t data = minx->rootp->minx__DOT__lcd__DOT__lcd_data[yC * 132 + xC];
                     for(int i = 0; i < 8; ++i)
-                        image_data[96 * (8 * yC + i) + xC] = 255 * ((~data >> i) & 1);
+                        image_data[96 * (8 * yC + i) + xC] = ((~data >> i) & 1)? 255.0: 255.0 * (1.0 - (float)contrast / 0x20);
                 }
             }
 

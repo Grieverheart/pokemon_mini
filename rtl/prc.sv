@@ -24,7 +24,7 @@ module prc
 
 // @todo: What about page 8?
 //
-// @todo: Implement map scrolling and use map_width, map_height.
+// @todo: Implement map scrolling.
 
 // @note: For the sprite rendering basically implemented the folliowing as
 // a finite-state machine:
@@ -368,7 +368,7 @@ begin
                         if(execution_step % 3 == 0)
                         begin
                             // Read tile address
-                            bus_address_out <= 24'h1360 + yC * 12 + {20'd0, xC[6:3]};
+                            bus_address_out <= 24'h1360 + yC * map_width + {20'd0, xC[6:3]};
                         end
                         else if(execution_step % 3 == 1)
                         begin
