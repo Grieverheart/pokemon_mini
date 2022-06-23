@@ -23,7 +23,6 @@ module prc
 // multiple clocks.
 
 // @todo: What about page 8?
-//
 // @todo: Implement map scrolling.
 
 // @note: For the sprite rendering basically implemented the folliowing as
@@ -704,10 +703,10 @@ begin
                 column_data <= bus_data_in;
 
             SPRITE_DRAW_STATE_READ_SPRITE_DATA:
-                sprite_data <= bus_data_in;
+                sprite_data <= sprite_info[1]? {<<{bus_data_in}}: bus_data_in;
 
             SPRITE_DRAW_STATE_READ_SPRITE_MASK:
-                sprite_mask <= bus_data_in;
+                sprite_mask <= sprite_info[1]? {<<{bus_data_in}}: bus_data_in;
 
             default:
             begin
