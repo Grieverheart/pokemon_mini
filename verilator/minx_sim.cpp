@@ -703,7 +703,7 @@ int main(int argc, char** argv, char** env)
 
     // Load a cartridge.
     uint8_t* cartridge = (uint8_t*) calloc(1, 0x200000);
-    fp = fopen("data/togepi_no_daibouken_j.min", "rb");
+    fp = fopen("data/party_j.min", "rb");
     fseek(fp, 0, SEEK_END);
     size_t cartridge_file_size = ftell(fp);
     fseek(fp, 0, SEEK_SET);  /* same as rewind(f); */
@@ -720,7 +720,7 @@ int main(int argc, char** argv, char** env)
     minx->reset = 1;
 
     bool dump = true;
-    int dump_step = 21343502;
+    int dump_step = 21987218;
     int dump_range = 400000;
     VerilatedVcdC* tfp;
     if(dump)
@@ -753,7 +753,7 @@ int main(int argc, char** argv, char** env)
     int irq_render_done_old = 0;
     int irq_copy_complete_old = 0;
     int num_cycles_since_sync = 0;
-    while (timestamp < 54000000 && !Verilated::gotFinish())
+    while (timestamp < 30000000 && !Verilated::gotFinish())
     {
         //322
         minx->clk = 1;

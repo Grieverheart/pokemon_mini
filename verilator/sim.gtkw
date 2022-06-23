@@ -1,55 +1,56 @@
 [*]
-[*] GTKWave Analyzer v3.3.107 (w)1999-2020 BSI
-[*] Tue Jun 21 23:05:21 2022
+[*] GTKWave Analyzer v3.3.111 (w)1999-2020 BSI
+[*] Thu Jun 23 21:02:34 2022
 [*]
-[dumpfile] "/Users/nicktasios/Programming/fpga/pokemon_mini/verilator/sim.vcd"
-[dumpfile_mtime] "Tue Jun 21 23:01:04 2022"
-[dumpfile_size] 78675959
-[savefile] "/Users/nicktasios/Programming/fpga/pokemon_mini/verilator/sim.gtkw"
-[timestart] 22990347
-[size] 1280 755
+[dumpfile] "/home/nicktasios/Programming/fpga/pokemon_mini/verilator/sim.vcd"
+[dumpfile_mtime] "Thu Jun 23 21:01:59 2022"
+[dumpfile_size] 81427059
+[savefile] "/home/nicktasios/Programming/fpga/pokemon_mini/verilator/sim.gtkw"
+[timestart] 21587219
+[size] 2560 1371
 [pos] -1 -1
-*-18.338047 23138585 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-16.429333 21875805 21338260 21332628 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] minx.
 [treeopen] minx.cpu.
 [sst_width] 227
-[signals_width] 324
+[signals_width] 465
 [sst_expanded] 1
-[sst_vpaned_height] 368
+[sst_vpaned_height] 774
 @28
 minx.clk
 minx.cpu.pk
 minx.cpu.pl
 minx.read
-@29
 minx.write
-@28
 minx.cpu.read_interrupt_vector
 minx.cpu.sync
 minx.cpu.fetch_opcode
 @22
 minx.address_out[23:0]
-@c00022
 minx.cpu.PC[15:0]
+@c00022
+minx.cpu.jump_dest[15:0]
 @28
-(0)minx.cpu.PC[15:0]
-(1)minx.cpu.PC[15:0]
-(2)minx.cpu.PC[15:0]
-(3)minx.cpu.PC[15:0]
-(4)minx.cpu.PC[15:0]
-(5)minx.cpu.PC[15:0]
-(6)minx.cpu.PC[15:0]
-(7)minx.cpu.PC[15:0]
-(8)minx.cpu.PC[15:0]
-(9)minx.cpu.PC[15:0]
-(10)minx.cpu.PC[15:0]
-(11)minx.cpu.PC[15:0]
-(12)minx.cpu.PC[15:0]
-(13)minx.cpu.PC[15:0]
-(14)minx.cpu.PC[15:0]
-(15)minx.cpu.PC[15:0]
+(0)minx.cpu.jump_dest[15:0]
+(1)minx.cpu.jump_dest[15:0]
+(2)minx.cpu.jump_dest[15:0]
+(3)minx.cpu.jump_dest[15:0]
+(4)minx.cpu.jump_dest[15:0]
+(5)minx.cpu.jump_dest[15:0]
+(6)minx.cpu.jump_dest[15:0]
+(7)minx.cpu.jump_dest[15:0]
+(8)minx.cpu.jump_dest[15:0]
+(9)minx.cpu.jump_dest[15:0]
+(10)minx.cpu.jump_dest[15:0]
+(11)minx.cpu.jump_dest[15:0]
+(12)minx.cpu.jump_dest[15:0]
+(13)minx.cpu.jump_dest[15:0]
+(14)minx.cpu.jump_dest[15:0]
+(15)minx.cpu.jump_dest[15:0]
 @1401200
 -group_end
+@28
+minx.cpu.jump_condition_true
 @22
 minx.cpu.extended_opcode[9:0]
 minx.cpu.data_in[7:0]
@@ -102,7 +103,9 @@ minx.t256_irqs[3:0]
 -group_end
 @28
 minx.cpu.iack
+@29
 minx.cpu.bus_ack
+@28
 minx.t1_irqs[2:0]
 @22
 minx.timer1.reg_compare[15:0]
@@ -331,7 +334,6 @@ minx.reg_io_data[7:0]
 @28
 minx.rom.clock_posedge
 minx.rom.data_latch
-minx.rom.reg_data_out
 minx.rom.data_out
 @c00022
 minx.rom.input_byte[7:0]
@@ -350,7 +352,6 @@ minx.rom.input_byte[7:0]
 minx.rom.bit_count[3:0]
 @24
 minx.rom.state[2:0]
-@22
 minx.rom.address[12:0]
 @1401200
 -eeprom
@@ -426,6 +427,7 @@ minx.cpu.alu_flags[3:0]
 @24
 minx.cpu.alu_op[4:0]
 @22
+minx.cpu.B[7:0]
 minx.cpu.BA[15:0]
 @c00022
 minx.cpu.BR[7:0]
@@ -442,14 +444,15 @@ minx.cpu.BR[7:0]
 -group_end
 @22
 minx.cpu.CB[7:0]
+minx.cpu.NB[7:0]
 minx.cpu.EP[7:0]
 minx.cpu.IX[15:0]
 minx.cpu.IY[15:0]
 minx.cpu.HL[15:0]
-minx.cpu.NB[7:0]
 minx.cpu.PC[15:0]
 minx.cpu.XP[7:0]
 minx.cpu.YP[7:0]
+minx.cpu.imm[15:0]
 @1401200
 -cpu
 [pattern_trace] 1

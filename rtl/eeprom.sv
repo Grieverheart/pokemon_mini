@@ -102,6 +102,7 @@ module eeprom
                                 state <= EEPROM_STATE_DATA_READ;
                                 input_byte <= rom[address];
                                 reg_data_out <= 1'd0;
+                                address <= address + 1;
                             end
                             else
                             begin
@@ -131,7 +132,11 @@ module eeprom
                         end
                         else if(state == EEPROM_STATE_DATA_READ)
                         begin
+                            // @todo: Oops, wee need to set the input byte
+                            // again?
+                            //$display("Reading byte 0x%x at %d", rom[address], address);
                             address <= (address + 1) & 13'h1FFF;
+                            input_byte <= rom[address];
                             reg_data_out <= 1'd1;
                         end
                     end
