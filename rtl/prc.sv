@@ -372,7 +372,7 @@ begin
                         else if(execution_step % 3 == 1)
                         begin
                             // Read tile data
-                            bus_address_out <= reg_map_base + bus_data_in * 8 + {21'd0, xC[2:0]};
+                            bus_address_out <= reg_map_base + {13'd0, bus_data_in, 3'd0} + {21'd0, xC[2:0]};
                         end
                         else
                         begin

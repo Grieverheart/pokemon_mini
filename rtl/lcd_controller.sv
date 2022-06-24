@@ -9,8 +9,7 @@ module lcd_controller
     output logic [7:0] data_out
 );
 
-// @todo: Handle contrast.
-// @todo: Handle reading out of the lcd_data. Can either be done with
+// @todo: (for rendering) Handle reading out of the lcd_data. Can either be done with
 // additional inputs/outputs, or using the standard controller interface.
 
 reg [5:0] contrast;

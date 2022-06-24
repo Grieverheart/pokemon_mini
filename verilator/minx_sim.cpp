@@ -703,14 +703,13 @@ int main(int argc, char** argv, char** env)
 
     // Load a cartridge.
     uint8_t* cartridge = (uint8_t*) calloc(1, 0x200000);
-    // This one does not work.
     //fp = fopen("data/pokemon_anime_card_daisakusen_j.min", "rb");
     // This one does not work.
-    //fp = fopen("data/pokemon_shock_tetris_j.min", "rb");
+    fp = fopen("data/pokemon_shock_tetris_j.min", "rb");
     // This one loads the pokemon/nintendo trademark screen and then does not work.
     //fp = fopen("data/snorlaxs_lunch_time_j.min", "rb");
     // Works but has unimplemented instructions.
-    fp = fopen("data/party_j.min", "rb");
+    //fp = fopen("data/party_j.min", "rb");
 
     fseek(fp, 0, SEEK_END);
     size_t cartridge_file_size = ftell(fp);
@@ -728,8 +727,8 @@ int main(int argc, char** argv, char** env)
     minx->reset = 1;
 
     bool dump = true;
-    int dump_step = 22797728;
-    int dump_range = 400000;
+    int dump_step = 19750508;
+    int dump_range = 500000;
     VerilatedVcdC* tfp;
     if(dump)
     {
@@ -761,7 +760,7 @@ int main(int argc, char** argv, char** env)
     int irq_render_done_old = 0;
     int irq_copy_complete_old = 0;
     int num_cycles_since_sync = 0;
-    while (timestamp < 150000000 && !Verilated::gotFinish())
+    while (timestamp < 50000000 && !Verilated::gotFinish())
     {
         //322
         minx->clk = 1;
@@ -934,7 +933,7 @@ int main(int argc, char** argv, char** env)
         if(timestamp > 258 && minx->iack == 1 && minx->pl == 0 && minx->sync)
         {
             irq_processing = true;
-            printf("IACK with IRQ=0x%x, timestamp: %d\n", minx->rootp->minx__DOT__irq__DOT__next_irq, timestamp);
+            //printf("IACK with IRQ=0x%x, timestamp: %d\n", minx->rootp->minx__DOT__irq__DOT__next_irq, timestamp);
         }
 
         if(minx->bus_status == BUS_MEM_READ && minx->pl == 0) // Check if PL=0 just to reduce spam.
@@ -989,8 +988,8 @@ int main(int argc, char** argv, char** env)
             else if(minx->address_out < 0x2000)
             {
                 // write to ram
-                //if(minx->address_out == 0x1000 && minx->data_out == 0x55) printf("= 0x%x: 0x%x, timestamp: %d\n", minx->address_out, minx->data_out, timestamp);
-                //if(minx->address_out < 0x1360 && minx->address_out >= 0x1300) printf("= 0x%x, 0x%x, %d\n", minx->address_out, minx->data_out, timestamp);
+                //if(minx->address_out >= 0x1000 && minx->address_out <= 0x12FF && minx->data_out > 0) printf("= 0x%x: 0x%x, timestamp: %d\n", minx->address_out, minx->data_out, timestamp);
+                //if(minx->address_out == 0x1A49) printf("= 0x%x, 0x%x, %d\n", minx->address_out, minx->data_out, timestamp);
                 //if(minx->address_out >= prc_map && minx->address_out < 0x1928) printf("= 0x%x, 0x%x\n", minx->address_out, minx->data_out);
                 uint32_t address = minx->address_out & 0xFFF;
                 *(uint8_t*)(memory + address) = minx->data_out;
