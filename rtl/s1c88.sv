@@ -1054,6 +1054,10 @@ module s1c88
                         begin
                             PC[15:8] <= data_in;
                         end
+                        else if(exception_process_step == 7)
+                        begin
+                            state <= next_state;
+                        end
                     end
                     else
                     begin
@@ -1101,7 +1105,6 @@ module s1c88
                         else if(exception_process_step == 6)
                         begin
                             fetch_opcode <= 1;
-                            state        <= next_state;
                         end
                     end
                 end
@@ -1194,7 +1197,7 @@ module s1c88
                             end
                         end
 
-                        if(micro_op_type == MICRO_TYPE_BUS && micro_bus_op == MICRO_BUS_MEM_READ)
+                        if(micro_op_type == MICRO_TYPE_BUS && micro_bus_op == MICRO_BUS_MEM_READ)// && !fetch_opcode)
                         begin
                             write_data_to_register(micro_bus_reg, {8'd0, data_in});
                         end
