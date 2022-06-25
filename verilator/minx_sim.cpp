@@ -703,13 +703,11 @@ int main(int argc, char** argv, char** env)
 
     // Load a cartridge.
     uint8_t* cartridge = (uint8_t*) calloc(1, 0x200000);
-    //fp = fopen("data/pokemon_anime_card_daisakusen_j.min", "rb");
-    // This one does not work.
-    fp = fopen("data/pokemon_shock_tetris_j.min", "rb");
-    // This one loads the pokemon/nintendo trademark screen and then does not work.
-    //fp = fopen("data/snorlaxs_lunch_time_j.min", "rb");
-    // Works but has unimplemented instructions.
     //fp = fopen("data/party_j.min", "rb");
+    //fp = fopen("data/pokemon_anime_card_daisakusen_j.min", "rb");
+    //fp = fopen("data/snorlaxs_lunch_time_j.min", "rb");
+    // This one gets corrupted screen.
+    fp = fopen("data/pokemon_shock_tetris_j.min", "rb");
 
     fseek(fp, 0, SEEK_END);
     size_t cartridge_file_size = ftell(fp);
@@ -727,7 +725,7 @@ int main(int argc, char** argv, char** env)
     minx->reset = 1;
 
     bool dump = true;
-    int dump_step = 19419228;
+    int dump_step = 29230748;
     int dump_range =  500000;
     VerilatedVcdC* tfp;
     if(dump)
