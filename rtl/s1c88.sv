@@ -315,29 +315,31 @@ module s1c88
         MICRO_ADD_SP_DD1 = 6'h12;
 
     localparam [4:0]
-        MICRO_ALU_OP_NONE = 5'h00,
-        MICRO_ALU_OP_XOR  = 5'h01,
-        MICRO_ALU_OP_AND  = 5'h02,
-        MICRO_ALU_OP_OR   = 5'h03,
-        MICRO_ALU_OP_ADD  = 5'h04,
-        MICRO_ALU_OP_ADC  = 5'h05,
-        MICRO_ALU_OP_SUB  = 5'h06,
-        MICRO_ALU_OP_SBC  = 5'h07,
-        MICRO_ALU_OP_CMP  = 5'h08,
-        MICRO_ALU_OP_INC  = 5'h09,
-        MICRO_ALU_OP_DEC  = 5'h0A,
-        MICRO_ALU_OP_NEG  = 5'h0B,
-        MICRO_ALU_OP_RL   = 5'h0C,
-        MICRO_ALU_OP_RLC  = 5'h0D,
-        MICRO_ALU_OP_RR   = 5'h0E,
-        MICRO_ALU_OP_RRC  = 5'h0F,
-        MICRO_ALU_OP_SLL  = 5'h10,
-        MICRO_ALU_OP_SLA  = 5'h11,
-        MICRO_ALU_OP_SRL  = 5'h12,
-        MICRO_ALU_OP_SRA  = 5'h13,
-        MICRO_ALU_OP_CPL  = 5'h14,
-        MICRO_ALU_OP_DIV  = 5'h15,
-        MICRO_ALU_OP_MUL  = 5'h16;
+        MICRO_ALU_OP_NONE  = 5'h00,
+        MICRO_ALU_OP_XOR   = 5'h01,
+        MICRO_ALU_OP_AND   = 5'h02,
+        MICRO_ALU_OP_OR    = 5'h03,
+        MICRO_ALU_OP_ADD   = 5'h04,
+        MICRO_ALU_OP_ADC   = 5'h05,
+        MICRO_ALU_OP_SUB   = 5'h06,
+        MICRO_ALU_OP_SBC   = 5'h07,
+        MICRO_ALU_OP_CMP   = 5'h08,
+        MICRO_ALU_OP_INC   = 5'h09,
+        MICRO_ALU_OP_DEC   = 5'h0A,
+        MICRO_ALU_OP_NEG   = 5'h0B,
+        MICRO_ALU_OP_RL    = 5'h0C,
+        MICRO_ALU_OP_RLC   = 5'h0D,
+        MICRO_ALU_OP_RR    = 5'h0E,
+        MICRO_ALU_OP_RRC   = 5'h0F,
+        MICRO_ALU_OP_SLL   = 5'h10,
+        MICRO_ALU_OP_SLA   = 5'h11,
+        MICRO_ALU_OP_SRL   = 5'h12,
+        MICRO_ALU_OP_SRA   = 5'h13,
+        MICRO_ALU_OP_CPL   = 5'h14,
+        MICRO_ALU_OP_DIV   = 5'h15,
+        MICRO_ALU_OP_MUL   = 5'h16,
+        MICRO_ALU_OP_PACK  = 5'h17,
+        MICRO_ALU_OP_UPACK = 5'h18;
 
     localparam
         MICRO_ALU8  = 1'b0,
@@ -744,6 +746,12 @@ module s1c88
 
                 MICRO_ALU_OP_SRA:
                     alu_op <= ALUOP_SRA;
+
+                MICRO_ALU_OP_PACK:
+                    alu_op <= ALUOP_PACK;
+
+                MICRO_ALU_OP_UPACK:
+                    alu_op <= ALUOP_UPACK;
 
                 default:
                 begin
