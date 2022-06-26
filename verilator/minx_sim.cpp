@@ -707,6 +707,7 @@ int main(int argc, char** argv, char** env)
     //fp = fopen("data/pokemon_anime_card_daisakusen_j.min", "rb");
     //fp = fopen("data/snorlaxs_lunch_time_j.min", "rb");
     //fp = fopen("data/pokemon_shock_tetris_j.min", "rb");
+    // Contrast does not go back to normal after splash screen.
     fp = fopen("data/togepi_no_daibouken_j.min", "rb");
 
     fseek(fp, 0, SEEK_END);
@@ -725,7 +726,7 @@ int main(int argc, char** argv, char** env)
     minx->reset = 1;
 
     bool dump = true;
-    int dump_step = 22814942;
+    int dump_step = 23023448;
     int dump_range =  400000;
     VerilatedVcdC* tfp;
     if(dump)

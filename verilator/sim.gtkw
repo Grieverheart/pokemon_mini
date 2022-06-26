@@ -1,18 +1,18 @@
 [*]
 [*] GTKWave Analyzer v3.3.111 (w)1999-2020 BSI
-[*] Fri Jun 24 19:05:04 2022
+[*] Sun Jun 26 18:13:39 2022
 [*]
 [dumpfile] "/home/nicktasios/Programming/fpga/pokemon_mini/verilator/sim.vcd"
-[dumpfile_mtime] "Fri Jun 24 19:04:51 2022"
-[dumpfile_size] 97356256
+[dumpfile_mtime] "Sun Jun 26 18:11:51 2022"
+[dumpfile_size] 68541032
 [savefile] "/home/nicktasios/Programming/fpga/pokemon_mini/verilator/sim.gtkw"
-[timestart] 19250509
+[timestart] 22806743
 [size] 2560 1371
 [pos] -1 -1
-*-16.429333 19564206 21338260 21332628 19503074 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+*-2.853470 22806772 103721365 22806772 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] minx.
 [treeopen] minx.cpu.
-[sst_width] 227
+[sst_width] 351
 [signals_width] 465
 [sst_expanded] 1
 [sst_vpaned_height] 774
@@ -25,34 +25,62 @@ minx.write
 minx.cpu.read_interrupt_vector
 minx.cpu.sync
 minx.cpu.fetch_opcode
-@22
-minx.address_out[23:0]
-minx.cpu.PC[15:0]
 @c00022
-minx.cpu.jump_dest[15:0]
+minx.address_out[23:0]
 @28
-(0)minx.cpu.jump_dest[15:0]
-(1)minx.cpu.jump_dest[15:0]
-(2)minx.cpu.jump_dest[15:0]
-(3)minx.cpu.jump_dest[15:0]
-(4)minx.cpu.jump_dest[15:0]
-(5)minx.cpu.jump_dest[15:0]
-(6)minx.cpu.jump_dest[15:0]
-(7)minx.cpu.jump_dest[15:0]
-(8)minx.cpu.jump_dest[15:0]
-(9)minx.cpu.jump_dest[15:0]
-(10)minx.cpu.jump_dest[15:0]
-(11)minx.cpu.jump_dest[15:0]
-(12)minx.cpu.jump_dest[15:0]
-(13)minx.cpu.jump_dest[15:0]
-(14)minx.cpu.jump_dest[15:0]
-(15)minx.cpu.jump_dest[15:0]
+(0)minx.address_out[23:0]
+(1)minx.address_out[23:0]
+(2)minx.address_out[23:0]
+(3)minx.address_out[23:0]
+(4)minx.address_out[23:0]
+(5)minx.address_out[23:0]
+(6)minx.address_out[23:0]
+(7)minx.address_out[23:0]
+(8)minx.address_out[23:0]
+(9)minx.address_out[23:0]
+(10)minx.address_out[23:0]
+(11)minx.address_out[23:0]
+(12)minx.address_out[23:0]
+(13)minx.address_out[23:0]
+(14)minx.address_out[23:0]
+(15)minx.address_out[23:0]
+(16)minx.address_out[23:0]
+(17)minx.address_out[23:0]
+(18)minx.address_out[23:0]
+(19)minx.address_out[23:0]
+(20)minx.address_out[23:0]
+(21)minx.address_out[23:0]
+(22)minx.address_out[23:0]
+(23)minx.address_out[23:0]
 @1401200
 -group_end
-@28
-minx.cpu.jump_condition_true
 @22
+minx.cpu.PC[15:0]
 minx.cpu.extended_opcode[9:0]
+minx.cpu.jump_dest[15:0]
+@c00022
+minx.cpu.imm[15:0]
+@28
+(0)minx.cpu.imm[15:0]
+(1)minx.cpu.imm[15:0]
+(2)minx.cpu.imm[15:0]
+(3)minx.cpu.imm[15:0]
+(4)minx.cpu.imm[15:0]
+(5)minx.cpu.imm[15:0]
+(6)minx.cpu.imm[15:0]
+(7)minx.cpu.imm[15:0]
+(8)minx.cpu.imm[15:0]
+(9)minx.cpu.imm[15:0]
+(10)minx.cpu.imm[15:0]
+(11)minx.cpu.imm[15:0]
+(12)minx.cpu.imm[15:0]
+(13)minx.cpu.imm[15:0]
+(14)minx.cpu.imm[15:0]
+(15)minx.cpu.imm[15:0]
+@1401200
+-group_end
+@22
+minx.cpu.top_address[15:0]
 minx.cpu.data_in[7:0]
 @c00022
 minx.data_out[7:0]
@@ -104,10 +132,6 @@ minx.t256_irqs[3:0]
 @28
 minx.cpu.iack
 minx.cpu.bus_ack
-minx.t1_irqs[2:0]
-@22
-minx.timer1.reg_compare[15:0]
-minx.timer1.timer[15:0]
 @c00022
 minx.irq.reg_irq_enabled[31:0]
 @28
@@ -147,7 +171,18 @@ minx.irq.reg_irq_enabled[31:0]
 -group_end
 @22
 minx.irq.reg_irq_active[31:0]
-minx.timer256.timer[7:0]
+@24
+minx.prc.state[1:0]
+minx.prc.sprite_draw_state_current[2:0]
+@22
+minx.prc.reg_sprite_base[23:0]
+minx.prc.reg_map_base[23:0]
+minx.prc.sprite_info[3:0]
+minx.prc.xC[6:0]
+@28
+minx.prc.yC[2:0]
+@23
+minx.lcd.contrast[5:0]
 @c00200
 -irq
 @24
@@ -445,9 +480,7 @@ minx.cpu.CB[7:0]
 minx.cpu.NB[7:0]
 minx.cpu.EP[7:0]
 minx.cpu.IX[15:0]
-@23
 minx.cpu.IY[15:0]
-@22
 minx.cpu.HL[15:0]
 minx.cpu.PC[15:0]
 minx.cpu.XP[7:0]
