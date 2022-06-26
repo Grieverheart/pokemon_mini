@@ -706,8 +706,8 @@ int main(int argc, char** argv, char** env)
     //fp = fopen("data/party_j.min", "rb");
     //fp = fopen("data/pokemon_anime_card_daisakusen_j.min", "rb");
     //fp = fopen("data/snorlaxs_lunch_time_j.min", "rb");
-    // This one gets corrupted screen.
-    fp = fopen("data/pokemon_shock_tetris_j.min", "rb");
+    //fp = fopen("data/pokemon_shock_tetris_j.min", "rb");
+    fp = fopen("data/togepi_no_daibouken_j.min", "rb");
 
     fseek(fp, 0, SEEK_END);
     size_t cartridge_file_size = ftell(fp);
@@ -725,8 +725,8 @@ int main(int argc, char** argv, char** env)
     minx->reset = 1;
 
     bool dump = true;
-    int dump_step = 29230748;
-    int dump_range =  500000;
+    int dump_step = 22814942;
+    int dump_range =  400000;
     VerilatedVcdC* tfp;
     if(dump)
     {

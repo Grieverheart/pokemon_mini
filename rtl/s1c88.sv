@@ -1003,15 +1003,10 @@ module s1c88
                     //if(exception == EXCEPTION_TYPE_NONE || iack == 1)
                     //    state <= next_state;
 
-                    // @important: While handling an interrupt, if the loaded
-                    // opcode is an extended opcode, then we have a problem
-                    // since the next_state will not be an STATE_EXC_PROCESS,
-                    // but a STATE_EXECUTE.
                     state <= next_state;
 
                     if(next_state == STATE_EXC_PROCESS && exception_process_step == 0 && iack == 1)
                         bus_status <= (exception < EXCEPTION_TYPE_NMI)? BUS_COMMAND_IRQ_READ: BUS_COMMAND_MEM_READ;
-
                     else if(exception == EXCEPTION_TYPE_RESET && iack == 0)
                     begin
                         fetch_opcode           <= 1;
@@ -1020,17 +1015,18 @@ module s1c88
                         exception_process_step <= 4;
                     end
 
-                    if(next_state == STATE_EXECUTE || (state == STATE_EXECUTE && !fetch_opcode))
+                    if(
+                        ((state == STATE_EXECUTE && !fetch_opcode) ||
+                         (next_state == STATE_EXECUTE && state != STATE_EXC_PROCESS)) &&
+                        microinstruction_done
+                    )
                     begin
-                        if(microinstruction_done)
-                        begin
-                            fetch_opcode <= 1;
+                        fetch_opcode <= 1;
 
-                            if(exception != EXCEPTION_TYPE_NONE && iack == 0)
-                            begin
-                                iack                   <= 1;
-                                exception_process_step <= 0;
-                            end
+                        if(exception != EXCEPTION_TYPE_NONE && iack == 0)
+                        begin
+                            iack                   <= 1;
+                            exception_process_step <= 0;
                         end
                     end
                 end
