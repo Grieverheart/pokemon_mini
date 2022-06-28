@@ -548,10 +548,10 @@ AF,"POP F",8,0
 "E1 ss","CALLNCB #ss *1",20,8
 "E2 ss","CALLZB #ss *1",20,8
 "E3 ss","CALLNZB #ss *1",20,8
-"E8 ss ss","CALLCW #ssss *1",24,8
-"E9 ss ss","CALLNCW #ssss *1",24,8
-"EA ss ss","CALLZW #ssss *1",24,8
-"EB ss ss","CALLNZW #ssss *1",24,8
+"E8 ss ss","CALLCW #ssss *1",24,12
+"E9 ss ss","CALLNCW #ssss *1",24,12
+"EA ss ss","CALLZW #ssss *1",24,12
+"EB ss ss","CALLNZW #ssss *1",24,12
 "F0 ss","CALLB #ss *1",20,0
 "F2 ss ss","CALLW #ssss *1",24,0
 "FB nn nn","CALL [#nnnn]",20,0

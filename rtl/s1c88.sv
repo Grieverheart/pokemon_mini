@@ -1307,10 +1307,15 @@ module s1c88
                                 end
                             end
 
-                            //MICRO_ADD_SP_DD:
-                            //begin
-                            //    address_out <= {8'd0, SP+{{8{imm_low[7]}}, imm_low}};
-                            //end
+                            MICRO_ADD_SP_DD:
+                            begin
+                                address_out <= {8'd0, SP+{{8{imm_low[7]}}, imm_low}};
+                            end
+
+                            MICRO_ADD_SP_DD1:
+                            begin
+                                address_out <= {8'd0, SP+{{8{imm_low[7]}}, imm_low}+16'd1};
+                            end
 
                             MICRO_ADD_BR:
                             begin
