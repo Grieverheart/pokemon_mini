@@ -704,11 +704,18 @@ int main(int argc, char** argv, char** env)
     // Load a cartridge.
     uint8_t* cartridge = (uint8_t*) calloc(1, 0x200000);
     //fp = fopen("data/party_j.min", "rb");
+    //fp = fopen("data/pichu_bros_mini_j.min", "rb");
     //fp = fopen("data/pokemon_anime_card_daisakusen_j.min", "rb");
     //fp = fopen("data/snorlaxs_lunch_time_j.min", "rb");
     //fp = fopen("data/pokemon_shock_tetris_j.min", "rb");
-    // Contrast does not go back to normal after splash screen.
-    fp = fopen("data/togepi_no_daibouken_j.min", "rb");
+    //fp = fopen("data/togepi_no_daibouken_j.min", "rb");
+    //fp = fopen("data/pokemon_race_mini_j.min", "rb");
+    //fp = fopen("data/pokemon_sodateyasan_mini_j.min", "rb");
+    //fp = fopen("data/pokemon_puzzle_collection_j.min", "rb");
+    //problem
+    //fp = fopen("data/pokemon_puzzle_collection_vol2_j.min", "rb");
+    //problem
+    //fp = fopen("data/pokemon_pinball_mini_j.min", "rb");
 
     fseek(fp, 0, SEEK_END);
     size_t cartridge_file_size = ftell(fp);
