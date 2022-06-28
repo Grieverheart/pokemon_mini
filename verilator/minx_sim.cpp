@@ -704,6 +704,7 @@ int main(int argc, char** argv, char** env)
     // Load a cartridge.
     uint8_t* cartridge = (uint8_t*) calloc(1, 0x200000);
     fp = fopen("data/party_j.min", "rb");
+    //fp = fopen("data/6shades.min", "rb");
     //fp = fopen("data/pichu_bros_mini_j.min", "rb");
     //fp = fopen("data/pokemon_anime_card_daisakusen_j.min", "rb");
     //fp = fopen("data/snorlaxs_lunch_time_j.min", "rb");
@@ -731,7 +732,7 @@ int main(int argc, char** argv, char** env)
     minx->reset = 1;
 
     bool dump = true;
-    int dump_step = 20308106;
+    int dump_step = 2426906;
     int dump_range =  400000;
     VerilatedVcdC* tfp;
     if(dump)
@@ -904,7 +905,7 @@ int main(int argc, char** argv, char** env)
                 PRINTE(" ** Addressing not implemented error: 0x%llx, timestamp: %d** \n", (minx->rootp->minx__DOT__cpu__DOT__micro_op & 0x3F00000) >> 20, timestamp);
 
             if(minx->rootp->minx__DOT__cpu__DOT__not_implemented_jump_error == 1 && minx->pl == 0)
-                PRINTE(" ** Jump not implemented error, timestamp: %d** \n", timestamp);
+                PRINTE(" ** Jump not implemented error, 0x%llx, timestamp: %d** \n", (minx->rootp->minx__DOT__cpu__DOT__micro_op & 0x7C000) >> 14, timestamp);
 
             if(minx->rootp->minx__DOT__cpu__DOT__not_implemented_data_out_error == 1 && minx->pl == 1)
                 PRINTE(" ** Data-out not implemented error, timestamp: %d** \n", timestamp);

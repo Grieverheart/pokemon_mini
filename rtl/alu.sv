@@ -27,7 +27,8 @@ enum [4:0]
     ALUOP_MUL   = 5'd22,
 
     ALUOP_PACK  = 5'd23,
-    ALUOP_UPACK = 5'd24
+    ALUOP_UPACK = 5'd24,
+    ALUOP_SEP   = 5'd25
 } AluOp;
 
 enum [1:0]
@@ -251,6 +252,12 @@ module alu
             ALUOP_UPACK:
             begin
                 R = {4'd0, A[7:4], 4'd0, A[3:0]};
+                flags = 4'd0;
+            end
+
+            ALUOP_SEP:
+            begin
+                R = {{8{A[7]}}, A[7:0]};
                 flags = 4'd0;
             end
 

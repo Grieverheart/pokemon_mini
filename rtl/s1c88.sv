@@ -101,7 +101,7 @@ module s1c88
     //
     // * Implement HALT.
     // * Implement EXCEPTION_TYPE_DIVZERO.
-    // * Implement alu decimal operations, and unpack operations.
+    // * Implement alu decimal operations
     // * Bus wait states.
 
     // For jump instruction we need: condition, offset (TA1/TA2). I think
@@ -339,7 +339,8 @@ module s1c88
         MICRO_ALU_OP_DIV   = 5'h15,
         MICRO_ALU_OP_MUL   = 5'h16,
         MICRO_ALU_OP_PACK  = 5'h17,
-        MICRO_ALU_OP_UPACK = 5'h18;
+        MICRO_ALU_OP_UPACK = 5'h18,
+        MICRO_ALU_OP_SEP   = 5'h19;
 
     localparam
         MICRO_ALU8  = 1'b0,
@@ -753,6 +754,9 @@ module s1c88
                 MICRO_ALU_OP_UPACK:
                     alu_op <= ALUOP_UPACK;
 
+                MICRO_ALU_OP_SEP:
+                    alu_op <= ALUOP_SEP;
+
                 default:
                 begin
                     alu_op <= ALUOP_ADD;
@@ -891,12 +895,22 @@ module s1c88
             //MICRO_COND_LESS, MICRO_COND_GREATER:
             //begin
             //end
-            //MICRO_COND_LESS_EQUAL, MICRO_COND_GREATER_EQUAL:
-            //begin
-            //end
-            //MICRO_COND_OVERFLOW, MICRO_COND_NON_OVERFLOW:
-            //begin
-            //end
+            MICRO_COND_LESS_EQUAL:
+            begin
+                if(flag_zero | (flag_negative ^ flag_overflow) == 1)
+                    jump_condition_true = 1;
+            end
+            MICRO_COND_GREATER_EQUAL:
+            begin
+                //if(flag_zero | ~(flag_negative ^ flag_overflow) == 1)
+                if(flag_negative ^ flag_overflow == 0)
+                    jump_condition_true = 1;
+            end
+            MICRO_COND_OVERFLOW, MICRO_COND_NON_OVERFLOW:
+            begin
+                if(flag_overflow == micro_jmp_condition[0])
+                    jump_condition_true = 1;
+            end
             MICRO_COND_MINUS, MICRO_COND_PLUS:
             begin
                 if(flag_negative == micro_jmp_condition[0])
