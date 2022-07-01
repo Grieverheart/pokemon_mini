@@ -11,6 +11,7 @@
 #include <SDL2/SDL.h>
 #include <GL/glew.h>
 #include <SDL2/SDL_opengl.h>
+#include "gl_utils.h"
 
 #define VERBOSE 1
 
@@ -46,6 +47,131 @@ bool irq_processing = false;
 int irq_render_done_old = 0;
 int irq_copy_complete_old = 0;
 int num_cycles_since_sync = 0;
+
+bool gl_renderer_init(int buffer_width, int buffer_height)
+{
+    GLenum err = glewInit();
+    if(err != GLEW_OK)
+    {
+        fprintf(stderr, "Error initializing GLEW.\n");
+        return false;
+    }
+
+    int glVersion[2] = {-1, 1};
+    glGetIntegerv(GL_MAJOR_VERSION, &glVersion[0]);
+    glGetIntegerv(GL_MINOR_VERSION, &glVersion[1]);
+
+    gl_debug(__FILE__, __LINE__);
+
+    printf("Using OpenGL: %d.%d\n", glVersion[0], glVersion[1]);
+    printf("Renderer used: %s\n", glGetString(GL_RENDERER));
+    printf("Shading Language: %s\n", glGetString(GL_SHADING_LANGUAGE_VERSION));
+
+    glClearColor(1.0, 0.0, 0.0, 1.0);
+
+    // Create texture for presenting buffer to OpenGL
+    GLuint buffer_texture;
+    glGenTextures(1, &buffer_texture);
+    glBindTexture(GL_TEXTURE_2D, buffer_texture);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_R8, buffer_width, buffer_height, 0, GL_RED, GL_UNSIGNED_BYTE, nullptr);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+
+    // Create vao for generating fullscreen triangle
+    GLuint fullscreen_triangle_vao;
+    glGenVertexArrays(1, &fullscreen_triangle_vao);
+
+
+    // Create shader for displaying buffer
+    static const char* fragment_shader =
+        "\n"
+        "#version 330\n"
+        "\n"
+        "uniform sampler2D buffer;\n"
+        "noperspective in vec2 TexCoord;\n"
+        "\n"
+        "out vec3 outColor;\n"
+        "\n"
+        "void main(void){\n"
+        "    outColor = vec3(texture(buffer, TexCoord).r);\n"
+        "}\n";
+
+    static const char* vertex_shader =
+        "\n"
+        "#version 330\n"
+        "\n"
+        "noperspective out vec2 TexCoord;\n"
+        "\n"
+        "void main(void){\n"
+        "\n"
+        "    TexCoord.x = (gl_VertexID == 2)? 2.0: 0.0;\n"
+        "    TexCoord.y = (gl_VertexID == 1)? 2.0: 0.0;\n"
+        "    \n"
+        "    gl_Position = vec4(2.0 * TexCoord - 1.0, 0.0, 1.0);\n"
+        "}\n";
+
+    GLuint shader_id = glCreateProgram();
+
+    {
+        //Create vertex shader
+        GLuint shader_vp = glCreateShader(GL_VERTEX_SHADER);
+
+        glShaderSource(shader_vp, 1, &vertex_shader, 0);
+        glCompileShader(shader_vp);
+        validate_shader(shader_vp, vertex_shader);
+        glAttachShader(shader_id, shader_vp);
+
+        glDeleteShader(shader_vp);
+    }
+
+    {
+        //Create fragment shader
+        GLuint shader_fp = glCreateShader(GL_FRAGMENT_SHADER);
+
+        glShaderSource(shader_fp, 1, &fragment_shader, 0);
+        glCompileShader(shader_fp);
+        validate_shader(shader_fp, fragment_shader);
+        glAttachShader(shader_id, shader_fp);
+
+        glDeleteShader(shader_fp);
+    }
+
+    glLinkProgram(shader_id);
+
+    if(!validate_program(shader_id)){
+        fprintf(stderr, "Error while validating shader.\n");
+        glDeleteVertexArrays(1, &fullscreen_triangle_vao);
+        return false;
+    }
+
+    glUseProgram(shader_id);
+
+    GLint location = glGetUniformLocation(shader_id, "buffer");
+    glUniform1i(location, 0);
+
+
+    //OpenGL setup
+    glDisable(GL_DEPTH_TEST);
+    glActiveTexture(GL_TEXTURE0);
+
+    glBindVertexArray(fullscreen_triangle_vao);
+
+    return true;
+}
+
+void gl_renderer_draw(int buffer_width, int buffer_height, void* buffer_data)
+{
+    glTexSubImage2D(
+        GL_TEXTURE_2D, 0, 0, 0,
+        buffer_width, buffer_height,
+        GL_RED, GL_UNSIGNED_BYTE,
+        buffer_data
+    );
+    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+}
 
 void write_hardware_register(uint8_t* registers, uint32_t address, uint8_t data)
 {
@@ -958,6 +1084,29 @@ void simulate_steps(SimData* sim, int n_steps)
     }
 }
 
+uint8_t* get_lcd_image(Vminx& minx)
+{
+    uint8_t contrast = minx.rootp->minx__DOT__lcd__DOT__contrast;
+    if(contrast > 0x20) contrast = 0x20;
+
+    uint8_t* image_data = new uint8_t[96*64];
+
+    for (int yC=0; yC<8; yC++)
+    {
+        for (int xC=0; xC<96; xC++)
+        {
+            uint8_t data = minx.rootp->minx__DOT__lcd__DOT__lcd_data[yC * 132 + xC];
+            for(int i = 0; i < 8; ++i)
+            {
+                int idx = 96 * (63 - 8 * yC - i) + xC;
+                image_data[idx] = ((~data >> i) & 1)? 255.0: 255.0 * (1.0 - (float)contrast / 0x20);
+            }
+        }
+    }
+
+    return image_data;
+}
+
 int main(int argc, char** argv)
 {
     int num_sim_steps = 150000;
@@ -984,7 +1133,7 @@ int main(int argc, char** argv)
         SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
         SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
         SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_FORWARD_COMPATIBLE_FLAG);
-        SDL_GL_SetAttribute(SDL_GL_FRAMEBUFFER_SRGB_CAPABLE, 1);
+        //SDL_GL_SetAttribute(SDL_GL_FRAMEBUFFER_SRGB_CAPABLE, 1);
 
         window = SDL_CreateWindow(
             "Vectron",
@@ -1015,12 +1164,14 @@ int main(int argc, char** argv)
         SDL_GL_GetAttribute(SDL_GL_BLUE_SIZE, &b);
         SDL_GL_GetAttribute(SDL_GL_ALPHA_SIZE, &a);
         SDL_GL_GetAttribute(SDL_GL_MULTISAMPLESAMPLES, &m);
-        SDL_GL_GetAttribute(SDL_GL_FRAMEBUFFER_SRGB_CAPABLE, &s);
+        //SDL_GL_GetAttribute(SDL_GL_FRAMEBUFFER_SRGB_CAPABLE, &s);
 
         SDL_GL_SetSwapInterval(1);
     }
 
-    //SDL_GL_GetDrawableSize(window, &window_width, &window_height);
+    int drawable_width, drawable_height;
+    SDL_GL_GetDrawableSize(window, &drawable_width, &drawable_height);
+    gl_renderer_init(96, 64);
 
     bool sim_is_running = true;
     bool program_is_running = true;
@@ -1106,9 +1257,7 @@ int main(int argc, char** argv)
             {
                 if(sdl_event.window.event == SDL_WINDOWEVENT_SIZE_CHANGED)
                 {
-                    //int drawable_width, drawable_height;
-                    //SDL_GL_GetDrawableSize(window, &drawable_width, &drawable_height);
-                    // @todo: Do resize stuff.
+                    SDL_GL_GetDrawableSize(window, &drawable_width, &drawable_height);
                 }
                 else if(sdl_event.window.event == SDL_WINDOWEVENT_FOCUS_LOST)
                     sim_is_running = false;
@@ -1117,10 +1266,10 @@ int main(int argc, char** argv)
             }
         }
 
-        //int drawable_width, drawable_height;
-        //SDL_GL_GetDrawableSize(window, &drawable_width, &drawable_height);
-
         simulate_steps(&sim, num_sim_steps);
+        uint8_t* lcd_image = get_lcd_image(*sim.minx);
+        gl_renderer_draw(96, 64, lcd_image);
+        delete[] lcd_image;
 
         SDL_GL_SwapWindow(window);
     }
