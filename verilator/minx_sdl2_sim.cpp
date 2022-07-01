@@ -1266,7 +1266,8 @@ int main(int argc, char** argv)
             }
         }
 
-        simulate_steps(&sim, num_sim_steps);
+        if(sim_is_running)
+            simulate_steps(&sim, num_sim_steps);
         uint8_t* lcd_image = get_lcd_image(*sim.minx);
         gl_renderer_draw(96, 64, lcd_image);
         delete[] lcd_image;
