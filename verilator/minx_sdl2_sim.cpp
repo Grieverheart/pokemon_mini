@@ -8,8 +8,9 @@
 
 #include "instruction_cycles.h"
 
-#define STB_IMAGE_WRITE_IMPLEMENTATION
-#include "stb_image_write.h"
+#include <SDL2/SDL.h>
+#include <GL/glew.h>
+#include <SDL2/SDL_opengl.h>
 
 #define VERBOSE 1
 
@@ -765,7 +766,7 @@ void simulate_steps(SimData* sim, int n_steps)
         {
             sim->minx->rt_clk = !sim->minx->rt_clk;
             sim->minx->eval();
-            sim->osc1_next_clock += osc1_clocks;
+            sim->osc1_next_clock += sim->osc1_clocks;
         }
         sim->timestamp++;
 
@@ -775,7 +776,7 @@ void simulate_steps(SimData* sim, int n_steps)
         {
             sim->minx->rt_clk = !sim->minx->rt_clk;
             sim->minx->eval();
-            sim->osc1_next_clock += osc1_clocks;
+            sim->osc1_next_clock += sim->osc1_clocks;
         }
         sim->timestamp++;
 
@@ -851,7 +852,7 @@ void simulate_steps(SimData* sim, int n_steps)
                         if(num_cycles != num_cycles_actual_branch || num_cycles_actual_branch == 0)
                             PRINTE(" ** Discrepancy found in number of cycles of instruction 0x%x: %d, %d, timestamp: %d** \n", extended_opcode, num_cycles, num_cycles_actual, sim->timestamp);
 
-                    sim.instructions_executed[extended_opcode] = 1;
+                    sim->instructions_executed[extended_opcode] = 1;
                 }
             }
 
@@ -900,25 +901,25 @@ void simulate_steps(SimData* sim, int n_steps)
             if(sim->minx->address_out < 0x1000)
             {
                 // read from bios
-                sim.bios_touched[sim->minx->address_out & (bios_file_size - 1)] = 1;
-                sim->minx->data_in = *(bios + (sim->minx->address_out & (bios_file_size - 1)));
+                sim->bios_touched[sim->minx->address_out & (sim->bios_file_size - 1)] = 1;
+                sim->minx->data_in = *(sim->bios + (sim->minx->address_out & (sim->bios_file_size - 1)));
             }
             else if(sim->minx->address_out < 0x2000)
             {
                 // read from ram
                 uint32_t address = sim->minx->address_out & 0xFFF;
-                sim->minx->data_in = *(uint8_t*)(memory + address);
+                sim->minx->data_in = *(uint8_t*)(sim->memory + address);
             }
             else if(sim->minx->address_out < 0x2100)
             {
                 // read from hardware registers
-                sim->minx->data_in = read_hardware_register(sim->minx->address_out & 0x1FFF);
+                sim->minx->data_in = read_hardware_register(sim->registers, sim->minx->address_out & 0x1FFF);
             }
             else
             {
                 // read from cartridge
-                sim.cartridge_touched[(sim->minx->address_out & 0x1FFFFF) & (cartridge_file_size - 1)] = 1;
-                sim->minx->data_in = *(uint8_t*)(cartridge + (sim->minx->address_out & 0x1FFFFF));
+                sim->cartridge_touched[(sim->minx->address_out & 0x1FFFFF) & (sim->cartridge_file_size - 1)] = 1;
+                sim->minx->data_in = *(uint8_t*)(sim->cartridge + (sim->minx->address_out & 0x1FFFFF));
             }
 
             data_sent = true;
@@ -934,12 +935,12 @@ void simulate_steps(SimData* sim, int n_steps)
             {
                 // write to ram
                 uint32_t address = sim->minx->address_out & 0xFFF;
-                *(uint8_t*)(memory + address) = sim->minx->data_out;
+                *(uint8_t*)(sim->memory + address) = sim->minx->data_out;
             }
             else if(sim->minx->address_out < 0x2100)
             {
                 // write to hardware registers
-                write_hardware_register(sim->minx->address_out & 0x1FFF, sim->minx->data_out);
+                write_hardware_register(sim->registers, sim->minx->address_out & 0x1FFF, sim->minx->data_out);
             }
             else
             {
@@ -962,13 +963,171 @@ int main(int argc, char** argv)
     int num_sim_steps = 150000;
 
     SimData sim;
-    init_sim(&sim);
+    init_sim(&sim, "data/party_j.min");
 
-    // @todo: SDL2 stuff.
-    while(true)
+    // Create window and gl context, and game controller
+    int window_width = 960;
+    int window_height = 640;
+
+    SDL_Window* window;
+    SDL_GLContext gl_context;
     {
-        simulate_steps(&sim, num_sim_steps);
+        if(SDL_Init(SDL_INIT_VIDEO) < 0)// | SDL_INIT_AUDIO) < 0)
+        {
+            fprintf(stderr, "Error initializing SDL. SDL_Error: %s\n", SDL_GetError());
+            return -1;
+        }
+
+
+        // Use OpenGL 3.1 core
+        SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+        SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
+        SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
+        SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_FORWARD_COMPATIBLE_FLAG);
+        SDL_GL_SetAttribute(SDL_GL_FRAMEBUFFER_SRGB_CAPABLE, 1);
+
+        window = SDL_CreateWindow(
+            "Vectron",
+            SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
+            window_width, window_height,
+            SDL_WINDOW_SHOWN | SDL_WINDOW_OPENGL | SDL_WINDOW_ALLOW_HIGHDPI
+        );
+
+        if(!window)
+        {
+            fprintf(stderr, "Error creating SDL window. SDL_Error: %s\n", SDL_GetError());
+            SDL_Quit();
+            return -1;
+        }
+
+        gl_context = SDL_GL_CreateContext(window);
+        if(!gl_context)
+        {
+            fprintf(stderr, "Error creating SDL GL context. SDL_Error: %s\n", SDL_GetError());
+            SDL_DestroyWindow(window);
+            SDL_Quit();
+            return -1;
+        }
+
+        int r, g, b, a, m, s;
+        SDL_GL_GetAttribute(SDL_GL_RED_SIZE, &r);
+        SDL_GL_GetAttribute(SDL_GL_GREEN_SIZE, &g);
+        SDL_GL_GetAttribute(SDL_GL_BLUE_SIZE, &b);
+        SDL_GL_GetAttribute(SDL_GL_ALPHA_SIZE, &a);
+        SDL_GL_GetAttribute(SDL_GL_MULTISAMPLESAMPLES, &m);
+        SDL_GL_GetAttribute(SDL_GL_FRAMEBUFFER_SRGB_CAPABLE, &s);
+
+        SDL_GL_SetSwapInterval(1);
     }
+
+    //SDL_GL_GetDrawableSize(window, &window_width, &window_height);
+
+    bool sim_is_running = true;
+    bool program_is_running = true;
+    while(program_is_running)
+    {
+        // Process input
+        SDL_Event sdl_event;
+        while(SDL_PollEvent(&sdl_event) != 0)
+        {
+            // Keyboard input
+            if(sdl_event.type == SDL_KEYDOWN)
+            {
+                if(sdl_event.key.keysym.sym == SDLK_p)
+                {
+                    sim_is_running = !sim_is_running;
+                    continue;
+                }
+
+                switch(sdl_event.key.keysym.sym){
+                case SDLK_ESCAPE:
+                    program_is_running = false;
+                    break;
+                case SDLK_UP:
+                    sim.registers[0x52] = sim.registers[0x52] & 0xF7;
+                    break;
+                case SDLK_DOWN:
+                    sim.registers[0x52] = sim.registers[0x52] & 0xEF;
+                    break;
+                case SDLK_RIGHT:
+                    sim.registers[0x52] = sim.registers[0x52] & 0xBF;
+                    break;
+                case SDLK_LEFT:
+                    sim.registers[0x52] = sim.registers[0x52] & 0xDF;
+                    break;
+                case SDLK_x: // A
+                    sim.registers[0x52] = sim.registers[0x52] & 0xFE;
+                    break;
+                case SDLK_z: // B
+                    sim.registers[0x52] = sim.registers[0x52] & 0xFD;
+                    break;
+                case SDLK_s:
+                case SDLK_c:
+                    sim.registers[0x52] = sim.registers[0x52] & 0xFB;
+                    break;
+                default:
+                    break;
+                }
+            }
+            else if(sdl_event.type == SDL_KEYUP)
+            {
+                switch(sdl_event.key.keysym.sym){
+                case SDLK_UP:
+                    sim.registers[0x52] = sim.registers[0x52] | 0x08;
+                    break;
+                case SDLK_DOWN:
+                    sim.registers[0x52] = sim.registers[0x52] | 0x10;
+                    break;
+                case SDLK_RIGHT:
+                    sim.registers[0x52] = sim.registers[0x52] | 0x40;
+                    break;
+                case SDLK_LEFT:
+                    sim.registers[0x52] = sim.registers[0x52] | 0x20;
+                    break;
+                case SDLK_x: // A
+                    sim.registers[0x52] = sim.registers[0x52] | 0x01;
+                    break;
+                case SDLK_z: // B
+                    sim.registers[0x52] = sim.registers[0x52] | 0x02;
+                    break;
+                case SDLK_s:
+                case SDLK_c:
+                    sim.registers[0x52] = sim.registers[0x52] | 0x04;
+                    break;
+                default:
+                    break;
+                }
+            }
+            else if(sdl_event.type == SDL_QUIT)
+            {
+                program_is_running = false;
+            }
+            else if(sdl_event.type == SDL_WINDOWEVENT)
+            {
+                if(sdl_event.window.event == SDL_WINDOWEVENT_SIZE_CHANGED)
+                {
+                    //int drawable_width, drawable_height;
+                    //SDL_GL_GetDrawableSize(window, &drawable_width, &drawable_height);
+                    // @todo: Do resize stuff.
+                }
+                else if(sdl_event.window.event == SDL_WINDOWEVENT_FOCUS_LOST)
+                    sim_is_running = false;
+                else if(sdl_event.window.event == SDL_WINDOWEVENT_FOCUS_GAINED)
+                    sim_is_running = true;
+            }
+        }
+
+        //int drawable_width, drawable_height;
+        //SDL_GL_GetDrawableSize(window, &drawable_width, &drawable_height);
+
+        simulate_steps(&sim, num_sim_steps);
+
+        SDL_GL_SwapWindow(window);
+    }
+
+    SDL_GL_DeleteContext(gl_context);
+    SDL_DestroyWindow(window);
+    SDL_Quit();
 
     size_t total_touched = 0;
     for(size_t i = 0; i < sim.bios_file_size; ++i)
