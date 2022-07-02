@@ -23,7 +23,6 @@ module prc
 // multiple clocks.
 
 // @todo: What about page 8?
-// @todo: Implement map scrolling.
 
 // @note: For the sprite rendering basically implemented the folliowing as
 // a finite-state machine:
@@ -246,6 +245,9 @@ wire [7:0] sprite_color_masked_and_shifted = (top_or_bottom == 0)?
     (sprite_color & ~sprite_mask) << sprite_abs_y[2:0]:
     (sprite_color & ~sprite_mask) >> (4'd8 - {1'b0, sprite_abs_y[2:0]});
 
+wire [7:0] map_x = {1'd0, xC} + {1'd0, reg_scroll_x};
+wire [7:0] map_y = {1'd0, yC, 3'd0} + {1'd0, reg_scroll_y};
+
 always_ff @ (negedge clk, posedge reset)
 begin
     if(reset)
@@ -288,9 +290,14 @@ begin
                     reg_map_base[20:16] <= bus_data_in[4:0];
 
                 24'h2085: // PRC Map Vertical Scroll
-                    reg_scroll_y <= bus_data_in[6:0];
+                    if(bus_data_in[6:0] <= (map_height*8-64))
+                        reg_scroll_y <= bus_data_in[6:0];
                 24'h2086: // PRC Map Horizontal Scroll
-                    reg_scroll_x <= bus_data_in[6:0];
+                begin
+                    //$display("REG_SCROLL_X set to %d", bus_data_in[6:0]);
+                    if(bus_data_in[6:0] <= (map_width*8-96)) 
+                        reg_scroll_x <= bus_data_in[6:0];
+                end
 
                 24'h2087: // PRC Sprite Tile Base Low
                     reg_sprite_base[7:6] <= bus_data_in[7:6];
@@ -367,12 +374,12 @@ begin
                         if(execution_step % 3 == 0)
                         begin
                             // Read tile address
-                            bus_address_out <= 24'h1360 + yC * map_width + {20'd0, xC[6:3]};
+                            bus_address_out <= 24'h1360 + map_y[7:3] * map_width + {19'd0, map_x[7:3]};
                         end
                         else if(execution_step % 3 == 1)
                         begin
                             // Read tile data
-                            bus_address_out <= reg_map_base + {13'd0, bus_data_in, 3'd0} + {21'd0, xC[2:0]};
+                            bus_address_out <= reg_map_base + {13'd0, bus_data_in, map_y[2:0]} + {21'd0, map_x[2:0]};
                         end
                         else
                         begin

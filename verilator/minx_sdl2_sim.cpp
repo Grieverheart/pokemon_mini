@@ -96,7 +96,8 @@ bool gl_renderer_init(int buffer_width, int buffer_height)
         "out vec3 outColor;\n"
         "\n"
         "void main(void){\n"
-        "    outColor = vec3(texture(buffer, TexCoord).r);\n"
+        "    float val = texture(buffer, TexCoord).r;\n"
+        "    outColor = ((val > 0.5)? 1.0: 0.2) * vec3(0.611, 0.694, 0.611);\n"
         "}\n";
 
     static const char* vertex_shader =
@@ -1115,8 +1116,8 @@ int main(int argc, char** argv)
     init_sim(&sim, "data/party_j.min");
 
     // Create window and gl context, and game controller
-    int window_width = 960;
-    int window_height = 640;
+    int window_width = 960/2;
+    int window_height = 640/2;
 
     SDL_Window* window;
     SDL_GLContext gl_context;
