@@ -62,10 +62,10 @@ module alu
 
     // @todo: What's the correct way to handle 0 shifts?
 
-    wire [3:0] msb = (size == 0)? 4'd7: 4'd15;
+    wire [3:0] msb = (size == 1)? 4'd15: 4'd7;
     reg [16:0] R_temp;
 
-    // Should we put flags in separate always_comb? It's annoying that we have
+    // @todo: Should we put flags in separate always_comb? It's annoying that we have
     // to check again if it's ADD, INC, etc.
     always_comb
     begin
@@ -78,7 +78,7 @@ module alu
                 R = A & B;
                 flags[ALU_FLAG_C] = 0;
                 flags[ALU_FLAG_V] = 0;
-                flags[ALU_FLAG_Z] = (R == 0);
+                flags[ALU_FLAG_Z] = (size == 1)? (R == 0): (R[7:0] == 0);
                 flags[ALU_FLAG_S] = R[msb];
             end
 
@@ -87,7 +87,7 @@ module alu
                 R = A | B;
                 flags[ALU_FLAG_C] = 0;
                 flags[ALU_FLAG_V] = 0;
-                flags[ALU_FLAG_Z] = (R == 0);
+                flags[ALU_FLAG_Z] = (size == 1)? (R == 0): (R[7:0] == 0);
                 flags[ALU_FLAG_S] = R[msb];
             end
 
@@ -96,7 +96,7 @@ module alu
                 R = A ^ B;
                 flags[ALU_FLAG_C] = 0;
                 flags[ALU_FLAG_V] = 0;
-                flags[ALU_FLAG_Z] = (R == 0);
+                flags[ALU_FLAG_Z] = (size == 1)? (R == 0): (R[7:0] == 0);
                 flags[ALU_FLAG_S] = R[msb];
             end
 
@@ -124,7 +124,7 @@ module alu
 
                 flags[ALU_FLAG_V] = (A[msb] & B[msb] & ~R[msb]) | (~A[msb] & ~B[msb] & R[msb]);
                 // can we do this? flags[ALU_FLAG_V] = (R[msb] == flags[ALU_FLAG_C]);
-                flags[ALU_FLAG_Z] = (R == 0);
+                flags[ALU_FLAG_Z] = (size == 1)? (R == 0): (R[7:0] == 0);
                 flags[ALU_FLAG_S] = R[msb];
             end
 
@@ -152,7 +152,7 @@ module alu
                 end
 
                 flags[ALU_FLAG_V] = (A[msb] & ~B[msb] & ~R[msb]) | (~A[msb] & B[msb] & R[msb]);
-                flags[ALU_FLAG_Z] = (R == 0);
+                flags[ALU_FLAG_Z] = (size == 1)? (R == 0): (R[7:0] == 0);
                 flags[ALU_FLAG_S] = R[msb];
             end
 
@@ -161,7 +161,7 @@ module alu
                 R_temp[15:0] = A / {{8{B[7]}}, B[7:0]};
                 R = flags[ALU_FLAG_V]? A: {A[7:0] % B[7:0], R_temp[7:0]};
 
-                flags[ALU_FLAG_Z] = (B[7:0] != 0)? (R == 0): 0;
+                flags[ALU_FLAG_Z] = (B[7:0] != 0)? ((size == 1)? (R == 0): (R[7:0] == 0)): 0;
                 flags[ALU_FLAG_C] = 0;
                 flags[ALU_FLAG_V] = (B[7:0] != 0)? (R_temp[15:8] != 0): 1;
                 flags[ALU_FLAG_S] = (B[7:0] != 0)? R[7]: 1;
@@ -171,7 +171,7 @@ module alu
             begin
                 R = A[7:0] * B[7:0];
 
-                flags[ALU_FLAG_Z] = (R == 0);
+                flags[ALU_FLAG_Z] = (size == 1)? (R == 0): (R[7:0] == 0);
                 flags[ALU_FLAG_C] = 0;
                 flags[ALU_FLAG_V] = 0;
                 flags[ALU_FLAG_S] = R[15];
@@ -181,7 +181,7 @@ module alu
             begin
                 R = {A[14:0], A[msb]};
                 flags[ALU_FLAG_C] = A[msb];
-                flags[ALU_FLAG_Z] = (R == 0);
+                flags[ALU_FLAG_Z] = (size == 1)? (R == 0): (R[7:0] == 0);
                 flags[ALU_FLAG_S] = R[msb];
             end
 
@@ -189,7 +189,7 @@ module alu
             begin
                 R = {A[14:0], C};
                 flags[ALU_FLAG_C] = A[msb];
-                flags[ALU_FLAG_Z] = (R == 0);
+                flags[ALU_FLAG_Z] = (size == 1)? (R == 0): (R[7:0] == 0);
                 flags[ALU_FLAG_S] = R[msb];
             end
 
@@ -197,7 +197,7 @@ module alu
             begin
                 R = {A[15:8], A[0], A[7:1]};
                 flags[ALU_FLAG_C] = A[0];
-                flags[ALU_FLAG_Z] = (R == 0);
+                flags[ALU_FLAG_Z] = (size == 1)? (R == 0): (R[7:0] == 0);
                 flags[ALU_FLAG_S] = R[msb];
             end
 
@@ -205,7 +205,7 @@ module alu
             begin
                 R = {A[15:8], C, A[7:1]};
                 flags[ALU_FLAG_C] = A[0];
-                flags[ALU_FLAG_Z] = (R == 0);
+                flags[ALU_FLAG_Z] = (size == 1)? (R == 0): (R[7:0] == 0);
                 flags[ALU_FLAG_S] = R[msb];
             end
 
@@ -213,7 +213,7 @@ module alu
             begin
                 R = {A[14:0], 1'b0};
                 flags[ALU_FLAG_C] = A[msb];
-                flags[ALU_FLAG_Z] = (R == 0);
+                flags[ALU_FLAG_Z] = (size == 1)? (R == 0): (R[7:0] == 0);
                 flags[ALU_FLAG_S] = R[msb];
             end
 
@@ -221,7 +221,7 @@ module alu
             begin
                 R = {A[14:0], 1'b0};
                 flags[ALU_FLAG_C] = A[msb];
-                flags[ALU_FLAG_Z] = (R == 0);
+                flags[ALU_FLAG_Z] = (size == 1)? (R == 0): (R[7:0] == 0);
                 flags[ALU_FLAG_S] = R[msb];
                 flags[ALU_FLAG_V] = (A[msb] ^ A[msb-1]);
             end
@@ -230,7 +230,7 @@ module alu
             begin
                 R = {9'b0, A[7:1]};
                 flags[ALU_FLAG_C] = A[0];
-                flags[ALU_FLAG_Z] = (R == 0);
+                flags[ALU_FLAG_Z] = (size == 1)? (R == 0): (R[7:0] == 0);
                 flags[ALU_FLAG_S] = R[msb];
             end
 
@@ -238,7 +238,7 @@ module alu
             begin
                 R = {9'b0, A[7:1]};
                 flags[ALU_FLAG_C] = A[0];
-                flags[ALU_FLAG_Z] = (R == 0);
+                flags[ALU_FLAG_Z] = (size == 1)? (R == 0): (R[7:0] == 0);
                 flags[ALU_FLAG_S] = R[msb];
                 flags[ALU_FLAG_V] = 0;
             end

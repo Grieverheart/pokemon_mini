@@ -289,15 +289,13 @@ begin
                 24'h2084: // PRC Map Tile Base High
                     reg_map_base[20:16] <= bus_data_in[4:0];
 
+                // @todo: These should be set regardless!
                 24'h2085: // PRC Map Vertical Scroll
                     if(bus_data_in[6:0] <= (map_height*8-64))
                         reg_scroll_y <= bus_data_in[6:0];
                 24'h2086: // PRC Map Horizontal Scroll
-                begin
-                    //$display("REG_SCROLL_X set to %d", bus_data_in[6:0]);
                     if(bus_data_in[6:0] <= (map_width*8-96)) 
                         reg_scroll_x <= bus_data_in[6:0];
-                end
 
                 24'h2087: // PRC Sprite Tile Base Low
                     reg_sprite_base[7:6] <= bus_data_in[7:6];

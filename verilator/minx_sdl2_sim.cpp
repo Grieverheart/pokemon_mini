@@ -97,7 +97,7 @@ bool gl_renderer_init(int buffer_width, int buffer_height)
         "\n"
         "void main(void){\n"
         "    float val = texture(buffer, TexCoord).r;\n"
-        "    outColor = ((val > 0.5)? 1.0: 0.2) * vec3(0.611, 0.694, 0.611);\n"
+        "    outColor = val * vec3(0.611, 0.694, 0.611);\n"
         "}\n";
 
     static const char* vertex_shader =
@@ -823,6 +823,7 @@ uint8_t read_hardware_register(const uint8_t* registers, uint32_t address)
 struct SimData
 {
     Vminx* minx;
+    VerilatedVcdC* tfp;
 
     int timestamp;
     uint64_t osc1_clocks;
@@ -842,7 +843,7 @@ struct SimData
     uint8_t* instructions_executed;
 };
 
-void init_sim(SimData* sim, const char* cartridge_path)
+void sim_init(SimData* sim, const char* cartridge_path)
 {
     FILE* fp = fopen("data/bios.min", "rb");
     fseek(fp, 0, SEEK_END);
@@ -881,6 +882,30 @@ void init_sim(SimData* sim, const char* cartridge_path)
     sim->osc1_next_clock = sim->osc1_clocks;
 
     sim->timestamp = 0;
+
+    Verilated::traceEverOn(true);
+    sim->tfp = nullptr;
+}
+
+void sim_dump_stop(SimData* sim)
+{
+    if(!sim->tfp) return;
+    printf("Stopping dump.\n");
+
+    sim->tfp->close();
+    delete sim->tfp;
+    sim->tfp = nullptr;
+}
+
+void sim_dump_start(SimData* sim, const char* filepath)
+{
+    printf("Starting dump.\n");
+    if(sim->tfp)
+        sim_dump_stop(sim);
+
+    sim->tfp = new VerilatedVcdC;
+    sim->minx->trace(sim->tfp, 99);  // Trace 99 levels of hierarchy
+    sim->tfp->open(filepath);
 }
 
 void simulate_steps(SimData* sim, int n_steps)
@@ -893,8 +918,10 @@ void simulate_steps(SimData* sim, int n_steps)
         {
             sim->minx->rt_clk = !sim->minx->rt_clk;
             sim->minx->eval();
+            if(sim->tfp) sim->tfp->dump(sim->timestamp);
             sim->osc1_next_clock += sim->osc1_clocks;
         }
+        else if(sim->tfp) sim->tfp->dump(sim->timestamp);
         sim->timestamp++;
 
         sim->minx->clk = 0;
@@ -903,8 +930,10 @@ void simulate_steps(SimData* sim, int n_steps)
         {
             sim->minx->rt_clk = !sim->minx->rt_clk;
             sim->minx->eval();
+            if(sim->tfp) sim->tfp->dump(sim->timestamp);
             sim->osc1_next_clock += sim->osc1_clocks;
         }
+        else if(sim->tfp) sim->tfp->dump(sim->timestamp);
         sim->timestamp++;
 
         if(sim->minx->rootp->minx__DOT__irq_render_done && irq_render_done_old == 0)
@@ -979,6 +1008,8 @@ void simulate_steps(SimData* sim, int n_steps)
                         if(num_cycles != num_cycles_actual_branch || num_cycles_actual_branch == 0)
                             PRINTE(" ** Discrepancy found in number of cycles of instruction 0x%x: %d, %d, timestamp: %d** \n", extended_opcode, num_cycles, num_cycles_actual, sim->timestamp);
 
+                    //if(!sim->instructions_executed[extended_opcode])
+                    //    printf("Instruction 0x%x executed for the first time, at 0x%x, timestamp: %d.\n", extended_opcode, sim->minx->rootp->minx__DOT__cpu__DOT__top_address, sim->timestamp);
                     sim->instructions_executed[extended_opcode] = 1;
                 }
             }
@@ -1113,7 +1144,7 @@ int main(int argc, char** argv)
     int num_sim_steps = 150000;
 
     SimData sim;
-    init_sim(&sim, "data/party_j.min");
+    sim_init(&sim, "data/party_j.min");
 
     // Create window and gl context, and game controller
     int window_width = 960/2;
@@ -1176,6 +1207,7 @@ int main(int argc, char** argv)
 
     bool sim_is_running = true;
     bool program_is_running = true;
+    bool dump_sim = false;
     while(program_is_running)
     {
         // Process input
@@ -1190,35 +1222,50 @@ int main(int argc, char** argv)
                     sim_is_running = !sim_is_running;
                     continue;
                 }
-
-                switch(sdl_event.key.keysym.sym){
-                case SDLK_ESCAPE:
-                    program_is_running = false;
-                    break;
-                case SDLK_UP:
-                    sim.registers[0x52] = sim.registers[0x52] & 0xF7;
-                    break;
-                case SDLK_DOWN:
-                    sim.registers[0x52] = sim.registers[0x52] & 0xEF;
-                    break;
-                case SDLK_RIGHT:
-                    sim.registers[0x52] = sim.registers[0x52] & 0xBF;
-                    break;
-                case SDLK_LEFT:
-                    sim.registers[0x52] = sim.registers[0x52] & 0xDF;
-                    break;
-                case SDLK_x: // A
-                    sim.registers[0x52] = sim.registers[0x52] & 0xFE;
-                    break;
-                case SDLK_z: // B
-                    sim.registers[0x52] = sim.registers[0x52] & 0xFD;
-                    break;
-                case SDLK_s:
-                case SDLK_c:
-                    sim.registers[0x52] = sim.registers[0x52] & 0xFB;
-                    break;
-                default:
-                    break;
+                else if(sdl_event.key.keysym.sym == SDLK_d)
+                {
+                    if(!dump_sim)
+                    {
+                        dump_sim = true;
+                        sim_dump_start(&sim, "sim.vcd");
+                    }
+                    else
+                    {
+                        dump_sim = false;
+                        sim_dump_stop(&sim);
+                    }
+                }
+                else
+                {
+                    switch(sdl_event.key.keysym.sym){
+                    case SDLK_ESCAPE:
+                        program_is_running = false;
+                        break;
+                    case SDLK_UP:
+                        sim.registers[0x52] = sim.registers[0x52] & 0xF7;
+                        break;
+                    case SDLK_DOWN:
+                        sim.registers[0x52] = sim.registers[0x52] & 0xEF;
+                        break;
+                    case SDLK_RIGHT:
+                        sim.registers[0x52] = sim.registers[0x52] & 0xBF;
+                        break;
+                    case SDLK_LEFT:
+                        sim.registers[0x52] = sim.registers[0x52] & 0xDF;
+                        break;
+                    case SDLK_x: // A
+                        sim.registers[0x52] = sim.registers[0x52] & 0xFE;
+                        break;
+                    case SDLK_z: // B
+                        sim.registers[0x52] = sim.registers[0x52] & 0xFD;
+                        break;
+                    case SDLK_s:
+                    case SDLK_c:
+                        sim.registers[0x52] = sim.registers[0x52] & 0xFB;
+                        break;
+                    default:
+                        break;
+                    }
                 }
             }
             else if(sdl_event.type == SDL_KEYUP)
