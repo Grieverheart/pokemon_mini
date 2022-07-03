@@ -1139,12 +1139,25 @@ uint8_t* get_lcd_image(Vminx& minx)
     return image_data;
 }
 
+// @todo: Create a call stack for keeping track call/return problems.
 int main(int argc, char** argv)
 {
     int num_sim_steps = 150000;
 
     SimData sim;
-    sim_init(&sim, "data/pichu_bros_mini_j.min");
+    //const char* rom_filepath = "data/party_j.min";
+    //const char* rom_filepath = "data/6shades.min";
+    //const char* rom_filepath = "data/pichu_bros_mini_j.min";
+    const char* rom_filepath = "data/pokemon_anime_card_daisakusen_j.min";
+    //const char* rom_filepath = "data/snorlaxs_lunch_time_j.min";
+    //const char* rom_filepath = "data/pokemon_shock_tetris_j.min";
+    //const char* rom_filepath = "data/togepi_no_daibouken_j.min";
+    //const char* rom_filepath = "data/pokemon_race_mini_j.min";
+    //const char* rom_filepath = "data/pokemon_sodateyasan_mini_j.min";
+    //const char* rom_filepath = "data/pokemon_puzzle_collection_j.min";
+    //const char* rom_filepath = "data/pokemon_puzzle_collection_vol2_j.min";
+    //const char* rom_filepath = "data/pokemon_pinball_mini_j.min";
+    sim_init(&sim, rom_filepath);
 
     // Create window and gl context, and game controller
     int window_width = 960/2;
