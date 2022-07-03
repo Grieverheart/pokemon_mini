@@ -1144,7 +1144,7 @@ int main(int argc, char** argv)
     int num_sim_steps = 150000;
 
     SimData sim;
-    sim_init(&sim, "data/party_j.min");
+    sim_init(&sim, "data/pichu_bros_mini_j.min");
 
     // Create window and gl context, and game controller
     int window_width = 960/2;
