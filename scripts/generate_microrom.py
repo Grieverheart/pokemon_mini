@@ -112,6 +112,7 @@ if __name__ == '__main__':
     num_opcodes_implemented = 0
     default_address = 0
     done_flags_in_instruction = 0
+    microinstruction_addresses = []
     for line in lines:
         line = line.strip()
 
@@ -143,6 +144,7 @@ if __name__ == '__main__':
                 else:
                     num_opcodes_implemented += 1
                     addresses[opcode] = microinstruction_address
+                    microinstruction_addresses.append(microinstruction_address)
         else:
             microcommands = line.split(' ')
             microcommands = [x for x in microcommands if len(x) > 0]
@@ -157,6 +159,13 @@ if __name__ == '__main__':
             assert(len(command) == microinstruction_width)
             rom.append(command)
             microinstruction_address += 1
+
+    from collections import Counter
+    microprograms = [int(''.join(rom[x[0]:x[1]]),2) for x in zip(microinstruction_addresses[:-1], microinstruction_addresses[1:])]
+    duplicates = [i for i,(k,v) in enumerate(Counter(microprograms).items()) if v > 1]
+    if len(duplicates) > 0:
+        print("Warning: duplicates found! Check the following rom addresses:")
+        print([microinstruction_addresses[x] for x in duplicates])
 
     print('%d microinstructions in rom.' % len(rom))
     print('%d/608 opcodes implemented.' % num_opcodes_implemented)
