@@ -106,6 +106,11 @@ if __name__ == '__main__':
 
     # @todo: Also check if MOV_DATA is called enough times given the
     # instruction number of arguments.
+    done_exceptions = [
+        0xE0, 0xE1, 0xE2, 0xE3, 0x1F0, 0x1F1, 0x1F2, 0x1F3, 0x1F4, 0x1F5, 0x1F6, 0x1F7,
+        0x1F8, 0x1F9, 0x1FA, 0x1FB, 0x1FC, 0x1FD, 0x1FE, 0x1FF, 0xE8, 0xE9, 0xEA, 0xEB
+    ]
+
     addresses = [-1] * 768
     rom = []
     microinstruction_address = 0
@@ -125,7 +130,8 @@ if __name__ == '__main__':
 
         if line[0] == '#':
             if done_flags_in_instruction > 1:
-                print('Warning: opcode 0x%x has multiple DONE!' % opcode)
+                if opcode not in done_exceptions:
+                    print('Warning: opcode 0x%x has multiple DONE!' % opcode)
             done_flags_in_instruction = 0
             if line[1:] == 'default':
                 default_address = microinstruction_address
