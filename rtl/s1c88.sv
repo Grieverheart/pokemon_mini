@@ -340,7 +340,8 @@ module s1c88
         MICRO_ALU_OP_MUL   = 5'h16,
         MICRO_ALU_OP_PACK  = 5'h17,
         MICRO_ALU_OP_UPACK = 5'h18,
-        MICRO_ALU_OP_SEP   = 5'h19;
+        MICRO_ALU_OP_SEP   = 5'h19,
+        MICRO_ALU_OP_SWAP  = 5'h1A;
 
     localparam
         MICRO_ALU8  = 1'b0,
@@ -756,6 +757,9 @@ module s1c88
 
                 MICRO_ALU_OP_SEP:
                     alu_op <= ALUOP_SEP;
+
+                MICRO_ALU_OP_SWAP:
+                    alu_op <= ALUOP_SWAP;
 
                 default:
                 begin

@@ -1,15 +1,15 @@
 enum [4:0]
 {
-    ALUOP_ADD   = 5'd0,
-    ALUOP_OR    = 5'd1,
-    ALUOP_ADC   = 5'd2,
-    ALUOP_SBC   = 5'd3,
-    ALUOP_AND   = 5'd4,
-    ALUOP_SUB   = 5'd5,
-    ALUOP_XOR   = 5'd6,
+    ALUOP_ADD   = 5'd00,
+    ALUOP_OR    = 5'd01,
+    ALUOP_ADC   = 5'd02,
+    ALUOP_SBC   = 5'd03,
+    ALUOP_AND   = 5'd04,
+    ALUOP_SUB   = 5'd05,
+    ALUOP_XOR   = 5'd06,
 
-    ALUOP_RLC   = 5'd8,
-    ALUOP_RRC   = 5'd9,
+    ALUOP_RLC   = 5'd08,
+    ALUOP_RRC   = 5'd09,
     ALUOP_RL    = 5'd10,
     ALUOP_RR    = 5'd11,
     ALUOP_SLL   = 5'd12,
@@ -28,7 +28,8 @@ enum [4:0]
 
     ALUOP_PACK  = 5'd23,
     ALUOP_UPACK = 5'd24,
-    ALUOP_SEP   = 5'd25
+    ALUOP_SWAP  = 5'd25,
+    ALUOP_SEP   = 5'd26
 } AluOp;
 
 enum [1:0]
@@ -252,6 +253,12 @@ module alu
             ALUOP_UPACK:
             begin
                 R = {4'd0, A[7:4], 4'd0, A[3:0]};
+                flags = 4'd0;
+            end
+
+            ALUOP_SWAP:
+            begin
+                R = {8'd0, A[3:0], A[7:4]};
                 flags = 4'd0;
             end
 
