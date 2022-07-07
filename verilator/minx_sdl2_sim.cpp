@@ -825,7 +825,7 @@ struct SimData
     Vminx* minx;
     VerilatedVcdC* tfp;
 
-    int timestamp;
+    uint64_t timestamp;
     uint64_t osc1_clocks;
     uint64_t osc1_next_clock;
 
@@ -899,12 +899,13 @@ void sim_dump_stop(SimData* sim)
 
 void sim_dump_start(SimData* sim, const char* filepath)
 {
-    printf("Starting dump.\n");
+    printf("Starting dump at timestamp: %llu.\n", sim->timestamp);
     if(sim->tfp)
         sim_dump_stop(sim);
 
     sim->tfp = new VerilatedVcdC;
     sim->minx->trace(sim->tfp, 99);  // Trace 99 levels of hierarchy
+    sim->tfp->rolloverMB(209715200);
     sim->tfp->open(filepath);
 }
 
@@ -983,7 +984,7 @@ void simulate_steps(SimData* sim, int n_steps)
                 if(sim->minx->rootp->minx__DOT__cpu__DOT__microaddress == 0 &&
                    sim->minx->rootp->minx__DOT__cpu__DOT__extended_opcode != 0x1AE
                 ){
-                    PRINTE("** Instruction 0x%x not implemented at 0x%x, timestamp: %d**\n", sim->minx->rootp->minx__DOT__cpu__DOT__extended_opcode, sim->minx->rootp->minx__DOT__cpu__DOT__top_address, sim->timestamp);
+                    PRINTE("** Instruction 0x%x not implemented at 0x%x, timestamp: %llu**\n", sim->minx->rootp->minx__DOT__cpu__DOT__extended_opcode, sim->minx->rootp->minx__DOT__cpu__DOT__top_address, sim->timestamp);
                 }
             }
 
@@ -1006,44 +1007,55 @@ void simulate_steps(SimData* sim, int n_steps)
 
                     if(num_cycles != num_cycles_actual)
                         if(num_cycles != num_cycles_actual_branch || num_cycles_actual_branch == 0)
-                            PRINTE(" ** Discrepancy found in number of cycles of instruction 0x%x: %d, %d, timestamp: %d** \n", extended_opcode, num_cycles, num_cycles_actual, sim->timestamp);
+                            PRINTE(" ** Discrepancy found in number of cycles of instruction 0x%x: %d, %d, timestamp: %llu** \n", extended_opcode, num_cycles, num_cycles_actual, sim->timestamp);
 
-                    //if(!sim->instructions_executed[extended_opcode])
-                    //    printf("Instruction 0x%x executed for the first time, at 0x%x, timestamp: %d.\n", extended_opcode, sim->minx->rootp->minx__DOT__cpu__DOT__top_address, sim->timestamp);
+                    if(!sim->instructions_executed[extended_opcode])
+                        printf("Instruction 0x%x executed for the first time, at 0x%x, timestamp: %llu.\n", extended_opcode, sim->minx->rootp->minx__DOT__cpu__DOT__top_address, sim->timestamp);
                     sim->instructions_executed[extended_opcode] = 1;
                 }
             }
 
             if(sim->minx->rootp->minx__DOT__cpu__DOT__not_implemented_addressing_error == 1 && sim->minx->pl == 0)
-                PRINTE(" ** Addressing not implemented error: 0x%llx, timestamp: %d** \n", (sim->minx->rootp->minx__DOT__cpu__DOT__micro_op & 0x3F00000) >> 20, sim->timestamp);
+                PRINTE(" ** Addressing not implemented error: 0x%llx, timestamp: %llu** \n", (sim->minx->rootp->minx__DOT__cpu__DOT__micro_op & 0x3F00000) >> 20, sim->timestamp);
 
             if(sim->minx->rootp->minx__DOT__cpu__DOT__not_implemented_jump_error == 1 && sim->minx->pl == 0)
-                PRINTE(" ** Jump not implemented error, 0x%llx, timestamp: %d** \n", (sim->minx->rootp->minx__DOT__cpu__DOT__micro_op & 0x7C000) >> 14, sim->timestamp);
+                PRINTE(" ** Jump not implemented error, 0x%llx, timestamp: %llu** \n", (sim->minx->rootp->minx__DOT__cpu__DOT__micro_op & 0x7C000) >> 14, sim->timestamp);
 
             if(sim->minx->rootp->minx__DOT__cpu__DOT__not_implemented_data_out_error == 1 && sim->minx->pl == 1)
-                PRINTE(" ** Data-out not implemented error, timestamp: %d** \n", sim->timestamp);
+                PRINTE(" ** Data-out not implemented error, timestamp: %llu** \n", sim->timestamp);
 
             if(sim->minx->rootp->minx__DOT__cpu__DOT__not_implemented_mov_src_error == 1 && sim->minx->pl == 0)
-                PRINTE(" ** Mov src not implemented error, timestamp: %d** \n", sim->timestamp);
+                PRINTE(" ** Mov src not implemented error, timestamp: %llu** \n", sim->timestamp);
 
             if(sim->minx->rootp->minx__DOT__cpu__DOT__not_implemented_write_error == 1 && sim->minx->pl == 0)
-                PRINTE(" ** Write not implemented error, timestamp: %d** \n", sim->timestamp);
+                PRINTE(" ** Write not implemented error, timestamp: %llu** \n", sim->timestamp);
 
             if(sim->minx->rootp->minx__DOT__cpu__DOT__alu_op_error == 1 && sim->minx->pl == 0)
-                PRINTE(" ** Alu not implemented error, timestamp: %d** \n", sim->timestamp);
+                PRINTE(" ** Alu not implemented error, timestamp: %llu** \n", sim->timestamp);
 
             if(sim->minx->rootp->minx__DOT__cpu__DOT__not_implemented_alu_dec_pack_ops_error == 1 && sim->minx->pl == 0)
-                PRINTE(" ** Alu decimal and packed operations not implemented error, sim->timestamp: %d** \n", sim->timestamp);
+                PRINTE(" ** Alu decimal and packed operations not implemented error, sim->timestamp: %llu** \n", sim->timestamp);
 
             if(sim->minx->rootp->minx__DOT__cpu__DOT__not_implemented_divzero_error == 1 && sim->minx->pl == 0)
-                PRINTE(" ** Division by zero exception not implemented error, sim->timestamp: %d**\n", sim->timestamp);
+                PRINTE(" ** Division by zero exception not implemented error, sim->timestamp: %llu**\n", sim->timestamp);
 
             if(sim->minx->rootp->minx__DOT__cpu__DOT__SP > 0x2000 && sim->minx->pl == 0)
             {
-                PRINTE(" ** Stack overflow, timestamp: %d**\n", sim->timestamp);
+                PRINTE(" ** Stack overflow, timestamp: %llu**\n", sim->timestamp);
                 break;
             }
         }
+
+        //if(
+        //    sim->minx->rootp->minx__DOT__cpu__DOT__postpone_exception == 1 &&
+        //    sim->minx->rootp->iack == 1 &&
+        //    sim->minx->rootp->minx__DOT__cpu__DOT__NB > 0
+        //){
+        //    if(!sim->tfp)
+        //        sim_dump_start(sim, "temp.vcd");
+        //}
+        //if(sim->timestamp == 23475360-1000)
+        //    sim_dump_start(sim, "temp.vcd");
 
         if(sim->timestamp >= 8)
             sim->minx->reset = 0;
@@ -1087,7 +1099,7 @@ void simulate_steps(SimData* sim, int n_steps)
             // memory write
             if(sim->minx->address_out < 0x1000)
             {
-                PRINTD("Program trying to write to bios at 0x%x, timestamp: %d\n", sim->minx->address_out, sim->timestamp);
+                PRINTD("Program trying to write to bios at 0x%x, timestamp: %llu\n", sim->minx->address_out, sim->timestamp);
             }
             else if(sim->minx->address_out < 0x2000)
             {
@@ -1102,7 +1114,7 @@ void simulate_steps(SimData* sim, int n_steps)
             }
             else
             {
-                PRINTD("Program trying to write to cartridge at 0x%x, timestamp: %d\n", sim->minx->address_out, sim->timestamp);
+                PRINTD("Program trying to write to cartridge at 0x%x, timestamp: %llu\n", sim->minx->address_out, sim->timestamp);
             }
 
             data_sent = true;
@@ -1147,11 +1159,15 @@ int main(int argc, char** argv)
     SimData sim;
     //const char* rom_filepath = "data/party_j.min";
     //const char* rom_filepath = "data/6shades.min";
-    //const char* rom_filepath = "data/pichu_bros_mini_j.min";
-    const char* rom_filepath = "data/pokemon_anime_card_daisakusen_j.min";
+    // Rendering issues, missing sprites etc.
+    const char* rom_filepath = "data/pichu_bros_mini_j.min";
+    //const char* rom_filepath = "data/pokemon_anime_card_daisakusen_j.min";
     //const char* rom_filepath = "data/snorlaxs_lunch_time_j.min";
+    // Rendering issues due to scrolling?
     //const char* rom_filepath = "data/pokemon_shock_tetris_j.min";
+    // Rendering issues! One issue is when scrolling on the y.
     //const char* rom_filepath = "data/togepi_no_daibouken_j.min";
+    // Rendering issues mainly due to scrolling, but also crashing randomly.
     //const char* rom_filepath = "data/pokemon_race_mini_j.min";
     //const char* rom_filepath = "data/pokemon_sodateyasan_mini_j.min";
     //const char* rom_filepath = "data/pokemon_puzzle_collection_j.min";
@@ -1335,6 +1351,8 @@ int main(int argc, char** argv)
 
         SDL_GL_SwapWindow(window);
     }
+
+    sim_dump_stop(&sim);
 
     SDL_GL_DeleteContext(gl_context);
     SDL_DestroyWindow(window);

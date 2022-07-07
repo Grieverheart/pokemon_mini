@@ -373,11 +373,12 @@ begin
                         begin
                             // Read tile address
                             bus_address_out <= 24'h1360 + map_y[7:3] * map_width + {19'd0, map_x[7:3]};
+                            //bus_address_out <= bus_address_out + {19'd0, map_width};
                         end
                         else if(execution_step % 3 == 1)
                         begin
                             // Read tile data
-                            bus_address_out <= reg_map_base + {13'd0, bus_data_in, map_y[2:0]} + {21'd0, map_x[2:0]};
+                            bus_address_out <= reg_map_base + {13'd0, bus_data_in, map_x[2:0]};
                         end
                         else
                         begin
@@ -386,7 +387,8 @@ begin
                             // either do it on the last negedge, or even better,
                             // make it work only on posedge.
 
-                            data_out <= bus_data_in;
+                            // @todo: Need to read two tiles!
+                            data_out <= (bus_data_in >> map_y[2:0]);
                             bus_address_out <= 24'h1000 + yC * 96 + {16'h0, xC};
 
                             xC <= xC + 1;

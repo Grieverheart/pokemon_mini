@@ -91,7 +91,6 @@ module s1c88
     // leaving (I think) only the possibility of updating PC at PL == 1.
     //
     //
-    // @todo:
     // "Interrupts are disabled while the instruction to modify the contents of
     // NB or SC is being executed. The exception processing of the interrupt
     // generated during that period is started after the following instruction
@@ -670,6 +669,18 @@ module s1c88
         {opcode_extension[1:0], opext}:
         {2'd0, opcode};
 
+    reg postpone_exception;
+    always_comb
+    begin
+        case(extended_opcode)
+            10'h9C, 10'h9D, 10'h9E, 10'h9F,
+            10'hAF, 10'hF9, 10'h1CC, 10'h1C3, 10'h1C4:
+                postpone_exception = 1;
+            default:
+                postpone_exception = 0;
+        endcase
+    end
+
     reg alu_op_error;
     reg not_implemented_divzero_error;
     always_ff @ (negedge clk, posedge reset)
@@ -1049,7 +1060,7 @@ module s1c88
                     begin
                         fetch_opcode <= 1;
 
-                        if(exception != EXCEPTION_TYPE_NONE && iack == 0)
+                        if(exception != EXCEPTION_TYPE_NONE && iack == 0 && postpone_exception == 0)
                         begin
                             iack                   <= 1;
                             exception_process_step <= 0;
