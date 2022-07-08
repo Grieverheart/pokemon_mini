@@ -235,6 +235,10 @@ reg [6:0] sprite_x;
 reg [6:0] sprite_y;
 reg [7:0] sprite_tile_address;
 reg [3:0] sprite_info;
+
+reg [7:0] tile_address;
+reg [7:0] tile_data;
+
 wire sprite_enabled = sprite_info[3];
 wire [7:0] sprite_tile_offset = {5'd0, sprite_tile_index[1], 2'd0} + {7'd0, sprite_tile_index[0]};
 wire [7:0] sprite_color = sprite_info[2]? ~sprite_data: sprite_data;
@@ -364,31 +368,37 @@ begin
                     begin
                         execution_step <= execution_step + 1;
 
-                        if(execution_step % 3 < 2)
+                        if(execution_step % 5 < 4)
                             bus_status <= BUS_COMMAND_MEM_READ;
                         else
                             bus_status <= BUS_COMMAND_MEM_WRITE;
 
-                        if(execution_step % 3 == 0)
+                        if(execution_step % 5 == 0)
                         begin
-                            // Read tile address
+                            // Read tile address (top)
                             bus_address_out <= 24'h1360 + map_y[7:3] * map_width + {19'd0, map_x[7:3]};
-                            //bus_address_out <= bus_address_out + {19'd0, map_width};
                         end
-                        else if(execution_step % 3 == 1)
+                        else if(execution_step % 5 == 1)
                         begin
-                            // Read tile data
-                            bus_address_out <= reg_map_base + {13'd0, bus_data_in, map_x[2:0]};
+                            // Read tile address (bottom)
+                            bus_address_out <= bus_address_out + {19'd0, map_width};
+                            tile_address    <= bus_data_in;
+                        end
+                        else if(execution_step % 5 == 2)
+                        begin
+                            // Read tile data (top)
+                            bus_address_out <= reg_map_base + {13'd0, tile_address, map_x[2:0]};
+                            tile_address    <= bus_data_in;
+                        end
+                        else if(execution_step % 5 == 3)
+                        begin
+                            // Read tile data (bottom)
+                            bus_address_out <= reg_map_base + {13'd0, tile_address, map_x[2:0]};
+                            tile_data       <= bus_data_in;
                         end
                         else
                         begin
-                            // @note: Perform this at the last posedge step to
-                            // avoid changing stuff too early. Ideally I should
-                            // either do it on the last negedge, or even better,
-                            // make it work only on posedge.
-
-                            // @todo: Need to read two tiles!
-                            data_out <= (bus_data_in >> map_y[2:0]);
+                            data_out <= (tile_data >> map_y[2:0]) | (bus_data_in << (8 - map_y[2:0]));
                             bus_address_out <= 24'h1000 + yC * 96 + {16'h0, xC};
 
                             xC <= xC + 1;
