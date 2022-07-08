@@ -740,11 +740,11 @@ begin
         24'h2086: // PRC Map Horizontal Scroll
             reg_data_out = {1'd0, reg_scroll_x};
         24'h2087: // PRC Map Sprite Base (Lo)
-            reg_data_out = reg_map_base[7:0];
+            reg_data_out = reg_sprite_base[7:0];
         24'h2088: // PRC Map Sprite Base (Med)
-            reg_data_out = reg_map_base[15:8];
+            reg_data_out = reg_sprite_base[15:8];
         24'h2089: // PRC Map Sprite Base (Hi)
-            reg_data_out = reg_map_base[23:16];
+            reg_data_out = reg_sprite_base[23:16];
         24'h208A: // PRC Counter
             reg_data_out = {1'd0, reg_counter};
         default:

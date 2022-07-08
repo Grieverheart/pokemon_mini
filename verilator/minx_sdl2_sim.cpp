@@ -1159,16 +1159,15 @@ int main(int argc, char** argv)
     SimData sim;
     //const char* rom_filepath = "data/party_j.min";
     //const char* rom_filepath = "data/6shades.min";
-    // Rendering issues, missing sprites etc.
-    const char* rom_filepath = "data/pichu_bros_mini_j.min";
+    //const char* rom_filepath = "data/pichu_bros_mini_j.min";
     //const char* rom_filepath = "data/pokemon_anime_card_daisakusen_j.min";
     //const char* rom_filepath = "data/snorlaxs_lunch_time_j.min";
     // Rendering issues due to scrolling?
     //const char* rom_filepath = "data/pokemon_shock_tetris_j.min";
-    // Rendering issues! One issue is when scrolling on the y.
+    // Rendering issues due to scrolling?
     //const char* rom_filepath = "data/togepi_no_daibouken_j.min";
-    // Rendering issues mainly due to scrolling, but also crashing randomly.
-    //const char* rom_filepath = "data/pokemon_race_mini_j.min";
+    // Rendering issues mainly due to scrolling.
+    const char* rom_filepath = "data/pokemon_race_mini_j.min";
     //const char* rom_filepath = "data/pokemon_sodateyasan_mini_j.min";
     //const char* rom_filepath = "data/pokemon_puzzle_collection_j.min";
     //const char* rom_filepath = "data/pokemon_puzzle_collection_vol2_j.min";
