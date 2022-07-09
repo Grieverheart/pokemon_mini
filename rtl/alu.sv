@@ -159,7 +159,7 @@ module alu
 
             ALUOP_DIV:
             begin
-                R_temp[15:0] = A / {{8{B[7]}}, B[7:0]};
+                R_temp[15:0] = A / {8'd0, B[7:0]};
                 R = flags[ALU_FLAG_V]? A: {A[7:0] % B[7:0], R_temp[7:0]};
 
                 flags[ALU_FLAG_Z] = (B[7:0] != 0)? ((size == 1)? (R == 0): (R[7:0] == 0)): 0;
