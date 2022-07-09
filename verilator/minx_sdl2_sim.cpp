@@ -35,8 +35,6 @@ enum
     BUS_MEM_READ  = 0x3
 };
 
-uint32_t sec_cnt = 0;
-uint8_t sec_ctrl = 0;
 uint32_t prc_map = 0;
 uint8_t prc_mode = 0;
 uint8_t prc_rate = 0;
@@ -189,7 +187,6 @@ void write_hardware_register(uint8_t* registers, uint32_t address, uint8_t data)
         case 0x08:
         {
             PRINTD("Writing hardware register SEC_CTRL=");
-            sec_ctrl = data & 3;
         }
         break;
 
@@ -575,28 +572,24 @@ uint8_t read_hardware_register(const uint8_t* registers, uint32_t address)
         case 0x8:
         {
             PRINTD("Reading hardware register SEC_CTRL=");
-            data = sec_ctrl;
         }
         break;
 
         case 0x9:
         {
             PRINTD("Reading hardware register SEC_CNT_LO=");
-            data = sec_cnt & 0xFF;
         }
         break;
 
         case 0xA:
         {
             PRINTD("Reading hardware register SEC_CNT_MID=");
-            data = (sec_cnt >> 8) & 0xFF;
         }
         break;
 
         case 0xB:
         {
             PRINTD("Reading hardware register SEC_CNT_MID=");
-            data = (sec_cnt >> 16) & 0xFF;
         }
         break;
 
@@ -969,12 +962,6 @@ void simulate_steps(SimData* sim, int n_steps)
 
         // At rising edge of clock
         data_sent = false;
-
-        if(sec_ctrl & 2)
-            sec_cnt = 0;
-
-        if((sec_ctrl & 1) && (sim->timestamp % 4000000 == 0))
-            ++sec_cnt;
 
 
         // Check for errors

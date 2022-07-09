@@ -1,5 +1,3 @@
-// @todo: Implement interrupts
-
 module timer256
 (
     input clk,

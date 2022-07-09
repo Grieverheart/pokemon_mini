@@ -101,6 +101,18 @@ module minx
         .osc256         (osc256)
     );
 
+    wire [7:0] rtc_data_out;
+    rtc rtc
+    (
+        .clk            (clk),
+        .rt_clk         (rt_clk),
+        .reset          (reset),
+        .bus_write      (write),
+        .bus_address_in (cpu_address_out),
+        .bus_data_in    (cpu_data_out),
+        .bus_data_out   (rtc_data_out)
+    );
+
     wire [3:0] t256_irqs;
     wire [7:0] timer256_data_out;
     timer256 timer256
@@ -178,6 +190,7 @@ module minx
         | lcd_data_out
         | prc_data_out
         | io_data_out
+        | rtc_data_out
         | timer256_data_out
         | timer1_data_out
         | irq_data_out;
@@ -188,6 +201,7 @@ module minx
          address_out == 24'h20FE || address_out == 24'h20FF ||
          address_out == 24'h2040 || address_out == 24'h2041 ||
          address_out == 24'h2060 || address_out == 24'h2061 ||
+        (address_out >= 24'h2008 && address_out <= 24'h200B)||
         (address_out >= 24'h2020 && address_out <= 24'h202A)||
         (address_out >= 24'h2030 && address_out <= 24'h2037)||
         (address_out >= 24'h2080 && address_out <= 24'h208F)) &&
