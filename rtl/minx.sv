@@ -84,6 +84,17 @@ module minx
         .cpu_irq         (cpu_irq)
     );
 
+    wire [7:0] sc_data_out;
+    system_control system_control
+    (
+        .clk            (clk),
+        .reset          (reset),
+        .bus_write      (write),
+        .bus_address_in (cpu_address_out),
+        .bus_data_in    (cpu_data_out),
+        .bus_data_out   (sc_data_out)
+    );
+
     wire [2:0] t1_irqs;
     wire [7:0] timer1_data_out;
     wire osc256;
@@ -190,6 +201,7 @@ module minx
         | lcd_data_out
         | prc_data_out
         | io_data_out
+        | sc_data_out
         | rtc_data_out
         | timer256_data_out
         | timer1_data_out
@@ -201,6 +213,7 @@ module minx
          address_out == 24'h20FE || address_out == 24'h20FF ||
          address_out == 24'h2040 || address_out == 24'h2041 ||
          address_out == 24'h2060 || address_out == 24'h2061 ||
+        (address_out >= 24'h2000 && address_out <= 24'h2002)||
         (address_out >= 24'h2008 && address_out <= 24'h200B)||
         (address_out >= 24'h2020 && address_out <= 24'h202A)||
         (address_out >= 24'h2030 && address_out <= 24'h2037)||
