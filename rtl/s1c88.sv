@@ -98,10 +98,10 @@ module s1c88
 
     // @todo:
     //
+    // * Bus wait states.
     // * Implement HALT.
     // * Implement EXCEPTION_TYPE_DIVZERO.
     // * Implement alu decimal operations
-    // * Bus wait states.
 
     // For jump instruction we need: condition, offset (TA1/TA2). I think
     // we'll leave the mov instructions in there as common to all

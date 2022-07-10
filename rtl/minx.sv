@@ -4,10 +4,10 @@ module minx
     input rt_clk,
     input reset,
     input [7:0] data_in,
+    input [7:0] keys_active,
     output logic pk,
     output logic pl,
     output wire [1:0] i01,
-
     output logic [7:0] data_out,
     output logic [23:0] address_out,
     output logic [1:0]  bus_status,
@@ -82,6 +82,15 @@ module minx
         .bus_address_out (irq_address_out),
         .bus_data_out    (irq_data_out),
         .cpu_irq         (cpu_irq)
+    );
+
+    wire [7:0] key_data_out;
+    key_input key_input
+    (
+        .reset          (reset),
+        .keys_active    (keys_active),
+        .bus_address_in (cpu_address_out),
+        .bus_data_out   (key_data_out)
     );
 
     wire [7:0] sc_data_out;
@@ -212,6 +221,7 @@ module minx
     wire [7:0] reg_data_out = 0
         | lcd_data_out
         | prc_data_out
+        | key_data_out
         | io_data_out
         | sc_data_out
         | sound_data_out
@@ -223,7 +233,6 @@ module minx
 
     wire [7:0] cpu_data_in = 
     (
-        (address_out != 24'h2052) &&
         (address_out >= 24'h2000) &&
         (address_out <  24'h2100) &&
         (bus_status == cpu.BUS_COMMAND_MEM_READ)

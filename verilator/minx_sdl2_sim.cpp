@@ -167,26 +167,6 @@ void gl_renderer_draw(int buffer_width, int buffer_height, void* buffer_data)
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 }
 
-uint8_t read_hardware_register(const uint8_t* registers, uint32_t address)
-{
-    switch(address)
-    {
-
-        case 0x52:
-        {
-            return registers[address];
-        }
-        break;
-
-        default:
-        {
-            return 0;
-        }
-        break;
-    }
-    return 0;
-}
-
 struct SimData
 {
     Vminx* minx;
@@ -195,8 +175,6 @@ struct SimData
     uint64_t timestamp;
     uint64_t osc1_clocks;
     uint64_t osc1_next_clock;
-
-    uint8_t registers[256] = {};
 
     uint8_t* bios;
     uint8_t* memory;
@@ -241,8 +219,6 @@ void sim_init(SimData* sim, const char* cartridge_path)
     sim->minx = new Vminx;
     sim->minx->clk = 0;
     sim->minx->reset = 1;
-
-    sim->registers[0x52] = 0xFF;
 
     sim->osc1_clocks = 4000000.0 / 32768.0 + 0.5;
     sim->osc1_next_clock = sim->osc1_clocks;
@@ -369,8 +345,8 @@ void simulate_steps(SimData* sim, int n_steps)
                         if(num_cycles != num_cycles_actual_branch || num_cycles_actual_branch == 0)
                             PRINTE(" ** Discrepancy found in number of cycles of instruction 0x%x: %d, %d, timestamp: %llu** \n", extended_opcode, num_cycles, num_cycles_actual, sim->timestamp);
 
-                    if(!sim->instructions_executed[extended_opcode])
-                        printf("Instruction 0x%x executed for the first time, at 0x%x, timestamp: %llu.\n", extended_opcode, sim->minx->rootp->minx__DOT__cpu__DOT__top_address, sim->timestamp);
+                    //if(!sim->instructions_executed[extended_opcode])
+                    //    printf("Instruction 0x%x executed for the first time, at 0x%x, timestamp: %llu.\n", extended_opcode, sim->minx->rootp->minx__DOT__cpu__DOT__top_address, sim->timestamp);
                     sim->instructions_executed[extended_opcode] = 1;
                 }
             }
@@ -440,12 +416,7 @@ void simulate_steps(SimData* sim, int n_steps)
                 uint32_t address = sim->minx->address_out & 0xFFF;
                 sim->minx->data_in = *(uint8_t*)(sim->memory + address);
             }
-            else if(sim->minx->address_out < 0x2100)
-            {
-                // read from hardware registers (now only reads key registers).
-                sim->minx->data_in = read_hardware_register(sim->registers, sim->minx->address_out & 0x1FFF);
-            }
-            else
+            else if(sim->minx->address_out >= 0x2100)
             {
                 // read from cartridge
                 sim->cartridge_touched[(sim->minx->address_out & 0x1FFFFF) & (sim->cartridge_file_size - 1)] = 1;
@@ -624,26 +595,26 @@ int main(int argc, char** argv)
                         program_is_running = false;
                         break;
                     case SDLK_UP:
-                        sim.registers[0x52] = sim.registers[0x52] & 0xF7;
+                        sim.minx->keys_active |= 0x08;
                         break;
                     case SDLK_DOWN:
-                        sim.registers[0x52] = sim.registers[0x52] & 0xEF;
+                        sim.minx->keys_active |= 0x10;
                         break;
                     case SDLK_RIGHT:
-                        sim.registers[0x52] = sim.registers[0x52] & 0xBF;
+                        sim.minx->keys_active |= 0x40;
                         break;
                     case SDLK_LEFT:
-                        sim.registers[0x52] = sim.registers[0x52] & 0xDF;
+                        sim.minx->keys_active |= 0x20;
                         break;
                     case SDLK_x: // A
-                        sim.registers[0x52] = sim.registers[0x52] & 0xFE;
+                        sim.minx->keys_active |= 0x01;
                         break;
                     case SDLK_z: // B
-                        sim.registers[0x52] = sim.registers[0x52] & 0xFD;
+                        sim.minx->keys_active |= 0x02;
                         break;
                     case SDLK_s:
                     case SDLK_c:
-                        sim.registers[0x52] = sim.registers[0x52] & 0xFB;
+                        sim.minx->keys_active |= 0x04;
                         break;
                     default:
                         break;
@@ -654,26 +625,26 @@ int main(int argc, char** argv)
             {
                 switch(sdl_event.key.keysym.sym){
                 case SDLK_UP:
-                    sim.registers[0x52] = sim.registers[0x52] | 0x08;
+                    sim.minx->keys_active &= ~0x08;
                     break;
                 case SDLK_DOWN:
-                    sim.registers[0x52] = sim.registers[0x52] | 0x10;
+                    sim.minx->keys_active &= ~0x10;
                     break;
                 case SDLK_RIGHT:
-                    sim.registers[0x52] = sim.registers[0x52] | 0x40;
+                    sim.minx->keys_active &= ~0x40;
                     break;
                 case SDLK_LEFT:
-                    sim.registers[0x52] = sim.registers[0x52] | 0x20;
+                    sim.minx->keys_active &= ~0x20;
                     break;
                 case SDLK_x: // A
-                    sim.registers[0x52] = sim.registers[0x52] | 0x01;
+                    sim.minx->keys_active &= ~0x01;
                     break;
                 case SDLK_z: // B
-                    sim.registers[0x52] = sim.registers[0x52] | 0x02;
+                    sim.minx->keys_active &= ~0x02;
                     break;
                 case SDLK_s:
                 case SDLK_c:
-                    sim.registers[0x52] = sim.registers[0x52] | 0x04;
+                    sim.minx->keys_active &= ~0x04;
                     break;
                 default:
                     break;
