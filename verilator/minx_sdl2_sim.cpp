@@ -35,11 +35,6 @@ enum
     BUS_MEM_READ  = 0x3
 };
 
-uint32_t prc_map = 0;
-uint8_t prc_mode = 0;
-uint8_t prc_rate = 0;
-
-int prc_state = 0;
 bool data_sent = false;
 bool irq_processing = false;
 int irq_render_done_old = 0;
@@ -172,88 +167,12 @@ void gl_renderer_draw(int buffer_width, int buffer_height, void* buffer_data)
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 }
 
-void write_hardware_register(uint8_t* registers, uint32_t address, uint8_t data)
-{
-    switch(address)
-    {
-
-        case 0x10:
-        {
-            PRINTD("Writing hardware register SYS_BATT=");
-            registers[address] = data;
-        }
-        break;
-
-        case 0x70:
-        {
-            PRINTD("Writing hardware register AUD_CTRL=");
-            registers[address] = data;
-        }
-        break;
-
-        case 0x71:
-        {
-            PRINTD("Writing hardware register AUD_VOL=");
-            registers[address] = data;
-        }
-        break;
-
-        case 0x44:
-        case 0x45:
-        case 0x46:
-        case 0x47:
-        case 0x50:
-        case 0x51:
-        case 0x54:
-        case 0x55:
-        case 0x62:
-        {
-            PRINTD("Writing hardware register Unknown=");
-            registers[address] = data;
-        }
-        break;
-
-        default:
-        {
-            PRINTD("Writing to hardware register 0x%x\n", address);
-            return;
-        }
-    }
-    PRINTD("0x%x\n", data);
-}
-
 uint8_t read_hardware_register(const uint8_t* registers, uint32_t address)
 {
     switch(address)
     {
 
         case 0x52:
-        {
-            return registers[address];
-        }
-        break;
-
-        case 0x70:
-        {
-            return registers[address];
-        }
-        break;
-
-        case 0x71:
-        {
-            return registers[address];
-        }
-        break;
-
-        case 0x44:
-        case 0x45:
-        case 0x46:
-        case 0x47:
-        case 0x50:
-        case 0x51:
-        case 0x54:
-        case 0x55:
-        case 0x62:
         {
             return registers[address];
         }
@@ -324,7 +243,6 @@ void sim_init(SimData* sim, const char* cartridge_path)
     sim->minx->reset = 1;
 
     sim->registers[0x52] = 0xFF;
-    sim->registers[0x10] = 0x18;
 
     sim->osc1_clocks = 4000000.0 / 32768.0 + 0.5;
     sim->osc1_next_clock = sim->osc1_clocks;
@@ -524,7 +442,7 @@ void simulate_steps(SimData* sim, int n_steps)
             }
             else if(sim->minx->address_out < 0x2100)
             {
-                // read from hardware registers
+                // read from hardware registers (now only reads key registers).
                 sim->minx->data_in = read_hardware_register(sim->registers, sim->minx->address_out & 0x1FFF);
             }
             else
@@ -549,12 +467,7 @@ void simulate_steps(SimData* sim, int n_steps)
                 uint32_t address = sim->minx->address_out & 0xFFF;
                 *(uint8_t*)(sim->memory + address) = sim->minx->data_out;
             }
-            else if(sim->minx->address_out < 0x2100)
-            {
-                // write to hardware registers
-                write_hardware_register(sim->registers, sim->minx->address_out & 0x1FFF, sim->minx->data_out);
-            }
-            else
+            else if(sim->minx->address_out >= 0x2100)
             {
                 PRINTD("Program trying to write to cartridge at 0x%x, timestamp: %llu\n", sim->minx->address_out, sim->timestamp);
             }

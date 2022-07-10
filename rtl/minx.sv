@@ -95,6 +95,17 @@ module minx
         .bus_data_out   (sc_data_out)
     );
 
+    wire [7:0] sound_data_out;
+    sound sound
+    (
+        .clk            (clk),
+        .reset          (reset),
+        .bus_write      (write),
+        .bus_address_in (cpu_address_out),
+        .bus_data_in    (cpu_data_out),
+        .bus_data_out   (sound_data_out)
+    );
+
     wire [2:0] t1_irqs;
     wire [7:0] timer1_data_out;
     wire osc256;
@@ -197,27 +208,24 @@ module minx
         .irq_render_done   (irq_render_done)
     );
 
+    wire [7:0] sys_batt = (address_out == 24'h2010)? 8'h18: 0;
     wire [7:0] reg_data_out = 0
         | lcd_data_out
         | prc_data_out
         | io_data_out
         | sc_data_out
+        | sound_data_out
         | rtc_data_out
         | timer256_data_out
         | timer1_data_out
-        | irq_data_out;
+        | irq_data_out
+        | sys_batt;
 
     wire [7:0] cpu_data_in = 
     (
-        (address_out == 24'h2018 || address_out == 24'h2019 ||
-         address_out == 24'h20FE || address_out == 24'h20FF ||
-         address_out == 24'h2040 || address_out == 24'h2041 ||
-         address_out == 24'h2060 || address_out == 24'h2061 ||
-        (address_out >= 24'h2000 && address_out <= 24'h2002)||
-        (address_out >= 24'h2008 && address_out <= 24'h200B)||
-        (address_out >= 24'h2020 && address_out <= 24'h202A)||
-        (address_out >= 24'h2030 && address_out <= 24'h2037)||
-        (address_out >= 24'h2080 && address_out <= 24'h208F)) &&
+        (address_out != 24'h2052) &&
+        (address_out >= 24'h2000) &&
+        (address_out <  24'h2100) &&
         (bus_status == cpu.BUS_COMMAND_MEM_READ)
     )? reg_data_out: data_in;
 
