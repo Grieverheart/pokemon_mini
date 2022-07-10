@@ -118,20 +118,29 @@ module pokemon_mini
     wire write;
     wire sync;
     wire iack;
+    wire read_interrupt_vector;
+    wire [1:0] i01;
+    wire [7:0] keys_active;
+    wire clk_32768;
 
-    s1c88 s1c88(
-        .clk        (pclk),
-        .reset      (reset),
-        .data_in    (data_in),
-        .pk         (pk),
-        .pl         (pl),
-        .data_out   (data_out),
-        .address_out(address_out),
-        .bus_status (bus_status),
-        .read       (read),
-        .write      (write),
-        .sync       (sync),
-        .iack       (iack)
+    minx minx(
+    (
+        clk                   (pclk),
+        rt_clk                (clk_32768),
+        reset                 (reset),
+        data_in               (data_in),
+        keys_active           (keys_active),
+        pk                    (pk),
+        pl                    (pl),
+        i01                   (i01),
+        data_out              (data_out),
+        address_out           (address_out),
+        bus_status            (bus_status),
+        read                  (read),
+        read_interrupt_vector (read_interrupt_vector),
+        write                 (write),
+        sync                  (sync),
+        iack                  (iack)
     );
 
     dpram #(
