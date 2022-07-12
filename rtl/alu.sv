@@ -1,4 +1,4 @@
-enum [4:0]
+enum bit[4:0]
 {
     ALUOP_ADD   = 5'd00,
     ALUOP_OR    = 5'd01,
@@ -32,7 +32,7 @@ enum [4:0]
     ALUOP_SEP   = 5'd26
 } AluOp;
 
-enum [1:0]
+enum bit[1:0]
 {
     ALU_FLAG_Z,  // Zero flag
     ALU_FLAG_C,  // Carry flag
@@ -119,9 +119,9 @@ module alu
                     flags[ALU_FLAG_C] = R_temp[{1'b0, msb} + 5'd1];
                 end
                 else if(alu_op == ALUOP_INC)
-                    R = A + 1;
+                    R = A + 16'd1;
                 else
-                    R = A + 2;
+                    R = A + 16'd2;
 
                 flags[ALU_FLAG_V] = (A[msb] & B[msb] & ~R[msb]) | (~A[msb] & ~B[msb] & R[msb]);
                 // can we do this? flags[ALU_FLAG_V] = (R[msb] == flags[ALU_FLAG_C]);
@@ -136,9 +136,9 @@ module alu
             ALUOP_SBC:
             begin
                 if(alu_op == ALUOP_DEC)
-                    R = A - 1;
+                    R = A - 16'd1;
                 else if(alu_op == ALUOP_DEC2)
-                    R = A - 2;
+                    R = A - 16'd2;
                 else if(alu_op == ALUOP_SBC)
                 begin
                     R_temp = {1'b0, A} - {1'b0, B} - {16'd0, C};
@@ -162,10 +162,10 @@ module alu
                 R_temp[15:0] = A / {8'd0, B[7:0]};
                 R = flags[ALU_FLAG_V]? A: {A[7:0] % B[7:0], R_temp[7:0]};
 
-                flags[ALU_FLAG_Z] = (B[7:0] != 0)? ((size == 1)? (R == 0): (R[7:0] == 0)): 0;
+                flags[ALU_FLAG_Z] = (B[7:0] != 0)? ((size == 1)? (R == 0): (R[7:0] == 0)): 1'd0;
                 flags[ALU_FLAG_C] = 0;
-                flags[ALU_FLAG_V] = (B[7:0] != 0)? (R_temp[15:8] != 0): 1;
-                flags[ALU_FLAG_S] = (B[7:0] != 0)? R[7]: 1;
+                flags[ALU_FLAG_V] = (B[7:0] != 0)? (R_temp[15:8] != 0): 1'd1;
+                flags[ALU_FLAG_S] = (B[7:0] != 0)? R[7]: 1'd1;
             end
 
             ALUOP_MUL:

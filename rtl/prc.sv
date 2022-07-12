@@ -684,7 +684,7 @@ begin
     end
 end
 
-always_ff @ (posedge clk, posedge reset)
+always_ff @ (posedge clk)
 begin
     bus_write_latch <= 0;
 
@@ -720,10 +720,26 @@ begin
                 column_data <= bus_data_in;
 
             SPRITE_DRAW_STATE_READ_SPRITE_DATA:
-                sprite_data <= sprite_info[1]? {<<{bus_data_in}}: bus_data_in;
+				begin
+				    if(sprite_info[1])
+					 begin
+						for(int i = 0; i < 8; ++i)
+					       sprite_data[i] <= bus_data_in[7-i];
+					 end
+					 else
+					     sprite_data <= bus_data_in;
+				end
 
             SPRITE_DRAW_STATE_READ_SPRITE_MASK:
-                sprite_mask <= sprite_info[1]? {<<{bus_data_in}}: bus_data_in;
+				begin
+				    if(sprite_info[1])
+					 begin
+						for(int i = 0; i < 8; ++i)
+					       sprite_mask[i] <= bus_data_in[7-i];
+					 end
+					 else
+					     sprite_mask <= bus_data_in;
+				end
 
             default:
             begin

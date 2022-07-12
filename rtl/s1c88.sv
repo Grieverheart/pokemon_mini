@@ -1,4 +1,12 @@
 
+enum bit [1:0]
+{
+    BUS_COMMAND_IDLE      = 2'd0,
+    BUS_COMMAND_IRQ_READ  = 2'd1,
+    BUS_COMMAND_MEM_WRITE = 2'd2,
+    BUS_COMMAND_MEM_READ  = 2'd3
+}BusCommand;
+		  
 module s1c88
 (
     input clk,
@@ -208,11 +216,6 @@ module s1c88
     assign bus_ack = bus_ack_negedge & bus_ack_posedge;
     assign i01 = SC[7:6];
 
-    localparam [1:0]
-        BUS_COMMAND_IDLE      = 2'd0,
-        BUS_COMMAND_IRQ_READ  = 2'd1,
-        BUS_COMMAND_MEM_WRITE = 2'd2,
-        BUS_COMMAND_MEM_READ  = 2'd3;
 
     localparam [2:0]
         STATE_IDLE          = 3'd0,
@@ -378,7 +381,7 @@ module s1c88
         MICRO_JMP_SHORT = 1'b0,
         MICRO_JMP_LONG  = 1'b1;
 
-    reg [10:0] translation_rom[0:767];
+    reg [11:0] translation_rom[0:767];
     reg [35:0] rom[0:2047];
 
     assign write = pl && pk &&
@@ -393,8 +396,8 @@ module s1c88
 
     initial
     begin
-        $readmemh("translation_rom.mem", translation_rom);
-        $readmemh("rom.mem", rom);
+        $readmemh("verilator/translation_rom.mem", translation_rom);
+        $readmemh("verilator/rom.mem", rom);
     end
 
     reg [15:0] BA;
@@ -489,7 +492,7 @@ module s1c88
         (micro_jmp_long? imm: {{8{imm[7]}}, imm[7:0]});
 
     reg [3:0] microprogram_counter;
-    reg [10:0] microaddress;
+    reg [11:0] microaddress;
 
     // @todo: Bundle all errors into one wide register.
 
@@ -619,7 +622,7 @@ module s1c88
     reg [15:0] src_reg_sec;
     reg not_implemented_mov_src_error;
     reg temp_not_implemented_mov_src_sec_error;
-    wire not_implemented_mov_src_sec_error = (micro_op_type == MICRO_TYPE_MISC)? temp_not_implemented_mov_src_sec_error: 0;
+    wire not_implemented_mov_src_sec_error = (micro_op_type == MICRO_TYPE_MISC)? temp_not_implemented_mov_src_sec_error: 1'd0;
     always_comb
     begin
         map_microinstruction_register(micro_mov_src, src_reg, not_implemented_mov_src_error);
@@ -975,27 +978,27 @@ module s1c88
 
         if(reset)
         begin
-            iack                 <= 0;
+            iack                 <= 1'd0;
             state                <= STATE_IDLE;
-            address_out          <= ~0;
-            pl                   <= 0;
+            address_out          <= ~24'd0;
+            pl                   <= 1'd0;
             bus_status           <= BUS_COMMAND_IDLE;
-            reset_counter        <= 0;
+            reset_counter        <= 2'd0;
             exception            <= EXCEPTION_TYPE_RESET;
-            irq_vector_address   <= 0;
-            fetch_opcode         <= 0;
-            top_address          <= 0;
-            not_implemented_write_error <= 0;
+            irq_vector_address   <= 8'd0;
+            fetch_opcode         <= 1'd0;
+            top_address          <= 16'd0;
+            not_implemented_write_error <= 1'd0;
 
             SC <= 8'hC0;
             NB <= 8'h01;
-            EP <= 0;
-            IX <= 0;
-            IY <= 0;
+            EP <= 8'h0;
+            IX <= 16'h0;
+            IY <= 16'h0;
         end
         else if(reset_counter < 2)
         begin
-            reset_counter <= reset_counter + 1;
+            reset_counter <= reset_counter + 2'd1;
             if(reset_counter == 1)
             begin
                 // Output dummy address
@@ -1009,8 +1012,8 @@ module s1c88
 
             if((pk == 0) && bus_ack_posedge)
             begin
-                pl           <= 0;
-                address_out  <= 0;
+                pl           <= 1'd0;
+                address_out  <= 24'd0;
             end
             else if(!bus_ack)
             begin
@@ -1020,13 +1023,13 @@ module s1c88
                     if(exception_factor != 0 && exception != EXCEPTION_TYPE_RESET)
                         exception <= exception_factor;
 
-                    not_implemented_write_error <= 0;
+                    not_implemented_write_error <= 1'd0;
 
                     if(fetch_opcode && !iack)
                     begin
                         opcode <= data_in;
                         top_address <= PC;
-                        PC <= PC + 1;
+                        PC <= PC + 16'h1;
                     end
                 end
                 else if(pk == 0)
@@ -1094,31 +1097,31 @@ module s1c88
                     end
                     else
                     begin
-                        exception_process_step <= exception_process_step + 1;
+                        exception_process_step <= exception_process_step + 4'd1;
 
                         if(exception_process_step == 0)
                         begin
                             bus_status <= BUS_COMMAND_MEM_WRITE;
                             address_out <= {8'b0, SP - 16'd1};
-                            SP <= SP - 1;
+                            SP <= SP - 16'd1;
                         end
                         else if(exception_process_step == 1)
                         begin
                             bus_status <= BUS_COMMAND_MEM_WRITE;
                             address_out <= {8'b0, SP - 16'd1};
-                            SP <= SP - 1;
+                            SP <= SP - 16'd1;
                         end
                         else if(exception_process_step == 2)
                         begin
                             bus_status <= BUS_COMMAND_MEM_WRITE;
                             address_out <= {8'b0, SP - 16'd1};
-                            SP <= SP - 1;
+                            SP <= SP - 16'd1;
                         end
                         else if(exception_process_step == 3)
                         begin
                             bus_status <= BUS_COMMAND_MEM_WRITE;
                             address_out <= {8'b0, SP - 16'd1};
-                            SP <= SP - 1;
+                            SP <= SP - 16'd1;
                         end
                         else if(exception_process_step == 4)
                         begin
@@ -1146,7 +1149,7 @@ module s1c88
                     if(pk == 1)
                     begin
                         opext <= data_in;
-                        PC <= PC + 1;
+                        PC <= PC + 16'd1;
                     end
                 end
                 else if(state == STATE_EXECUTE)
@@ -1210,7 +1213,7 @@ module s1c88
 
                         if(micro_mov_src == MICRO_MOV_DATA)
                         begin
-                            PC <= PC + 1;
+                            PC <= PC + 16'd1;
                         end
 
                         if(micro_op_type == MICRO_TYPE_JMP)
@@ -1223,7 +1226,7 @@ module s1c88
                                     CB <= NB;
                                     // @note: Don't pre-increment PC when
                                     // interrupt acknowledged.
-                                    PC <= iack? jump_dest: jump_dest+1;
+                                    PC <= iack? jump_dest: jump_dest + 16'd1;
                                     top_address <= jump_dest;
                                 end
                                 else NB <= CB;
@@ -1367,7 +1370,7 @@ module s1c88
     begin
         if(reset)
         begin
-            data_out      <= ~0;
+            data_out      <= ~8'd0;
             read          <= 0;
             pk            <= 0;
             microaddress  <= 0;
@@ -1454,10 +1457,10 @@ module s1c88
                         // microinstruction_done.
                         if(pk == 1 && !microinstruction_done && !fetch_opcode)
                         begin
-                            microprogram_counter <= microprogram_counter + 1;
+                            microprogram_counter <= microprogram_counter + 4'd1;
                             if(micro_op_type == MICRO_TYPE_JMP && jump_condition_true)
                             begin
-                                microprogram_counter <= microprogram_counter + 2;
+                                microprogram_counter <= microprogram_counter + 4'd2;
                             end
                         end
 

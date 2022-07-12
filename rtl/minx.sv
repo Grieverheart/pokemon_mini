@@ -63,7 +63,7 @@ module minx
     assign irqs[5'h08] = t1_irqs[0];
     assign irqs[5'h0B] = t256_irqs[0];
     assign irqs[5'h0C] = t256_irqs[1];
-    assign irqs[5'h0C] = t256_irqs[2];
+    assign irqs[5'h0D] = t256_irqs[2];
     assign irqs[5'h0E] = t256_irqs[3];
 
     wire [23:0] irq_address_out;
@@ -217,7 +217,7 @@ module minx
         .irq_render_done   (irq_render_done)
     );
 
-    wire [7:0] sys_batt = (address_out == 24'h2010)? 8'h18: 0;
+    wire [7:0] sys_batt = (address_out == 24'h2010)? 8'h18: 8'h0;
     wire [7:0] reg_data_out = 0
         | lcd_data_out
         | prc_data_out
@@ -235,7 +235,7 @@ module minx
     (
         (address_out >= 24'h2000) &&
         (address_out <  24'h2100) &&
-        (bus_status == cpu.BUS_COMMAND_MEM_READ)
+        (bus_status == BUS_COMMAND_MEM_READ)
     )? reg_data_out: data_in;
 
     wire [7:0] cpu_data_out;
@@ -247,7 +247,7 @@ module minx
     (
         .clk                   (clk),
         .reset                 (reset),
-        .data_in               ((cpu_bus_status == cpu.BUS_COMMAND_IRQ_READ)? irq_data_out: cpu_data_in),
+        .data_in               ((cpu_bus_status == BUS_COMMAND_IRQ_READ)? irq_data_out: cpu_data_in),
         .irq                   (cpu_irq),
         .pk                    (pk),
         .pl                    (pl),

@@ -252,12 +252,14 @@ hps_io #(.CONF_STR(CONF_STR)) hps_io
 
 ///////////////////////   CLOCKS   ///////////////////////////////
 
+wire clk_video;
 wire clk_sys;
 pll pll
 (
 	.refclk(CLK_50M),
 	.rst(0),
-	.outclk_0(clk_sys)
+	.outclk_0(clk_video),
+	.outclk_1(clk_sys)
 );
 
 wire reset = RESET | status[0] | buttons[1];
@@ -285,7 +287,7 @@ pokemon_mini pokemon_mini
     .VGA_DE(VGA_DE)
 );
 
-assign CLK_VIDEO = clk_sys;
+assign CLK_VIDEO = clk_video;
 assign CE_PIXEL = ce_pix;
 
 reg  [26:0] act_cnt;

@@ -232,8 +232,6 @@ set_hps_location_assignment HPSINTERFACEPERIPHERALSPIMASTER_X52_Y72_N111 -to spi
 set_hps_location_assignment HPSINTERFACEPERIPHERALUART_X52_Y67_N111 -to uart
 set_hps_location_assignment HPSINTERFACEPERIPHERALI2C_X52_Y60_N111 -to hdmi_i2c
 set_global_assignment -name PRE_FLOW_SCRIPT_FILE "quartus_sh:sys/build_id.tcl"
-set_global_assignment -name CDF_FILE jtag.cdf
-set_global_assignment -name QIP_FILE sys/sys.qip
 source sys/sys_analog.tcl
 set_location_assignment PIN_AF25 -to SDIO_DAT[0]
 set_location_assignment PIN_AF23 -to SDIO_DAT[1]
@@ -284,13 +282,8 @@ set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to LED_*
 set_instance_assignment -name IO_STANDARD "3.3-V LVTTL" -to BTN_*
 set_instance_assignment -name WEAK_PULL_UP_RESISTOR ON -to BTN_*
 source files.qip
-set_global_assignment -name SYSTEMVERILOG_FILE rtl/pokemon_mini.sv
-set_global_assignment -name SYSTEMVERILOG_FILE rtl/decode.sv
-set_global_assignment -name SDC_FILE pokemon_mini.sdc
-set_global_assignment -name SYSTEMVERILOG_FILE pokemon_mini.sv
 set_global_assignment -name ENABLE_SIGNALTAP ON
 set_global_assignment -name USE_SIGNALTAP_FILE stp1.stp
-set_global_assignment -name SIGNALTAP_FILE stp1.stp
 set_global_assignment -name SLD_NODE_CREATOR_ID 110 -section_id auto_signaltap_0
 set_global_assignment -name SLD_NODE_ENTITY_NAME sld_signaltap -section_id auto_signaltap_0
 set_instance_assignment -name CONNECT_TO_SLD_NODE_ENTITY_PORT acq_data_in[0] -to "emu:emu|pokemon_mini:pokemon_mini|s1c88:s1c88|BR[0]" -section_id auto_signaltap_0
@@ -495,5 +488,25 @@ set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[3] -t
 set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[5] -to auto_signaltap_0|gnd -section_id auto_signaltap_0
 set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[6] -to auto_signaltap_0|vcc -section_id auto_signaltap_0
 set_instance_assignment -name POST_FIT_CONNECT_TO_SLD_NODE_ENTITY_PORT crc[11] -to auto_signaltap_0|vcc -section_id auto_signaltap_0
-set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top
+set_global_assignment -name CDF_FILE jtag.cdf
+set_global_assignment -name QIP_FILE sys/sys.qip
+set_global_assignment -name SYSTEMVERILOG_FILE rtl/s1c88.sv
+set_global_assignment -name SYSTEMVERILOG_FILE rtl/alu.sv
+set_global_assignment -name SYSTEMVERILOG_FILE rtl/eeprom.sv
+set_global_assignment -name SYSTEMVERILOG_FILE rtl/irq.sv
+set_global_assignment -name SYSTEMVERILOG_FILE rtl/key_input.sv
+set_global_assignment -name SYSTEMVERILOG_FILE rtl/lcd_controller.sv
+set_global_assignment -name SYSTEMVERILOG_FILE rtl/minx.sv
+set_global_assignment -name SYSTEMVERILOG_FILE rtl/prc.sv
+set_global_assignment -name SYSTEMVERILOG_FILE rtl/rtc.sv
+set_global_assignment -name SYSTEMVERILOG_FILE rtl/sound.sv
+set_global_assignment -name SYSTEMVERILOG_FILE rtl/system_control.sv
+set_global_assignment -name SYSTEMVERILOG_FILE rtl/timer.sv
+set_global_assignment -name SYSTEMVERILOG_FILE rtl/timer256.sv
+set_global_assignment -name VHDL_FILE rtl/dpram.vhd
+set_global_assignment -name SYSTEMVERILOG_FILE rtl/pokemon_mini.sv
+set_global_assignment -name SDC_FILE pokemon_mini.sdc
+set_global_assignment -name SYSTEMVERILOG_FILE pokemon_mini.sv
+set_global_assignment -name SIGNALTAP_FILE stp1.stp
 set_global_assignment -name SLD_FILE db/stp1_auto_stripped.stp
+set_instance_assignment -name PARTITION_HIERARCHY root_partition -to | -section_id Top

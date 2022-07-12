@@ -123,34 +123,34 @@ module pokemon_mini
     wire [7:0] keys_active;
     wire clk_32768;
 
-    minx minx(
+    minx minx
     (
-        clk                   (pclk),
-        rt_clk                (clk_32768),
-        reset                 (reset),
-        data_in               (data_in),
-        keys_active           (keys_active),
-        pk                    (pk),
-        pl                    (pl),
-        i01                   (i01),
-        data_out              (data_out),
-        address_out           (address_out),
-        bus_status            (bus_status),
-        read                  (read),
-        read_interrupt_vector (read_interrupt_vector),
-        write                 (write),
-        sync                  (sync),
-        iack                  (iack)
+        .clk                   (pclk),
+        .rt_clk                (clk_32768),
+        .reset                 (reset),
+        .data_in               (data_in),
+        .keys_active           (keys_active),
+        .pk                    (pk),
+        .pl                    (pl),
+        .i01                   (i01),
+        .data_out              (data_out),
+        .address_out           (address_out),
+        .bus_status            (bus_status),
+        .read                  (read),
+        .read_interrupt_vector (read_interrupt_vector),
+        .write                 (write),
+        .sync                  (sync),
+        .iack                  (iack)
     );
 
     dpram #(
         .init_file("verilator/data/bios.hex"),
-        .widthad_a(24),
+        .widthad_a(12),
         .width_a(8)
     ) vmem
     (
         .clock_a(pclk),
-        .address_a(address_out),
+        .address_a(address_out[11:0]),
         .wren_a(1'b0),
         .q_a(data_in),
 

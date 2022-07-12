@@ -13,7 +13,7 @@ module irq
     output logic [3:0] cpu_irq
 );
 
-    localparam [3:0] irq_group[0:31] = '{
+    localparam bit[3:0] irq_group[0:31] = '{
         0, 0, 0,                // NMI
         3, 3,                   // Blitter Group
         2, 2,                   // Tim3/2
@@ -31,7 +31,7 @@ module irq
     // $11     $12     $0B     $0C     $0D     $0E     $13     $14
     // $15     $16     $17     $18     $19     $1A     $1B     $1C
     // $0F     $10     $00     $01     $02     $1D     $1E     $1F
-    localparam [4:0] irq_reg_map[0:31] = '{
+    localparam bit[4:0] irq_reg_map[0:31] = '{
         29, 28, 27, 7, 6, 5, 4, 3, 2, 1, 0,
         13, 12, 11, 10, 31, 30, 15, 14, 9, 8,
         23, 22, 21, 20, 19, 18, 17, 16, 26, 25, 24
@@ -52,7 +52,7 @@ module irq
         end
         else
         begin
-            foreach(irqs[i])
+            for(int i = 0; i < 32; ++i)
             begin
                 if(irqs[i])
                     reg_irq_active[irq_reg_map[i]] <= 1;
@@ -115,7 +115,7 @@ module irq
     begin
         next_irq        = 5'd0;
         next_priority   = 2'd0;
-        foreach(irqs[i])
+        for(int i = 0; i < 32; ++i)
         begin
             if(
                 reg_irq_enabled[irq_reg_map[i]] &&
