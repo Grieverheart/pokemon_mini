@@ -381,7 +381,7 @@ module s1c88
         MICRO_JMP_SHORT = 1'b0,
         MICRO_JMP_LONG  = 1'b1;
 
-    reg [11:0] translation_rom[0:767];
+    reg [10:0] translation_rom[0:767];
     reg [35:0] rom[0:2047];
 
     assign write = pl && pk &&
@@ -396,8 +396,8 @@ module s1c88
 
     initial
     begin
-        $readmemh("verilator/translation_rom.mem", translation_rom);
-        $readmemh("verilator/rom.mem", rom);
+        $readmemh("translation_rom.mem", translation_rom);
+        $readmemh("rom.mem", rom);
     end
 
     reg [15:0] BA;
@@ -492,7 +492,7 @@ module s1c88
         (micro_jmp_long? imm: {{8{imm[7]}}, imm[7:0]});
 
     reg [3:0] microprogram_counter;
-    reg [11:0] microaddress;
+    reg [10:0] microaddress;
 
     // @todo: Bundle all errors into one wide register.
 
