@@ -21,6 +21,7 @@ module eeprom
     reg [12:0] address;
     reg [2:0] state;
     reg [3:0] bit_count;
+    // @todo: Move to bram, i.e. add bus wires with 13-bit width address.
     reg [7:0] rom[0:8191];
 
     assign data_out = reg_data_out & data_latch;

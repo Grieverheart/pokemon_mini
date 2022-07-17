@@ -6,11 +6,11 @@ module lcd_controller
     input bus_read,
     input [23:0] address_in,
     input [7:0] data_in,
-    output logic [7:0] data_out
-);
+    output logic [7:0] data_out,
 
-// @todo: (for rendering) Handle reading out of the lcd_data. Can either be done with
-// additional inputs/outputs, or using the standard controller interface.
+    output [5:0] lcd_contrast
+);
+assign lcd_contrast = contrast;
 
 reg [5:0] contrast;
 reg contrast_set;

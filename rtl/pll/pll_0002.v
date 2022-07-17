@@ -9,6 +9,7 @@ module  pll_0002(
 
 	// interface 'outclk0'
 	output wire outclk_0,
+
 	// interface 'outclk1'
 	output wire outclk_1,
 
@@ -21,10 +22,10 @@ module  pll_0002(
 		.reference_clock_frequency("50.0 MHz"),
 		.operation_mode("direct"),
 		.number_of_clocks(2),
-		.output_clock_frequency0("25.116279 MHz"),
+		.output_clock_frequency0("4.000000 MHz"),
 		.phase_shift0("0 ps"),
 		.duty_cycle0(50),
-		.output_clock_frequency1("4 MHz"),
+		.output_clock_frequency1("4.194528 MHz"),
 		.phase_shift1("0 ps"),
 		.duty_cycle1(50),
 		.output_clock_frequency2("0 MHz"),

@@ -15,8 +15,14 @@ module minx
     output logic read_interrupt_vector,
     output wire write,
     output wire sync,
-    output logic iack
+    output logic iack,
+
+    output [5:0] lcd_contrast,
+    output frame_complete
 );
+
+    assign frame_complete = irq_copy_complete;
+
     // @todo: Design question: Move this logic to inside the eeprom module?
     // The idea of putting this logic here is that eeprom is part of the gpio
     // and gpio, as a module is not implemented (yet).
@@ -184,7 +190,8 @@ module minx
         .bus_read(read),
         .address_in(address_out),
         .data_in(data_out),
-        .data_out(lcd_data_out)
+        .data_out(lcd_data_out),
+        .lcd_contrast(lcd_contrast)
     );
 
     wire bus_request;

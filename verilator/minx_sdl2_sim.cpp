@@ -293,7 +293,8 @@ void simulate_steps(SimData* sim, int n_steps)
             {
                 for (int xC=0; xC<96; xC++)
                 {
-                    uint8_t data = sim->minx->rootp->minx__DOT__lcd__DOT__lcd_data[yC * 132 + xC];
+                    //uint8_t data = sim->minx->rootp->minx__DOT__lcd__DOT__lcd_data[yC * 132 + xC];
+                    uint8_t data = sim->memory[0x1000 + yC * 96 + xC];
                     for(int i = 0; i < 8; ++i)
                         image_data[96 * (8 * yC + i) + xC] = ((~data >> i) & 1)? 255.0: 255.0 * (1.0 - (float)contrast / 0x20);
                 }

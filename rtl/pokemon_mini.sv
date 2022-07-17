@@ -145,12 +145,12 @@ module pokemon_mini
 
     dpram #(
         .init_file("verilator/data/bios.hex"),
-        .widthad_a(12),
+        .widthad_a(24),
         .width_a(8)
     ) vmem
     (
         .clock_a(pclk),
-        .address_a(address_out[11:0]),
+        .address_a(address_out),
         .wren_a(1'b0),
         .q_a(data_in),
 
