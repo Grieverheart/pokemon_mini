@@ -21,12 +21,13 @@ module eeprom
     reg [12:0] address;
     reg [2:0] state;
     reg [3:0] bit_count;
-    // @todo: Move to bram, i.e. add bus wires with 13-bit width address.
-    reg [7:0] rom[0:8191];
+    // @todo: Move to explicit bram?
+    (* ramstyle = "no_rw_check" *) reg [7:0] rom[0:8191];
 
     assign data_out = reg_data_out & data_latch;
 
-    always_ff @ (posedge clk, posedge reset)
+    reg [7:0] rom_read;
+    always_ff @ (posedge clk)
     begin
         if(reset)
         begin
@@ -37,6 +38,7 @@ module eeprom
         end
         else
         begin
+            rom_read <= rom[address];
             clock_posedge <= ce;
             data_latch <= data_in;
 
@@ -101,7 +103,7 @@ module eeprom
                             begin
                                 //$display("Reading byte 0x%x at %d", rom[address], address);
                                 state <= EEPROM_STATE_DATA_READ;
-                                input_byte <= rom[address];
+                                input_byte <= rom_read;
                                 reg_data_out <= 1'd0;
                                 address <= address + 1;
                             end
@@ -128,7 +130,7 @@ module eeprom
                         begin
                             //$display("Wrote byte 0x%x at %d", input_byte, address);
                             rom[address] <= input_byte;
-                            address <= (address + 1) & 13'h1FFF;
+                            address <= address + 1;
                             reg_data_out <= 1'd0;
                         end
                         else if(state == EEPROM_STATE_DATA_READ)
@@ -136,8 +138,8 @@ module eeprom
                             // @todo: Oops, wee need to set the input byte
                             // again?
                             //$display("Reading byte 0x%x at %d", rom[address], address);
-                            address <= (address + 1) & 13'h1FFF;
-                            input_byte <= rom[address];
+                            address <= address + 1;
+                            input_byte <= rom_read;
                             reg_data_out <= 1'd1;
                         end
                     end

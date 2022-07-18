@@ -28,7 +28,7 @@ reg read_latch;
 reg write_latch;
 
 // (0-8, pages 0-7 are 8px high, Page 8 = 1px high)
-reg [7:0] lcd_data[9*132];
+(* ramstyle = "no_rw_check" *) reg [7:0] lcd_data[9*132];
 
 
 wire [10:0] pixel_address = page * 11'd132 + (
@@ -36,7 +36,9 @@ wire [10:0] pixel_address = page * 11'd132 + (
         131 - {3'd0, column}:
         {3'd0, column});
 
-always_ff @ (posedge clk, posedge reset)
+reg [7:0] lcd_read;
+
+always_ff @ (posedge clk)
 begin
     if(reset)
     begin
@@ -54,6 +56,7 @@ begin
     begin
         read_latch  <= bus_read;
         write_latch <= bus_write;
+        lcd_read    <= lcd_data[pixel_address];
 
         if(bus_write && !write_latch)
         begin
@@ -199,7 +202,7 @@ begin
 
             24'h20FF:
             begin
-                data_out = lcd_data[pixel_address];
+                data_out = lcd_read;
                 if(page >= 8)
                      data_out = {7'd0, data_out[0]};
             end

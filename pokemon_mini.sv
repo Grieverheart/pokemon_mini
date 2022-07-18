@@ -359,6 +359,8 @@ wire [23:0] minx_address_out;
 minx minx
 (
     .clk                   (clk_sys),
+    // @todo: Pass rt_clk and rt_ce instead; clk_rt_prescale[7] is not really
+    // a clock.
     .rt_clk                (clk_rt_prescale[7]),
     .reset                 (reset),
     .data_in               (minx_data_in),
