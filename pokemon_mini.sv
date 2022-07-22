@@ -189,8 +189,8 @@ assign AUDIO_L = 0;
 assign AUDIO_R = 0;
 assign AUDIO_MIX = 0;
 
-assign LED_DISK = red[0];
-assign LED_POWER = hpos == 0;
+assign LED_DISK = {1'b1, bus_ack};
+assign LED_POWER = {1'b1, bus_request};
 assign BUTTONS = 0;
 
 //////////////////////////////////////////////////////////////////
@@ -255,12 +255,14 @@ hps_io #(.CONF_STR(CONF_STR)) hps_io
 
 wire clk_sys;
 wire clk_rt;
+wire clk_ram;
 pll pll
 (
     .refclk(CLK_50M),
     .rst(0),
     .outclk_0(clk_sys),
-    .outclk_1(clk_rt)
+    .outclk_1(clk_rt),
+    .outclk_2(clk_ram)
 );
 
 reg [7:0] clk_rt_prescale = 0;
@@ -270,6 +272,12 @@ reg [1:0] clk_prescale = 0;
 always_ff @ (posedge clk_sys) clk_prescale <= clk_prescale + 1;
 
 wire reset = RESET | status[0] | buttons[1];
+reg [3:0] reset_counter;
+always_ff @ (posedge clk_sys)
+begin
+    if(reset) reset_counter = 4'hF;
+    else if(reset_counter > 4'd0) reset_counter <= reset_counter - 4'd1;
+end
 
 //////////////////////////////////////////////////////////////////
 
@@ -280,11 +288,8 @@ assign CLK_VIDEO = clk_sys;
 
 assign LED_USER  = frame_complete;//ioctl_download | sav_pending;
 
-//assign vsync = vpos < 2 || vpos > V_HEIGHT - 1'd1; // Catch the uneven line in vsync to see if it helps
-//assign hsync = hpos < 16 || hpos > (H_WIDTH - 8'd16);
 reg hs, vs, hbl, vbl;
 
-// 140 x 119
 localparam H_WIDTH   = 8'd140;
 localparam V_HEIGHT  = 8'd119;
 localparam LCD_XSIZE = 8'd96;
@@ -296,6 +301,9 @@ reg [7:0] blue;
 reg [7:0] hpos,vpos;
 reg [12:0] pixel_address;
 //reg frame_complete_latch;
+wire [7:0] xpos = hpos - 8'd17;
+wire [7:0] ypos = vpos - 8'd33;
+wire [7:0] pixel_on = (lcd_contrast >= 6'h20)? 8'd255: {lcd_contrast[4:0], 3'd0};
 always @ (posedge CLK_VIDEO, posedge reset)
 begin
     if(reset)
@@ -305,10 +313,11 @@ begin
     end
     else if(ce_pix)
     begin
-        if(hpos == LCD_XSIZE + 16)  hbl <= 1;
-        if(vpos ==  32)             vbl <= 0;
-        if(vpos >=  32+LCD_YSIZE)   vbl <= 1;
-        if(hpos == 16)              hbl <= 0;
+        if(hpos == LCD_XSIZE + 16) hbl <= 1;
+        if(hpos == 16)             hbl <= 0;
+        if(vpos >=  32+LCD_YSIZE)  vbl <= 1;
+        if(vpos == 32)             vbl <= 0;
+
         if(hpos == 120)
         begin
             hs <= 1;
@@ -319,21 +328,19 @@ begin
         if(hpos == 120+16) hs <= 0;
 
         hpos <= hpos + 1;
-        if(hpos == 8'd140)
+        if(hpos == H_WIDTH - 1'd1)
         begin
             hpos <= 0;
             vpos <= vpos + 1;
 
-            if(vpos == 8'd119) vpos <= 0;
+            if(vpos == V_HEIGHT - 1'd1) vpos <= 0;
         end
 
-        // @note: If we have hpos and vpos anyway, perhaps we can use
-        // those instead of pixel_address.
         if(~hbl && ~vbl) // if(VGA_DE) ?
         begin
-            red   <= fb0[{pixel_address[12:9], pixel_address[5:0]}][pixel_address[8:6]]? 8'd255: 8'h0;
-            green <= fb0[{pixel_address[12:9], pixel_address[5:0]}][pixel_address[8:6]]? 8'd255: 8'h0;
-            blue  <= fb0[{pixel_address[12:9], pixel_address[5:0]}][pixel_address[8:6]]? 8'd255: 8'h0;
+            red   <= fb0_pixel_value[ypos[2:0]]? 8'h0: pixel_on;
+            green <= fb0_pixel_value[ypos[2:0]]? 8'h0: pixel_on;
+            blue  <= fb0_pixel_value[ypos[2:0]]? 8'h0: pixel_on;
             pixel_address <= pixel_address + 1;
         end
         else if(vbl)
@@ -356,13 +363,17 @@ wire [5:0] lcd_contrast;
 wire [7:0] minx_data_in;
 wire [7:0] minx_data_out;
 wire [23:0] minx_address_out;
+
+wire bus_request;
+wire bus_ack;
+wire minx_we;
+wire [1:0] bus_status;
 minx minx
 (
     .clk                   (clk_sys),
-    // @todo: Pass rt_clk and rt_ce instead; clk_rt_prescale[7] is not really
-    // a clock.
-    .rt_clk                (clk_rt_prescale[7]),
-    .reset                 (reset),
+    .rt_clk                (rt_clk),
+    .rt_ce                 (clk_rt_prescale[7]),
+    .reset                 (reset | (|reset_counter)),
     .data_in               (minx_data_in),
     //.keys_active           (keys_active),
     //.pk                    (pk),
@@ -373,7 +384,7 @@ minx minx
     .bus_status            (bus_status),
     //.read                  (read),
     //.read_interrupt_vector (read_interrupt_vector),
-    //.write                 (write),
+    .write                 (minx_we),
     //.sync                  (sync),
     //.iack                  (iack),
 
@@ -382,88 +393,69 @@ minx minx
 );
 
 wire [7:0] bios_data_out;
-dpram #(
+spram #(
     .init_file("verilator/data/bios.hex"),
     .widthad_a(12),
     .width_a(8)
-) vmem
+) bios
 (
-    .clock_a(clk_sys),
-    .address_a(minx_address_out[11:0] - 12'h300),
-    .wren_a(1'b0),
-    .q_a(bios_data_out)
-
-    //.clock_b(clk_sys),
-    //.wren_b(bus_status == 2'd2),
-    //.address_b(minx_address_out),
-    //.data_b(data_out)
+    .clock(clk_sys),
+    .address(minx_address_out[11:0]),
+    .wren(1'b0),
+    .q(bios_data_out)
 );
 
-reg [7:0] fb0[768];
-reg [7:0] ram[3328];
+wire [7:0] ram_data_out;
+spram #(
+    .widthad_a(12),
+    .width_a(8)
+) minx_ram
+(
+    .clock(clk_sys),
+    .address(minx_address_out[11:0] - 12'h300),
+    .q(ram_data_out),
+    .data(minx_data_out),
+    .wren(
+        minx_we &&
+        (bus_status == BUS_COMMAND_MEM_READ) &&
+        (minx_address_out >= 24'h1300) &&
+        (minx_address_out < 24'h2000)
+    )
+);
+
+// @note: Using fb0 for getting the rendered image is not always right, at
+// least not without triple buffering, because the image can be overwritten
+// while rendering to the screen. Alternatively, we need to output a signal
+// for when the actual rendering part is done, instead of the copy.
+wire [7:0] fb0_data_out;
+wire [7:0] fb0_pixel_value;
+dpram #(
+    .widthad_a(10),
+    .width_a(8)
+) fb0
+(
+    .clock_a(clk_sys),
+    .address_a(minx_address_out[9:0]),
+    .q_a(fb0_data_out),
+    .data_a(minx_data_out),
+    .wren_a(
+        minx_we &&
+        (bus_status == BUS_COMMAND_MEM_READ) &&
+        (minx_address_out >= 24'h1000) &&
+        (minx_address_out < 24'h1300)
+    ),
+
+    .clock_b(clk_sys),
+    .address_b({5'd0, ypos[7:3]} * 96 + {4'd0, xpos[5:0]}),
+    .q_b(fb0_pixel_value),
+    .wren_b(1'b0)
+);
+
 assign minx_data_in =
      (minx_address_out < 24'h1000)? bios_data_out:
-    ((minx_address_out < 24'h1300)? fb0[minx_address_out[9:0]]:
-    ((minx_address_out < 24'h2000)? ram[minx_address_out[11:0] - 12'h300]:
+    ((minx_address_out < 24'h1300)? fb0_data_out:
+    ((minx_address_out < 24'h2000)? ram_data_out:
                                     0));
-
-always_ff @ (posedge clk_sys)
-begin
-    if(bus_status == BUS_COMMAND_MEM_WRITE && minx_address_out >= 24'h1000)
-    begin
-        if(minx_address_out < 24'h1300)
-            fb0[minx_address_out[9:0]] <= minx_data_out;
-        else if(minx_address_out < 24'h2000)
-            ram[minx_address_out[11:0] - 12'h300] <= minx_data_out;
-    end
-end
-
-//altsyncram  altsyncram_component
-//(
-//    .address_a (bram_addr),
-//    .address_b (sd_buff_addr),
-//    .clock0 (clk_ram),
-//    .clock1 (clk_sys),
-//    .data_a (bram_din),
-//    .data_b (sd_buff_dout),
-//    .wren_a (~bk_loading & bram_ack),
-//    .wren_b (sd_buff_wr && ~extra_data_addr),
-//    .q_a (bram_dout),
-//    .q_b (bram_buff_out),
-//    .byteena_a (1'b1),
-//    .byteena_b (1'b1),
-//    .clocken0 (1'b1),
-//    .clocken1 (1'b1),
-//    .rden_a (1'b1),
-//    .rden_b (1'b1)
-//);
-//defparam
-//    altsyncram_component.address_reg_b = "CLOCK1",
-//    altsyncram_component.clock_enable_input_a = "BYPASS",
-//    altsyncram_component.clock_enable_input_b = "BYPASS",
-//    altsyncram_component.clock_enable_output_a = "BYPASS",
-//    altsyncram_component.clock_enable_output_b = "BYPASS",
-//    altsyncram_component.indata_reg_b = "CLOCK1",
-//    altsyncram_component.intended_device_family = "Cyclone V",
-//    altsyncram_component.lpm_type = "altsyncram",
-//    altsyncram_component.numwords_a = 256,
-//    altsyncram_component.numwords_b = 256,
-//    altsyncram_component.operation_mode = "BIDIR_DUAL_PORT",
-//    altsyncram_component.outdata_aclr_a = "NONE",
-//    altsyncram_component.outdata_aclr_b = "NONE",
-//    altsyncram_component.outdata_reg_a = "UNREGISTERED",
-//    altsyncram_component.outdata_reg_b = "UNREGISTERED",
-//    altsyncram_component.power_up_uninitialized = "FALSE",
-//    altsyncram_component.read_during_write_mode_port_a = "NEW_DATA_NO_NBE_READ",
-//    altsyncram_component.read_during_write_mode_port_b = "NEW_DATA_NO_NBE_READ",
-//    altsyncram_component.widthad_a = 8,
-//    altsyncram_component.widthad_b = 8,
-//    altsyncram_component.width_a = 16,
-//    altsyncram_component.width_b = 16,
-//    altsyncram_component.width_byteena_a = 1,
-//    altsyncram_component.width_byteena_b = 1,
-//    altsyncram_component.wrcontrol_wraddress_reg_b = "CLOCK1";
-
 
 video_mixer #(640, 0) mixer
 (

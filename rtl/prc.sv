@@ -252,7 +252,7 @@ wire [7:0] sprite_color_masked_and_shifted = (top_or_bottom == 0)?
 wire [7:0] map_x = {1'd0, xC} + {1'd0, reg_scroll_x};
 wire [7:0] map_y = {1'd0, yC, 3'd0} + {1'd0, reg_scroll_y};
 
-always_ff @ (negedge clk, posedge reset)
+always_ff @ (negedge clk)
 begin
     if(reset)
     begin
@@ -281,10 +281,13 @@ begin
                     reg_mode <= bus_data_in[5:0];
 
                 24'h2081: // PRC Rate Control
+                begin
+                    //$display("0x%x, 0x%x", reg_rate[3:1], bus_data_in[3:1]);
                     // @todo? Reset the reg_counter when changing the divider.
                     reg_rate <= (reg_rate[3:1] != bus_data_in[3:1])?
                         {4'd0, bus_data_in[3:0]}:
                         {reg_rate[7:4], bus_data_in[3:0]};
+                end
 
                 24'h2082: // PRC Map Tile Base Low
                     reg_map_base[7:3] <= bus_data_in[7:3];
@@ -330,7 +333,7 @@ begin
                 begin
                     state <= PRC_STATE_IDLE;
                 end
-                else if(reg_counter < 7'h42)
+                else if(reg_counter < 7'h41)
                 begin
                     // Draw map/sprite or copy frame
                     if(reg_mode[3:1] > 0 && !bus_ack)
@@ -341,7 +344,7 @@ begin
                         init_next_state(next_state);
                     end
                 end
-                else if(reg_counter == 7'h42)
+                else if(reg_counter == 7'h41)
                 begin
                     bus_request     <= 0;
                     reg_counter     <= 7'h1;
@@ -349,10 +352,10 @@ begin
                     irq_render_done <= 1;
                 end
             end
-            else if(reg_counter == 7'h42)
+            else if(reg_counter == 7'h41)
             begin
                 // Non-active frame
-                reg_counter   <= 7'd1;
+                reg_counter <= 7'd1;
                 reg_rate[7:4] <= reg_rate[7:4] + 4'd1;
             end
         end

@@ -2,23 +2,27 @@ module minx
 (
     input clk,
     input rt_clk,
+    input rt_ce,
     input reset,
     input [7:0] data_in,
     input [7:0] keys_active,
-    output logic pk,
-    output logic pl,
-    output wire [1:0] i01,
-    output logic [7:0] data_out,
-    output logic [23:0] address_out,
-    output logic [1:0]  bus_status,
-    output logic read,
-    output logic read_interrupt_vector,
-    output wire write,
-    output wire sync,
-    output logic iack,
+    output pk,
+    output pl,
+    output [1:0] i01,
+    output [7:0] data_out,
+    output [23:0] address_out,
+    output [1:0]  bus_status,
+    output read,
+    output read_interrupt_vector,
+    output write,
+    output sync,
+    output iack,
 
     output [5:0] lcd_contrast,
-    output frame_complete
+    output frame_complete,
+
+    output bus_request,
+    output bus_ack
 );
 
     assign frame_complete = irq_copy_complete;
@@ -128,6 +132,7 @@ module minx
     (
         .clk            (clk),
         .rt_clk         (rt_clk),
+        .rt_ce          (rt_ce),
         .reset          (reset),
         .bus_write      (write),
         .bus_read       (read),
@@ -143,6 +148,7 @@ module minx
     (
         .clk            (clk),
         .rt_clk         (rt_clk),
+        .rt_ce          (rt_ce),
         .reset          (reset),
         .bus_write      (write),
         .bus_address_in (cpu_address_out),
@@ -193,9 +199,6 @@ module minx
         .data_out(lcd_data_out),
         .lcd_contrast(lcd_contrast)
     );
-
-    wire bus_request;
-    wire bus_ack;
 
     wire [7:0] prc_data_out;
     wire [23:0] prc_address_out;

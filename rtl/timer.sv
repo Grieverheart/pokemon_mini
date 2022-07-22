@@ -5,6 +5,7 @@ module timer
 (
     input clk,
     input rt_clk,
+    input rt_ce,
     input reset,
     input bus_write,
     input bus_read,
@@ -168,12 +169,12 @@ begin
 end
 
 reg rt_clk_latch;
-wire rt_clk_edge = (rt_clk & ~rt_clk_latch);
+wire rt_clk_edge = (rt_ce & ~rt_clk_latch);
 reg [11:0] osc1_prescaler;
 always_ff @ (posedge clk)
 begin
     osc1_prescaler <= osc1_prescaler + 1;
-    rt_clk_latch <= rt_clk;
+    rt_clk_latch   <= rt_ce;
     irqs <= 0;
 
     if(reset_l)
@@ -256,7 +257,7 @@ end
 reg [6:0] osc2_prescaler;
 always_ff @ (posedge rt_clk)
 begin
-    osc2_prescaler <= osc2_prescaler + 1;
+    if(rt_ce) osc2_prescaler <= osc2_prescaler + 1;
 end
 
 endmodule

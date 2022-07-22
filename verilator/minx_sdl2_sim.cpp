@@ -37,7 +37,6 @@ enum
 
 bool data_sent = false;
 bool irq_processing = false;
-int irq_render_done_old = 0;
 int irq_copy_complete_old = 0;
 int num_cycles_since_sync = 0;
 
@@ -205,13 +204,13 @@ void sim_init(SimData* sim, const char* cartridge_path)
 
     // Load a cartridge.
     sim->cartridge = (uint8_t*) calloc(1, 0x200000);
-    fp = fopen(cartridge_path, "rb");
+    //fp = fopen(cartridge_path, "rb");
 
-    fseek(fp, 0, SEEK_END);
-    sim->cartridge_file_size = ftell(fp);
-    fseek(fp, 0, SEEK_SET);  /* same as rewind(f); */
-    fread(sim->cartridge, 1, sim->cartridge_file_size, fp);
-    fclose(fp);
+    //fseek(fp, 0, SEEK_END);
+    //sim->cartridge_file_size = ftell(fp);
+    //fseek(fp, 0, SEEK_SET);  /* same as rewind(f); */
+    //fread(sim->cartridge, 1, sim->cartridge_file_size, fp);
+    //fclose(fp);
 
     sim->cartridge_touched = (uint8_t*) calloc(1, sim->cartridge_file_size);
     sim->instructions_executed = (uint8_t*) calloc(1, 0x300);
@@ -227,6 +226,8 @@ void sim_init(SimData* sim, const char* cartridge_path)
 
     Verilated::traceEverOn(true);
     sim->tfp = nullptr;
+
+    sim->minx->rt_ce = 1;
 }
 
 void sim_dump_stop(SimData* sim)
@@ -279,30 +280,6 @@ void simulate_steps(SimData* sim, int n_steps)
         else if(sim->tfp) sim->tfp->dump(sim->timestamp);
         sim->timestamp++;
 
-        if(sim->minx->rootp->minx__DOT__irq_render_done && irq_render_done_old == 0)
-        {
-            irq_render_done_old = 1;
-            PRINTD("Render done %d.\n", sim->timestamp / 2);
-
-            uint8_t contrast = sim->minx->rootp->minx__DOT__lcd__DOT__contrast;
-            if(contrast > 0x20) contrast = 0x20;
-
-            uint8_t image_data[96*64];
-
-            for (int yC=0; yC<8; yC++)
-            {
-                for (int xC=0; xC<96; xC++)
-                {
-                    //uint8_t data = sim->minx->rootp->minx__DOT__lcd__DOT__lcd_data[yC * 132 + xC];
-                    uint8_t data = sim->memory[0x1000 + yC * 96 + xC];
-                    for(int i = 0; i < 8; ++i)
-                        image_data[96 * (8 * yC + i) + xC] = ((~data >> i) & 1)? 255.0: 255.0 * (1.0 - (float)contrast / 0x20);
-                }
-            }
-
-        }
-        else if(!sim->minx->rootp->minx__DOT__irq_render_done) irq_render_done_old = 0;
-
         if(sim->minx->rootp->minx__DOT__irq_copy_complete && irq_copy_complete_old == 0)
         {
             irq_copy_complete_old = 1;
@@ -316,7 +293,7 @@ void simulate_steps(SimData* sim, int n_steps)
 
         // Check for errors
         {
-            if(sim->minx->rootp->minx__DOT__cpu__DOT__state == 2 && sim->minx->pl == 0 && !sim->minx->rootp->minx__DOT__bus_ack)
+            if(sim->minx->rootp->minx__DOT__cpu__DOT__state == 2 && sim->minx->pl == 0 && !sim->minx->bus_ack)
             {
                 if(sim->minx->rootp->minx__DOT__cpu__DOT__microaddress == 0 &&
                    sim->minx->rootp->minx__DOT__cpu__DOT__extended_opcode != 0x1AE
@@ -330,7 +307,7 @@ void simulate_steps(SimData* sim, int n_steps)
                 (sim->minx->pl == 0) &&
                 (sim->minx->rootp->minx__DOT__cpu__DOT__micro_op & 0x1000) &&
                 sim->minx->iack == 0 &&
-                !sim->minx->rootp->minx__DOT__bus_ack)
+                !sim->minx->bus_ack)
             {
                 if(irq_processing)
                     irq_processing = false;
@@ -450,14 +427,14 @@ void simulate_steps(SimData* sim, int n_steps)
         if(sim->minx->sync && sim->minx->pl == 1)
             num_cycles_since_sync = 0;
 
-        if(sim->minx->pl == 1 && !sim->minx->rootp->minx__DOT__bus_ack)
+        if(sim->minx->pl == 1 && !sim->minx->bus_ack)
             ++num_cycles_since_sync;
     }
 }
 
-uint8_t* get_lcd_image(Vminx& minx)
+uint8_t* get_lcd_image(const SimData* sim)
 {
-    uint8_t contrast = minx.rootp->minx__DOT__lcd__DOT__contrast;
+    uint8_t contrast = sim->minx->rootp->minx__DOT__lcd__DOT__contrast;
     if(contrast > 0x20) contrast = 0x20;
 
     uint8_t* image_data = new uint8_t[96*64];
@@ -466,7 +443,8 @@ uint8_t* get_lcd_image(Vminx& minx)
     {
         for (int xC=0; xC<96; xC++)
         {
-            uint8_t data = minx.rootp->minx__DOT__lcd__DOT__lcd_data[yC * 132 + xC];
+            uint8_t data = sim->minx->rootp->minx__DOT__lcd__DOT__lcd_data[yC * 132 + xC];
+            //uint8_t data = sim->memory[yC * 96 + xC];
             for(int i = 0; i < 8; ++i)
             {
                 int idx = 96 * (63 - 8 * yC - i) + xC;
@@ -670,7 +648,7 @@ int main(int argc, char** argv)
 
         if(sim_is_running)
             simulate_steps(&sim, num_sim_steps);
-        uint8_t* lcd_image = get_lcd_image(*sim.minx);
+        uint8_t* lcd_image = get_lcd_image(&sim);
         gl_renderer_draw(96, 64, lcd_image);
         delete[] lcd_image;
 
