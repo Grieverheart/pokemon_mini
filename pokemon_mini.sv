@@ -432,7 +432,7 @@ spram #(
     .data(minx_data_out),
     .wren(
         minx_we &&
-        (bus_status == BUS_COMMAND_MEM_READ) &&
+        (bus_status == BUS_COMMAND_MEM_WRITE) &&
         (minx_address_out >= 24'h1300) &&
         (minx_address_out < 24'h2000)
     )
@@ -452,7 +452,7 @@ dpram #(
     .data_a(minx_data_out),
     .wren_a(
         minx_we &&
-        (bus_status == BUS_COMMAND_MEM_READ) &&
+        (bus_status == BUS_COMMAND_MEM_WRITE) &&
         (minx_address_out >= 24'h1000) &&
         (minx_address_out < 24'h1300)
     ),
