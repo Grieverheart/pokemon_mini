@@ -170,6 +170,15 @@ module emu
     input         OSD_STATUS
 );
 
+// TODO list:
+// * Load roms
+// * Input
+// * Use lcd gdram
+// * implement n-buffering and sample average from all buffers.
+// * color palette
+// * save eeprom as file
+// * savestates + hold instruction?
+
 ///////// Default values for ports not used in this core /////////
 
 assign ADC_BUS  = 'Z;
@@ -269,11 +278,11 @@ reg [7:0] clk_rt_prescale = 0;
 always_ff @ (posedge clk_rt) clk_rt_prescale <= clk_rt_prescale + 1;
 
 reg [1:0] clk_prescale = 0;
-reg minx_clk_ce = 0;
+reg [1:0] minx_clk_prescale = 0;
 always_ff @ (posedge clk_sys)
 begin
     clk_prescale <= clk_prescale + 1;
-    minx_clk_ce  <= minx_clk_ce + 1;
+    minx_clk_prescale  <= minx_clk_prescale + 1;
 end
 
 wire reset = RESET | status[0] | buttons[1];
@@ -376,7 +385,7 @@ wire [1:0] bus_status;
 minx minx
 (
     .clk                   (clk_sys),
-    .clk_ce                (minx_clk_ce),
+    .clk_ce                (&minx_clk_prescale),
     .rt_clk                (rt_clk),
     .rt_ce                 (clk_rt_prescale[7]),
     .reset                 (reset | (|reset_counter)),
