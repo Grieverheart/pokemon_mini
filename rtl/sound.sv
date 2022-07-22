@@ -1,6 +1,7 @@
 module sound
 (
     input clk,
+    input clk_ce,
     input reset,
     input bus_write,
     input [23:0] bus_address_in,
@@ -14,27 +15,33 @@ reg [2:0] reg_sound_volume;
 reg write_latch;
 always_ff @ (negedge clk)
 begin
-    if(reset)
+    if(clk_ce)
     begin
-        reg_sound_control <= 3'd0;
-        reg_sound_volume  <= 3'd0;
-    end
-    else
-    begin
-        if(write_latch)
+        if(reset)
         begin
-            if(bus_address_in == 24'h2070)
-                reg_sound_control <= bus_data_in[2:0];
-            else if(bus_address_in == 24'h2071)
-                reg_sound_volume <= bus_data_in[2:0];
+            reg_sound_control <= 3'd0;
+            reg_sound_volume  <= 3'd0;
+        end
+        else
+        begin
+            if(write_latch)
+            begin
+                if(bus_address_in == 24'h2070)
+                    reg_sound_control <= bus_data_in[2:0];
+                else if(bus_address_in == 24'h2071)
+                    reg_sound_volume <= bus_data_in[2:0];
+            end
         end
     end
 end
 
 always_ff @ (posedge clk)
 begin
-    write_latch <= 0;
-    if(bus_write) write_latch <= 1;
+    if(clk_ce)
+    begin
+        write_latch <= 0;
+        if(bus_write) write_latch <= 1;
+    end
 end
 
 always_comb

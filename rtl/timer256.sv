@@ -1,6 +1,7 @@
 module timer256
 (
     input clk,
+    input clk_ce,
     input rt_clk,
     input reset,
     input bus_write,
@@ -21,22 +22,25 @@ reg [7:0] timer;
 reg write_latch;
 always_ff @ (negedge clk)
 begin
-    if(reset)
+    if(clk_ce)
     begin
-        reg_enabled <= 1'd0;
-        reg_reset   <= 1'd0;
-    end
-    else
-    begin
-        if(reg_reset && timer == 0)
-            reg_reset <= 0;
-
-        if(write_latch)
+        if(reset)
         begin
-            if(bus_address_in == 24'h2040)
+            reg_enabled <= 1'd0;
+            reg_reset   <= 1'd0;
+        end
+        else
+        begin
+            if(reg_reset && timer == 0)
+                reg_reset <= 0;
+
+            if(write_latch)
             begin
-                reg_enabled <= bus_data_in[0];
-                reg_reset   <= bus_data_in[1];
+                if(bus_address_in == 24'h2040)
+                begin
+                    reg_enabled <= bus_data_in[0];
+                    reg_reset   <= bus_data_in[1];
+                end
             end
         end
     end
@@ -44,8 +48,11 @@ end
 
 always_ff @ (posedge clk)
 begin
-    write_latch <= 0;
-    if(bus_write) write_latch <= 1;
+    if(clk_ce)
+    begin
+        write_latch <= 0;
+        if(bus_write) write_latch <= 1;
+    end
 end
 
 always_comb

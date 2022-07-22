@@ -1,6 +1,7 @@
 module rtc
 (
     input clk,
+    input clk_ce,
     input rt_clk,
     input rt_ce,
     input reset,
@@ -18,18 +19,21 @@ reg [14:0] prescale;
 reg write_latch;
 always_ff @ (negedge clk)
 begin
-    if(reset)
+    if(clk_ce)
     begin
-        reg_enabled <= 1'd0;
-    end
-    else
-    begin
-        if(write_latch)
+        if(reset)
         begin
-            if(bus_address_in == 24'h2008)
+            reg_enabled <= 1'd0;
+        end
+        else
+        begin
+            if(write_latch)
             begin
-                reg_enabled <= bus_data_in[0];
-                reg_reset   <= bus_data_in[1];
+                if(bus_address_in == 24'h2008)
+                begin
+                    reg_enabled <= bus_data_in[0];
+                    reg_reset   <= bus_data_in[1];
+                end
             end
         end
     end
@@ -37,8 +41,11 @@ end
 
 always_ff @ (posedge clk)
 begin
-    write_latch <= 0;
-    if(bus_write) write_latch <= 1;
+    if(clk_ce)
+    begin
+        write_latch <= 0;
+        if(bus_write) write_latch <= 1;
+    end
 end
 
 always_comb

@@ -4,6 +4,7 @@ module timer
 // @todo: parameters.
 (
     input clk,
+    input clk_ce,
     input rt_clk,
     input rt_ce,
     input reset,
@@ -95,49 +96,55 @@ endfunction
 reg write_latch;
 always_ff @ (negedge clk)
 begin
-    if(reset)
+    if(clk_ce)
     begin
-        reg_control <= 16'd0;
-    end
-    else
-    begin
-        if(reset_l)
-            reg_control[1] <= 0;
-
-        if(reset_h)
-            reg_control[9] <= 0;
-
-        if(write_latch)
+        if(reset)
         begin
-            case(bus_address_in)
-                24'h2018:
-                    reg_scale         <= bus_data_in;
-                24'h2019:
-                    reg_osc_control   <= bus_data_in;
-                24'h2030:
-                    reg_control[7:0]  <= bus_data_in;
-                24'h2031:
-                    reg_control[15:8] <= bus_data_in;
-                24'h2032:
-                    reg_preset[7:0]   <= bus_data_in;
-                24'h2033:
-                    reg_preset[15:8]  <= bus_data_in;
-                24'h2034:
-                    reg_compare[7:0]  <= bus_data_in;
-                24'h2035:
-                    reg_compare[15:8] <= bus_data_in;
-                default:
-                begin
-                end
-            endcase
+            reg_control <= 16'd0;
+        end
+        else
+        begin
+            if(reset_l)
+                reg_control[1] <= 0;
+
+            if(reset_h)
+                reg_control[9] <= 0;
+
+            if(write_latch)
+            begin
+                case(bus_address_in)
+                    24'h2018:
+                        reg_scale         <= bus_data_in;
+                    24'h2019:
+                        reg_osc_control   <= bus_data_in;
+                    24'h2030:
+                        reg_control[7:0]  <= bus_data_in;
+                    24'h2031:
+                        reg_control[15:8] <= bus_data_in;
+                    24'h2032:
+                        reg_preset[7:0]   <= bus_data_in;
+                    24'h2033:
+                        reg_preset[15:8]  <= bus_data_in;
+                    24'h2034:
+                        reg_compare[7:0]  <= bus_data_in;
+                    24'h2035:
+                        reg_compare[15:8] <= bus_data_in;
+                    default:
+                    begin
+                    end
+                endcase
+            end
         end
     end
 end
 
 always_ff @ (posedge clk)
 begin
-    write_latch <= 0;
-    if(bus_write) write_latch <= 1;
+    if(clk_ce)
+    begin
+        write_latch <= 0;
+        if(bus_write) write_latch <= 1;
+    end
 end
 
 always_comb
@@ -173,81 +180,84 @@ wire rt_clk_edge = (rt_ce & ~rt_clk_latch);
 reg [11:0] osc1_prescaler;
 always_ff @ (posedge clk)
 begin
-    osc1_prescaler <= osc1_prescaler + 1;
-    rt_clk_latch   <= rt_ce;
-    irqs <= 0;
-
-    if(reset_l)
-        timer <= reg_preset;
-
-    if(mode16)
+    if(clk_ce)
     begin
-        if(enabled_l)
-        begin
-            //if(osc1_prescaler == 2**prescale_osc1[prescale_l] - 1)
-            //begin
-            //    osc1_prescaler <= 0;
-            if(tick(osc_l, prescale_l))
-            begin
-                if(~osc_l || rt_clk_edge)
-                begin
-                    if(timer == 0)
-                    begin
-                        irqs[1] <= 1;
-                        timer <= reg_preset;
-                    end
-                    else
-                        timer <= timer - 1;
+        osc1_prescaler <= osc1_prescaler + 1;
+        rt_clk_latch   <= rt_ce;
+        irqs <= 0;
 
-                    if(timer <= reg_compare)
+        if(reset_l)
+            timer <= reg_preset;
+
+        if(mode16)
+        begin
+            if(enabled_l)
+            begin
+                //if(osc1_prescaler == 2**prescale_osc1[prescale_l] - 1)
+                //begin
+                //    osc1_prescaler <= 0;
+                if(tick(osc_l, prescale_l))
+                begin
+                    if(~osc_l || rt_clk_edge)
                     begin
-                        irqs[2] <= 1;
+                        if(timer == 0)
+                        begin
+                            irqs[1] <= 1;
+                            timer <= reg_preset;
+                        end
+                        else
+                            timer <= timer - 1;
+
+                        if(timer <= reg_compare)
+                        begin
+                            irqs[2] <= 1;
+                        end
                     end
                 end
             end
         end
-    end
-    else
-    begin
-        if(reset_h)
-            timer[15:8] <= reg_preset[15:8];
-
-        if(enabled_l)
+        else
         begin
-            if(tick(osc_l, prescale_l))
-            begin
-                if(~osc_l || rt_clk_edge)
-                begin
-                    if(timer == 0)
-                    begin
-                        irqs[0] <= 1;
-                        timer[7:0] <= reg_preset[7:0];
-                    end
-                    else
-                        timer[7:0] <= timer[7:0] - 1;
+            if(reset_h)
+                timer[15:8] <= reg_preset[15:8];
 
-                    if(timer[7:0] <= reg_compare[7:0])
+            if(enabled_l)
+            begin
+                if(tick(osc_l, prescale_l))
+                begin
+                    if(~osc_l || rt_clk_edge)
                     begin
-                        irqs[2] <= 1;
+                        if(timer == 0)
+                        begin
+                            irqs[0] <= 1;
+                            timer[7:0] <= reg_preset[7:0];
+                        end
+                        else
+                            timer[7:0] <= timer[7:0] - 1;
+
+                        if(timer[7:0] <= reg_compare[7:0])
+                        begin
+                            irqs[2] <= 1;
+                        end
                     end
                 end
             end
-        end
 
-        if(enabled_h)
-        begin
-            if(tick(osc_h, prescale_h))
+            if(enabled_h)
             begin
-                if(~osc_h || rt_clk_edge)
+                if(tick(osc_h, prescale_h))
                 begin
-                    if(timer == 0)
+                    if(~osc_h || rt_clk_edge)
                     begin
-                        irqs[1] <= 1;
-                        timer[15:8] <= reg_preset[15:8];
+                        if(timer == 0)
+                        begin
+                            irqs[1] <= 1;
+                            timer[15:8] <= reg_preset[15:8];
+                        end
+                        else
+                            irqs[2] <= 1;
+                            timer[15:8] <= timer[15:8] - 1;
                     end
-                    else
-                        irqs[2] <= 1;
-                        timer[15:8] <= timer[15:8] - 1;
                 end
             end
         end

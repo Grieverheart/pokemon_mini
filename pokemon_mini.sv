@@ -269,7 +269,12 @@ reg [7:0] clk_rt_prescale = 0;
 always_ff @ (posedge clk_rt) clk_rt_prescale <= clk_rt_prescale + 1;
 
 reg [1:0] clk_prescale = 0;
-always_ff @ (posedge clk_sys) clk_prescale <= clk_prescale + 1;
+reg minx_clk_ce = 0;
+always_ff @ (posedge clk_sys)
+begin
+    clk_prescale <= clk_prescale + 1;
+    minx_clk_ce  <= minx_clk_ce + 1;
+end
 
 wire reset = RESET | status[0] | buttons[1];
 reg [3:0] reset_counter;
@@ -315,7 +320,7 @@ begin
     begin
         if(hpos == LCD_XSIZE + 16) hbl <= 1;
         if(hpos == 16)             hbl <= 0;
-        if(vpos >=  32+LCD_YSIZE)  vbl <= 1;
+        if(vpos >= 32+LCD_YSIZE)   vbl <= 1;
         if(vpos == 32)             vbl <= 0;
 
         if(hpos == 120)
@@ -371,6 +376,7 @@ wire [1:0] bus_status;
 minx minx
 (
     .clk                   (clk_sys),
+    .clk_ce                (minx_clk_ce),
     .rt_clk                (rt_clk),
     .rt_ce                 (clk_rt_prescale[7]),
     .reset                 (reset | (|reset_counter)),
@@ -423,10 +429,7 @@ spram #(
     )
 );
 
-// @note: Using fb0 for getting the rendered image is not always right, at
-// least not without triple buffering, because the image can be overwritten
-// while rendering to the screen. Alternatively, we need to output a signal
-// for when the actual rendering part is done, instead of the copy.
+// @todo: Use the lcd gdram instead of memory.
 wire [7:0] fb0_data_out;
 wire [7:0] fb0_pixel_value;
 dpram #(

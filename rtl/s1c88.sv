@@ -10,6 +10,7 @@ enum bit [1:0]
 module s1c88
 (
     input clk,
+    input clk_ce,
     input reset,
     input [7:0] data_in,
     input [3:0] irq,
@@ -686,103 +687,106 @@ module s1c88
 
     reg alu_op_error;
     reg not_implemented_divzero_error;
-    always_ff @ (negedge clk, posedge reset)
+    always_ff @ (negedge clk)
     begin
-        if(reset)
+        if(clk_ce)
         begin
-        end
-        else if(pk == 0)
-        begin
-            alu_op_error <= 0;
-            not_implemented_divzero_error <= 0;
-            alu_size <= micro_alu_size;
-            alu_flag_update <= micro_alu_flag_update;
+            if(reset)
+            begin
+            end
+            else if(pk == 0)
+            begin
+                alu_op_error <= 0;
+                not_implemented_divzero_error <= 0;
+                alu_size <= micro_alu_size;
+                alu_flag_update <= micro_alu_flag_update;
 
-            case(micro_alu_op)
-                MICRO_ALU_OP_AND:
-                    alu_op <= ALUOP_AND;
+                case(micro_alu_op)
+                    MICRO_ALU_OP_AND:
+                        alu_op <= ALUOP_AND;
 
-                MICRO_ALU_OP_OR:
-                    alu_op <= ALUOP_OR;
+                    MICRO_ALU_OP_OR:
+                        alu_op <= ALUOP_OR;
 
-                MICRO_ALU_OP_XOR:
-                    alu_op <= ALUOP_XOR;
+                    MICRO_ALU_OP_XOR:
+                        alu_op <= ALUOP_XOR;
 
-                MICRO_ALU_OP_ADD:
-                    alu_op <= ALUOP_ADD;
+                    MICRO_ALU_OP_ADD:
+                        alu_op <= ALUOP_ADD;
 
-                MICRO_ALU_OP_ADC:
-                    alu_op <= ALUOP_ADC;
+                    MICRO_ALU_OP_ADC:
+                        alu_op <= ALUOP_ADC;
 
-                MICRO_ALU_OP_SUB:
-                    alu_op <= ALUOP_SUB;
+                    MICRO_ALU_OP_SUB:
+                        alu_op <= ALUOP_SUB;
 
-                MICRO_ALU_OP_SBC:
-                    alu_op <= ALUOP_SBC;
+                    MICRO_ALU_OP_SBC:
+                        alu_op <= ALUOP_SBC;
 
-                MICRO_ALU_OP_INC:
-                    alu_op <= ALUOP_INC;
+                    MICRO_ALU_OP_INC:
+                        alu_op <= ALUOP_INC;
 
-                MICRO_ALU_OP_DEC:
-                    alu_op <= ALUOP_DEC;
+                    MICRO_ALU_OP_DEC:
+                        alu_op <= ALUOP_DEC;
 
-                MICRO_ALU_OP_NEG:
-                    alu_op <= ALUOP_NEG;
+                    MICRO_ALU_OP_NEG:
+                        alu_op <= ALUOP_NEG;
 
-                MICRO_ALU_OP_DIV:
-                begin
-                    alu_op <= ALUOP_DIV;
-                    if(A == 0)
-                        not_implemented_divzero_error <= 1;
-                end
+                    MICRO_ALU_OP_DIV:
+                    begin
+                        alu_op <= ALUOP_DIV;
+                        if(A == 0)
+                            not_implemented_divzero_error <= 1;
+                    end
 
-                MICRO_ALU_OP_MUL:
-                    alu_op <= ALUOP_MUL;
+                    MICRO_ALU_OP_MUL:
+                        alu_op <= ALUOP_MUL;
 
-                MICRO_ALU_OP_RL:
-                    alu_op <= ALUOP_RL;
+                    MICRO_ALU_OP_RL:
+                        alu_op <= ALUOP_RL;
 
-                MICRO_ALU_OP_RR:
-                    alu_op <= ALUOP_RR;
+                    MICRO_ALU_OP_RR:
+                        alu_op <= ALUOP_RR;
 
-                MICRO_ALU_OP_RLC:
-                    alu_op <= ALUOP_RLC;
+                    MICRO_ALU_OP_RLC:
+                        alu_op <= ALUOP_RLC;
 
-                MICRO_ALU_OP_RRC:
-                    alu_op <= ALUOP_RRC;
+                    MICRO_ALU_OP_RRC:
+                        alu_op <= ALUOP_RRC;
 
-                MICRO_ALU_OP_SLL:
-                    alu_op <= ALUOP_SLL;
+                    MICRO_ALU_OP_SLL:
+                        alu_op <= ALUOP_SLL;
 
-                MICRO_ALU_OP_SRL:
-                    alu_op <= ALUOP_SRL;
+                    MICRO_ALU_OP_SRL:
+                        alu_op <= ALUOP_SRL;
 
-                MICRO_ALU_OP_SLA:
-                    alu_op <= ALUOP_SLA;
+                    MICRO_ALU_OP_SLA:
+                        alu_op <= ALUOP_SLA;
 
-                MICRO_ALU_OP_SRA:
-                    alu_op <= ALUOP_SRA;
+                    MICRO_ALU_OP_SRA:
+                        alu_op <= ALUOP_SRA;
 
-                MICRO_ALU_OP_PACK:
-                    alu_op <= ALUOP_PACK;
+                    MICRO_ALU_OP_PACK:
+                        alu_op <= ALUOP_PACK;
 
-                MICRO_ALU_OP_UPACK:
-                    alu_op <= ALUOP_UPACK;
+                    MICRO_ALU_OP_UPACK:
+                        alu_op <= ALUOP_UPACK;
 
-                MICRO_ALU_OP_SEP:
-                    alu_op <= ALUOP_SEP;
+                    MICRO_ALU_OP_SEP:
+                        alu_op <= ALUOP_SEP;
 
-                MICRO_ALU_OP_SWAP:
-                    alu_op <= ALUOP_SWAP;
+                    MICRO_ALU_OP_SWAP:
+                        alu_op <= ALUOP_SWAP;
 
-                default:
-                begin
-                    alu_op <= ALUOP_ADD;
-                    if(micro_alu_op != MICRO_ALU_OP_NONE)
-                        alu_op_error <= 1;
-                end
+                    default:
+                    begin
+                        alu_op <= ALUOP_ADD;
+                        if(micro_alu_op != MICRO_ALU_OP_NONE)
+                            alu_op_error <= 1;
+                    end
 
-            endcase
+                endcase
+            end
         end
     end
 
@@ -970,395 +974,398 @@ module s1c88
     reg branch_taken;
     reg not_implemented_addressing_error;
     reg not_implemented_alu_dec_pack_ops_error;
-    always_ff @ (negedge clk, posedge reset)
+    always_ff @ (negedge clk)
     begin
-        branch_taken = 0;
-        not_implemented_addressing_error <= 0;
-        not_implemented_alu_dec_pack_ops_error <= 0;
-
-        if(reset)
+        if(clk_ce)
         begin
-            iack                 <= 1'd0;
-            state                <= STATE_IDLE;
-            address_out          <= ~24'd0;
-            pl                   <= 1'd0;
-            bus_status           <= BUS_COMMAND_IDLE;
-            reset_counter        <= 2'd0;
-            exception            <= EXCEPTION_TYPE_RESET;
-            irq_vector_address   <= 8'd0;
-            fetch_opcode         <= 1'd0;
-            top_address          <= 16'd0;
-            not_implemented_write_error <= 1'd0;
+            branch_taken = 0;
+            not_implemented_addressing_error <= 0;
+            not_implemented_alu_dec_pack_ops_error <= 0;
 
-            SC <= 8'hC0;
-            NB <= 8'h01;
-            EP <= 8'h0;
-            IX <= 16'h0;
-            IY <= 16'h0;
-        end
-        else if(reset_counter < 2)
-        begin
-            reset_counter <= reset_counter + 2'd1;
-            if(reset_counter == 1)
+            if(reset)
             begin
-                // Output dummy address
-                address_out <= 24'hDEFACE;
+                iack                 <= 1'd0;
+                state                <= STATE_IDLE;
+                address_out          <= ~24'd0;
+                pl                   <= 1'd0;
+                bus_status           <= BUS_COMMAND_IDLE;
+                reset_counter        <= 2'd0;
+                exception            <= EXCEPTION_TYPE_RESET;
+                irq_vector_address   <= 8'd0;
+                fetch_opcode         <= 1'd0;
+                top_address          <= 16'd0;
+                not_implemented_write_error <= 1'd0;
+
+                SC <= 8'hC0;
+                NB <= 8'h01;
+                EP <= 8'h0;
+                IX <= 16'h0;
+                IY <= 16'h0;
             end
-        end
-        else
-        begin
-            bus_request_latch <= bus_request;
-            bus_ack_negedge   <= (pk == 0)? bus_request: bus_request_latch;
-
-            if((pk == 0) && bus_ack_posedge)
+            else if(reset_counter < 2)
             begin
-                pl           <= 1'd0;
-                address_out  <= 24'd0;
+                reset_counter <= reset_counter + 2'd1;
+                if(reset_counter == 1)
+                begin
+                    // Output dummy address
+                    address_out <= 24'hDEFACE;
+                end
             end
-            else if(!bus_ack)
+            else
             begin
-                pl <= pk;
-                if(pk == 1)
+                bus_request_latch <= bus_request;
+                bus_ack_negedge   <= (pk == 0)? bus_request: bus_request_latch;
+
+                if((pk == 0) && bus_ack_posedge)
                 begin
-                    if(exception_factor != 0 && exception != EXCEPTION_TYPE_RESET)
-                        exception <= exception_factor;
-
-                    not_implemented_write_error <= 1'd0;
-
-                    if(fetch_opcode && !iack)
-                    begin
-                        opcode <= data_in;
-                        top_address <= PC;
-                        PC <= PC + 16'h1;
-                    end
+                    pl           <= 1'd0;
+                    address_out  <= 24'd0;
                 end
-                else if(pk == 0)
+                else if(!bus_ack)
                 begin
-                    address_out <= {1'd0, (PC[15]? CB: 8'd0), PC[14:0]};
-                    bus_status <= BUS_COMMAND_MEM_READ;
-                    fetch_opcode <= 0;
-                    //bus_status <= BUS_COMMAND_IRQ_READ;
-
-                    // @note: Do we need to restrict the state setting here?
-                    //if(exception == EXCEPTION_TYPE_NONE || iack == 1)
-                    //    state <= next_state;
-
-                    state <= next_state;
-
-                    if(next_state == STATE_EXC_PROCESS && exception_process_step == 0 && iack == 1)
-                        bus_status <= (exception < EXCEPTION_TYPE_NMI)? BUS_COMMAND_IRQ_READ: BUS_COMMAND_MEM_READ;
-                    else if(exception == EXCEPTION_TYPE_RESET && iack == 0)
-                    begin
-                        fetch_opcode           <= 1;
-                        iack                   <= 1;
-                        address_out            <= 24'hDEFACE;
-                        exception_process_step <= 4;
-                    end
-
-                    if(
-                        ((state == STATE_EXECUTE && !fetch_opcode) ||
-                         (next_state == STATE_EXECUTE && state != STATE_EXC_PROCESS)) &&
-                        microinstruction_done
-                    )
-                    begin
-                        fetch_opcode <= 1;
-
-                        if(exception != EXCEPTION_TYPE_NONE && iack == 0 && postpone_exception == 0)
-                        begin
-                            iack                   <= 1;
-                            exception_process_step <= 0;
-                        end
-                    end
-                end
-
-
-                if(state == STATE_EXC_PROCESS)
-                begin
-                    state <= STATE_EXC_PROCESS;
-
+                    pl <= pk;
                     if(pk == 1)
                     begin
-                        if(exception_process_step == 0)
+                        if(exception_factor != 0 && exception != EXCEPTION_TYPE_RESET)
+                            exception <= exception_factor;
+
+                        not_implemented_write_error <= 1'd0;
+
+                        if(fetch_opcode && !iack)
                         begin
-                            irq_vector_address <= data_in;
-                        end
-                        else if(exception_process_step == 5)
-                        begin
-                            PC[7:0] <= data_in;
-                        end
-                        else if(exception_process_step == 6)
-                        begin
-                            PC[15:8] <= data_in;
-                        end
-                        else if(exception_process_step == 7)
-                        begin
-                            state <= next_state;
+                            opcode <= data_in;
+                            top_address <= PC;
+                            PC <= PC + 16'h1;
                         end
                     end
-                    else
+                    else if(pk == 0)
                     begin
-                        exception_process_step <= exception_process_step + 4'd1;
+                        address_out <= {1'd0, (PC[15]? CB: 8'd0), PC[14:0]};
+                        bus_status <= BUS_COMMAND_MEM_READ;
+                        fetch_opcode <= 0;
+                        //bus_status <= BUS_COMMAND_IRQ_READ;
 
-                        if(exception_process_step == 0)
+                        // @note: Do we need to restrict the state setting here?
+                        //if(exception == EXCEPTION_TYPE_NONE || iack == 1)
+                        //    state <= next_state;
+
+                        state <= next_state;
+
+                        if(next_state == STATE_EXC_PROCESS && exception_process_step == 0 && iack == 1)
+                            bus_status <= (exception < EXCEPTION_TYPE_NMI)? BUS_COMMAND_IRQ_READ: BUS_COMMAND_MEM_READ;
+                        else if(exception == EXCEPTION_TYPE_RESET && iack == 0)
                         begin
-                            bus_status <= BUS_COMMAND_MEM_WRITE;
-                            address_out <= {8'b0, SP - 16'd1};
-                            SP <= SP - 16'd1;
+                            fetch_opcode           <= 1;
+                            iack                   <= 1;
+                            address_out            <= 24'hDEFACE;
+                            exception_process_step <= 4;
                         end
-                        else if(exception_process_step == 1)
-                        begin
-                            bus_status <= BUS_COMMAND_MEM_WRITE;
-                            address_out <= {8'b0, SP - 16'd1};
-                            SP <= SP - 16'd1;
-                        end
-                        else if(exception_process_step == 2)
-                        begin
-                            bus_status <= BUS_COMMAND_MEM_WRITE;
-                            address_out <= {8'b0, SP - 16'd1};
-                            SP <= SP - 16'd1;
-                        end
-                        else if(exception_process_step == 3)
-                        begin
-                            bus_status <= BUS_COMMAND_MEM_WRITE;
-                            address_out <= {8'b0, SP - 16'd1};
-                            SP <= SP - 16'd1;
-                        end
-                        else if(exception_process_step == 4)
-                        begin
-                            address_out <= {16'd0, irq_vector_address};
-                            // @important: in the CPU manual, it shows that i0,i1
-                            // are being set at pk == 0. Here we set all registers
-                            // at pl cycles to make it slightly easier, otherwise
-                            // we need to treat SC separately.
-                            SC[7:6] <= (exception < EXCEPTION_TYPE_NMI)? exception[1:0]: 2'h3;
-                        end
-                        else if(exception_process_step == 5)
-                        begin
-                            address_out <= {16'd0, irq_vector_address + 8'd1};
-                            iack        <= 0;
-                            exception   <= EXCEPTION_TYPE_NONE;
-                        end
-                        else if(exception_process_step == 6)
+
+                        if(
+                            ((state == STATE_EXECUTE && !fetch_opcode) ||
+                             (next_state == STATE_EXECUTE && state != STATE_EXC_PROCESS)) &&
+                            microinstruction_done
+                        )
                         begin
                             fetch_opcode <= 1;
+
+                            if(exception != EXCEPTION_TYPE_NONE && iack == 0 && postpone_exception == 0)
+                            begin
+                                iack                   <= 1;
+                                exception_process_step <= 0;
+                            end
                         end
                     end
-                end
-                else if(state == STATE_OPEXT_READ)
-                begin
-                    if(pk == 1)
-                    begin
-                        opext <= data_in;
-                        PC <= PC + 16'd1;
-                    end
-                end
-                else if(state == STATE_EXECUTE)
-                begin
-                    if(pk == 0)
-                    begin
-                        if(!fetch_opcode)
-                        begin
-                            state <= STATE_EXECUTE;
 
-                            if(micro_op_type == MICRO_TYPE_JMP && jump_condition_true)
+
+                    if(state == STATE_EXC_PROCESS)
+                    begin
+                        state <= STATE_EXC_PROCESS;
+
+                        if(pk == 1)
+                        begin
+                            if(exception_process_step == 0)
+                            begin
+                                irq_vector_address <= data_in;
+                            end
+                            else if(exception_process_step == 5)
+                            begin
+                                PC[7:0] <= data_in;
+                            end
+                            else if(exception_process_step == 6)
+                            begin
+                                PC[15:8] <= data_in;
+                            end
+                            else if(exception_process_step == 7)
+                            begin
+                                state <= next_state;
+                            end
+                        end
+                        else
+                        begin
+                            exception_process_step <= exception_process_step + 4'd1;
+
+                            if(exception_process_step == 0)
+                            begin
+                                bus_status <= BUS_COMMAND_MEM_WRITE;
+                                address_out <= {8'b0, SP - 16'd1};
+                                SP <= SP - 16'd1;
+                            end
+                            else if(exception_process_step == 1)
+                            begin
+                                bus_status <= BUS_COMMAND_MEM_WRITE;
+                                address_out <= {8'b0, SP - 16'd1};
+                                SP <= SP - 16'd1;
+                            end
+                            else if(exception_process_step == 2)
+                            begin
+                                bus_status <= BUS_COMMAND_MEM_WRITE;
+                                address_out <= {8'b0, SP - 16'd1};
+                                SP <= SP - 16'd1;
+                            end
+                            else if(exception_process_step == 3)
+                            begin
+                                bus_status <= BUS_COMMAND_MEM_WRITE;
+                                address_out <= {8'b0, SP - 16'd1};
+                                SP <= SP - 16'd1;
+                            end
+                            else if(exception_process_step == 4)
+                            begin
+                                address_out <= {16'd0, irq_vector_address};
+                                // @important: in the CPU manual, it shows that i0,i1
+                                // are being set at pk == 0. Here we set all registers
+                                // at pl cycles to make it slightly easier, otherwise
+                                // we need to treat SC separately.
+                                SC[7:6] <= (exception < EXCEPTION_TYPE_NMI)? exception[1:0]: 2'h3;
+                            end
+                            else if(exception_process_step == 5)
+                            begin
+                                address_out <= {16'd0, irq_vector_address + 8'd1};
+                                iack        <= 0;
+                                exception   <= EXCEPTION_TYPE_NONE;
+                            end
+                            else if(exception_process_step == 6)
+                            begin
+                                fetch_opcode <= 1;
+                            end
+                        end
+                    end
+                    else if(state == STATE_OPEXT_READ)
+                    begin
+                        if(pk == 1)
+                        begin
+                            opext <= data_in;
+                            PC <= PC + 16'd1;
+                        end
+                    end
+                    else if(state == STATE_EXECUTE)
+                    begin
+                        if(pk == 0)
+                        begin
+                            if(!fetch_opcode)
+                            begin
+                                state <= STATE_EXECUTE;
+
+                                if(micro_op_type == MICRO_TYPE_JMP && jump_condition_true)
+                                begin
+                                    if(microinstruction_done)
+                                    begin
+                                        //$display("%d, %x, %x, %x, %x: 0x%x", PC[15], PC, top_address, jump_dest, NB, {1'd0, (jump_dest[15]? NB: 8'd0), jump_dest[14:0]});
+                                        address_out <= {1'd0, (jump_dest[15]? NB: 8'd0), jump_dest[14:0]};
+                                        branch_taken = 1;
+                                    end
+                                end
+                            end
+                        end
+                        else
+                        begin
+                            if(alu_flag_update)
+                            begin
+                                case(alu_op)
+                                    ALUOP_AND, ALUOP_OR, ALUOP_XOR:
+                                    begin
+                                        SC[0] <= alu_flags[ALU_FLAG_Z];
+                                        SC[3] <= alu_flags[ALU_FLAG_S];
+                                    end
+                                    ALUOP_RLC, ALUOP_RRC, ALUOP_RL, ALUOP_RR, ALUOP_SLL, ALUOP_SRL:
+                                    begin
+                                        SC[0] <= alu_flags[ALU_FLAG_Z];
+                                        SC[1] <= alu_flags[ALU_FLAG_C];
+                                        SC[3] <= alu_flags[ALU_FLAG_S];
+                                    end
+                                    ALUOP_ADD, ALUOP_ADC, ALUOP_SUB, ALUOP_SBC, ALUOP_NEG, ALUOP_SLA, ALUOP_SRA, ALUOP_DIV, ALUOP_MUL:
+                                    begin
+                                        if(alu_op != ALUOP_SLA && alu_op != ALUOP_SRA && (SC[5:4] != 0))
+                                            not_implemented_alu_dec_pack_ops_error <= 1;
+                                        SC[0] <= alu_flags[ALU_FLAG_Z];
+                                        SC[1] <= alu_flags[ALU_FLAG_C];
+                                        SC[2] <= alu_flags[ALU_FLAG_V];
+                                        SC[3] <= alu_flags[ALU_FLAG_S];
+                                    end
+                                    ALUOP_INC, ALUOP_DEC:
+                                    begin
+                                        SC[0] <= alu_flags[ALU_FLAG_Z];
+                                    end
+                                    default:
+                                    begin
+                                    end
+                                endcase
+                            end
+
+                            if(micro_mov_dst == MICRO_MOV_PC)
+                            begin
+                                PC <= src_reg;
+                            end
+
+                            if(micro_mov_src == MICRO_MOV_DATA)
+                            begin
+                                PC <= PC + 16'd1;
+                            end
+
+                            if(micro_op_type == MICRO_TYPE_JMP)
                             begin
                                 if(microinstruction_done)
                                 begin
-                                    //$display("%d, %x, %x, %x, %x: 0x%x", PC[15], PC, top_address, jump_dest, NB, {1'd0, (jump_dest[15]? NB: 8'd0), jump_dest[14:0]});
-                                    address_out <= {1'd0, (jump_dest[15]? NB: 8'd0), jump_dest[14:0]};
-                                    branch_taken = 1;
+                                    if(jump_condition_true)
+                                    begin
+                                        branch_taken = 1;
+                                        CB <= NB;
+                                        // @note: Don't pre-increment PC when
+                                        // interrupt acknowledged.
+                                        PC <= iack? jump_dest: jump_dest + 16'd1;
+                                        top_address <= jump_dest;
+                                    end
+                                    else NB <= CB;
                                 end
                             end
+
+                            if(micro_op_type == MICRO_TYPE_BUS && micro_bus_op == MICRO_BUS_MEM_READ)// && !fetch_opcode)
+                            begin
+                                write_data_to_register(micro_bus_reg, {8'd0, data_in});
+                            end
+                            else if(micro_op_type == MICRO_TYPE_MISC)
+                            begin
+                                write_data_to_register(micro_mov_dst_sec, src_reg_sec);
+                            end
+                            write_data_to_register(micro_mov_dst, src_reg);
                         end
                     end
-                    else
+
+                    if(micro_op_type == MICRO_TYPE_BUS && pk == 0)
                     begin
-                        if(alu_flag_update)
+                        if((state == STATE_EXECUTE || (next_state == STATE_EXECUTE && state != STATE_EXC_PROCESS)) && !microinstruction_done)
                         begin
-                            case(alu_op)
-                                ALUOP_AND, ALUOP_OR, ALUOP_XOR:
+                            // Don't do any bus ops on the last microinstruction
+                            // step.
+                            if(micro_bus_op == MICRO_BUS_MEM_WRITE)
+                                bus_status <= BUS_COMMAND_MEM_WRITE;
+
+                            case(micro_bus_add)
+                                MICRO_ADD_HL:
                                 begin
-                                    SC[0] <= alu_flags[ALU_FLAG_Z];
-                                    SC[3] <= alu_flags[ALU_FLAG_S];
+                                    address_out <= {EP, HL};
                                 end
-                                ALUOP_RLC, ALUOP_RRC, ALUOP_RL, ALUOP_RR, ALUOP_SLL, ALUOP_SRL:
+
+                                MICRO_ADD_IX:
                                 begin
-                                    SC[0] <= alu_flags[ALU_FLAG_Z];
-                                    SC[1] <= alu_flags[ALU_FLAG_C];
-                                    SC[3] <= alu_flags[ALU_FLAG_S];
+                                    address_out <= {XP, IX};
                                 end
-                                ALUOP_ADD, ALUOP_ADC, ALUOP_SUB, ALUOP_SBC, ALUOP_NEG, ALUOP_SLA, ALUOP_SRA, ALUOP_DIV, ALUOP_MUL:
+
+                                MICRO_ADD_IX1:
                                 begin
-                                    if(alu_op != ALUOP_SLA && alu_op != ALUOP_SRA && (SC[5:4] != 0))
-                                        not_implemented_alu_dec_pack_ops_error <= 1;
-                                    SC[0] <= alu_flags[ALU_FLAG_Z];
-                                    SC[1] <= alu_flags[ALU_FLAG_C];
-                                    SC[2] <= alu_flags[ALU_FLAG_V];
-                                    SC[3] <= alu_flags[ALU_FLAG_S];
+                                    address_out <= {XP, IX+16'd1};
                                 end
-                                ALUOP_INC, ALUOP_DEC:
+
+                                MICRO_ADD_IX_DD:
                                 begin
-                                    SC[0] <= alu_flags[ALU_FLAG_Z];
+                                    address_out <= {XP, IX+{{8{imm_low[7]}}, imm_low}};
                                 end
+
+                                MICRO_ADD_IX_L:
+                                begin
+                                    address_out <= {XP, IX+{{8{L[7]}}, L}};
+                                end
+
+                                MICRO_ADD_IY:
+                                begin
+                                    address_out <= {YP, IY};
+                                end
+
+                                MICRO_ADD_IY1:
+                                begin
+                                    address_out <= {YP, IY+16'd1};
+                                end
+
+                                MICRO_ADD_IY_DD:
+                                begin
+                                    address_out <= {YP, IY+{{8{imm_low[7]}}, imm_low}};
+                                end
+
+                                MICRO_ADD_IY_L:
+                                begin
+                                    address_out <= {YP, IY+{{8{L[7]}}, L}};
+                                end
+
+                                MICRO_ADD_HL1:
+                                begin
+                                    address_out <= {EP, HL+16'd1};
+                                end
+
+                                MICRO_ADD_HH_LL:
+                                begin
+                                    address_out <= {EP, imm};
+                                end
+
+                                MICRO_ADD_HH_LL1:
+                                begin
+                                    address_out <= {EP, imm+16'd1};
+                                end
+
+                                MICRO_ADD_KK:
+                                begin
+                                    address_out <= {16'd0, imm[7:0]};
+                                end
+
+                                MICRO_ADD_KK1:
+                                begin
+                                    address_out <= {8'd0, {8'd0, imm[7:0]}+16'd1};
+                                end
+
+                                MICRO_ADD_SP:
+                                begin
+                                    if(micro_bus_op == MICRO_BUS_MEM_WRITE)
+                                    begin
+                                        address_out <= {8'b0, SP-16'd1};
+                                        SP <= SP - 16'd1;
+                                    end
+                                    else
+                                    begin
+                                        address_out <= {8'b0, SP};
+                                        SP <= SP + 16'd1;
+                                    end
+                                end
+
+                                MICRO_ADD_SP_DD:
+                                begin
+                                    address_out <= {8'd0, SP+{{8{imm_low[7]}}, imm_low}};
+                                end
+
+                                MICRO_ADD_SP_DD1:
+                                begin
+                                    address_out <= {8'd0, SP+{{8{imm_low[7]}}, imm_low}+16'd1};
+                                end
+
+                                MICRO_ADD_BR:
+                                begin
+                                    address_out <= {EP, BR, imm_low};
+                                end
+
                                 default:
                                 begin
+                                    not_implemented_addressing_error <= 1;
                                 end
                             endcase
                         end
-
-                        if(micro_mov_dst == MICRO_MOV_PC)
-                        begin
-                            PC <= src_reg;
-                        end
-
-                        if(micro_mov_src == MICRO_MOV_DATA)
-                        begin
-                            PC <= PC + 16'd1;
-                        end
-
-                        if(micro_op_type == MICRO_TYPE_JMP)
-                        begin
-                            if(microinstruction_done)
-                            begin
-                                if(jump_condition_true)
-                                begin
-                                    branch_taken = 1;
-                                    CB <= NB;
-                                    // @note: Don't pre-increment PC when
-                                    // interrupt acknowledged.
-                                    PC <= iack? jump_dest: jump_dest + 16'd1;
-                                    top_address <= jump_dest;
-                                end
-                                else NB <= CB;
-                            end
-                        end
-
-                        if(micro_op_type == MICRO_TYPE_BUS && micro_bus_op == MICRO_BUS_MEM_READ)// && !fetch_opcode)
-                        begin
-                            write_data_to_register(micro_bus_reg, {8'd0, data_in});
-                        end
-                        else if(micro_op_type == MICRO_TYPE_MISC)
-                        begin
-                            write_data_to_register(micro_mov_dst_sec, src_reg_sec);
-                        end
-                        write_data_to_register(micro_mov_dst, src_reg);
-                    end
-                end
-
-                if(micro_op_type == MICRO_TYPE_BUS && pk == 0)
-                begin
-                    if((state == STATE_EXECUTE || (next_state == STATE_EXECUTE && state != STATE_EXC_PROCESS)) && !microinstruction_done)
-                    begin
-                        // Don't do any bus ops on the last microinstruction
-                        // step.
-                        if(micro_bus_op == MICRO_BUS_MEM_WRITE)
-                            bus_status <= BUS_COMMAND_MEM_WRITE;
-
-                        case(micro_bus_add)
-                            MICRO_ADD_HL:
-                            begin
-                                address_out <= {EP, HL};
-                            end
-
-                            MICRO_ADD_IX:
-                            begin
-                                address_out <= {XP, IX};
-                            end
-
-                            MICRO_ADD_IX1:
-                            begin
-                                address_out <= {XP, IX+16'd1};
-                            end
-
-                            MICRO_ADD_IX_DD:
-                            begin
-                                address_out <= {XP, IX+{{8{imm_low[7]}}, imm_low}};
-                            end
-
-                            MICRO_ADD_IX_L:
-                            begin
-                                address_out <= {XP, IX+{{8{L[7]}}, L}};
-                            end
-
-                            MICRO_ADD_IY:
-                            begin
-                                address_out <= {YP, IY};
-                            end
-
-                            MICRO_ADD_IY1:
-                            begin
-                                address_out <= {YP, IY+16'd1};
-                            end
-
-                            MICRO_ADD_IY_DD:
-                            begin
-                                address_out <= {YP, IY+{{8{imm_low[7]}}, imm_low}};
-                            end
-
-                            MICRO_ADD_IY_L:
-                            begin
-                                address_out <= {YP, IY+{{8{L[7]}}, L}};
-                            end
-
-                            MICRO_ADD_HL1:
-                            begin
-                                address_out <= {EP, HL+16'd1};
-                            end
-
-                            MICRO_ADD_HH_LL:
-                            begin
-                                address_out <= {EP, imm};
-                            end
-
-                            MICRO_ADD_HH_LL1:
-                            begin
-                                address_out <= {EP, imm+16'd1};
-                            end
-
-                            MICRO_ADD_KK:
-                            begin
-                                address_out <= {16'd0, imm[7:0]};
-                            end
-
-                            MICRO_ADD_KK1:
-                            begin
-                                address_out <= {8'd0, {8'd0, imm[7:0]}+16'd1};
-                            end
-
-                            MICRO_ADD_SP:
-                            begin
-                                if(micro_bus_op == MICRO_BUS_MEM_WRITE)
-                                begin
-                                    address_out <= {8'b0, SP-16'd1};
-                                    SP <= SP - 16'd1;
-                                end
-                                else
-                                begin
-                                    address_out <= {8'b0, SP};
-                                    SP <= SP + 16'd1;
-                                end
-                            end
-
-                            MICRO_ADD_SP_DD:
-                            begin
-                                address_out <= {8'd0, SP+{{8{imm_low[7]}}, imm_low}};
-                            end
-
-                            MICRO_ADD_SP_DD1:
-                            begin
-                                address_out <= {8'd0, SP+{{8{imm_low[7]}}, imm_low}+16'd1};
-                            end
-
-                            MICRO_ADD_BR:
-                            begin
-                                address_out <= {EP, BR, imm_low};
-                            end
-
-                            default:
-                            begin
-                                not_implemented_addressing_error <= 1;
-                            end
-                        endcase
                     end
                 end
             end
@@ -1366,203 +1373,206 @@ module s1c88
     end
 
     reg not_implemented_data_out_error;
-    always_ff @ (posedge clk, posedge reset)
+    always_ff @ (posedge clk)
     begin
-        if(reset)
+        if(clk_ce)
         begin
-            data_out      <= ~8'd0;
-            read          <= 0;
-            pk            <= 0;
-            microaddress  <= 0;
-            microprogram_counter <= 0;
-            not_implemented_data_out_error <= 0;
-        end
-        else if(reset_counter >= 2)
-        begin
-            bus_ack_posedge <= bus_request;
-
-            if(!bus_ack)
+            if(reset)
             begin
-                pk <= ~pk;
-                read <= 0;
-                read_interrupt_vector <= 0;
+                data_out      <= ~8'd0;
+                read          <= 0;
+                pk            <= 0;
+                microaddress  <= 0;
+                microprogram_counter <= 0;
                 not_implemented_data_out_error <= 0;
+            end
+            else if(reset_counter >= 2)
+            begin
+                bus_ack_posedge <= bus_request;
 
-                if(fetch_opcode)
+                if(!bus_ack)
                 begin
-                    if(pk == 0)
-                    begin
-                        read <= 1;
-                    end
-                end
+                    pk <= ~pk;
+                    read <= 0;
+                    read_interrupt_vector <= 0;
+                    not_implemented_data_out_error <= 0;
 
-                if(next_state == STATE_EXECUTE)
-                begin
-                    if(pk == 1)
-                    begin
-                        microprogram_counter <= 0;
-                        microaddress <= translation_rom[extended_opcode];
-                    end
-                    else
-                    begin
-                    end
-                end
-
-                case(state)
-                    STATE_IDLE:
-                    begin
-                    end
-
-                    STATE_EXC_PROCESS:
+                    if(fetch_opcode)
                     begin
                         if(pk == 0)
                         begin
-                            if(exception_process_step == 0 && exception < EXCEPTION_TYPE_NMI)
-                                read_interrupt_vector <= 1;
-                            else if(exception_process_step == 1)
-                                data_out <= CB;
-                            else if(exception_process_step == 2)
-                                data_out <= PC[15:8];
-                            else if(exception_process_step == 3)
-                                data_out <= PC[7:0];
-                            else if(exception_process_step == 4)
-                            begin
-                                data_out <= SC;
-                                if(exception == EXCEPTION_TYPE_RESET)
-                                    read <= 1;
-                            end
-                            else if(exception_process_step >= 5)
-                            begin
-                                read <= 1;
-                            end
+                            read <= 1;
+                        end
+                    end
+
+                    if(next_state == STATE_EXECUTE)
+                    begin
+                        if(pk == 1)
+                        begin
+                            microprogram_counter <= 0;
+                            microaddress <= translation_rom[extended_opcode];
                         end
                         else
                         begin
                         end
                     end
 
-                    STATE_OPEXT_READ:
-                    begin
-                        if(pk == 0)
+                    case(state)
+                        STATE_IDLE:
                         begin
-                            read <= 1;
-                        end
-                    end
-
-                    STATE_EXECUTE:
-                    begin
-                        // Don't increment if the microinstruction is done or if
-                        // fetching next opcode.
-                        // @todo: Check if we can just remove the condition on
-                        // microinstruction_done.
-                        if(pk == 1 && !microinstruction_done && !fetch_opcode)
-                        begin
-                            microprogram_counter <= microprogram_counter + 4'd1;
-                            if(micro_op_type == MICRO_TYPE_JMP && jump_condition_true)
-                            begin
-                                microprogram_counter <= microprogram_counter + 4'd2;
-                            end
                         end
 
-                        if(micro_mov_src == MICRO_MOV_DATA && pk == 0)
-                            read <= 1;
-
-                        if(micro_op_type == MICRO_TYPE_BUS)
+                        STATE_EXC_PROCESS:
                         begin
-                            if(micro_bus_op == MICRO_BUS_MEM_READ)
+                            if(pk == 0)
                             begin
-                                if(pk == 0)
+                                if(exception_process_step == 0 && exception < EXCEPTION_TYPE_NMI)
+                                    read_interrupt_vector <= 1;
+                                else if(exception_process_step == 1)
+                                    data_out <= CB;
+                                else if(exception_process_step == 2)
+                                    data_out <= PC[15:8];
+                                else if(exception_process_step == 3)
+                                    data_out <= PC[7:0];
+                                else if(exception_process_step == 4)
+                                begin
+                                    data_out <= SC;
+                                    if(exception == EXCEPTION_TYPE_RESET)
+                                        read <= 1;
+                                end
+                                else if(exception_process_step >= 5)
                                 begin
                                     read <= 1;
                                 end
                             end
-                            else // MICRO_BUS_MEM_WRITE
+                            else
                             begin
-                                if(pk == 0)
+                            end
+                        end
+
+                        STATE_OPEXT_READ:
+                        begin
+                            if(pk == 0)
+                            begin
+                                read <= 1;
+                            end
+                        end
+
+                        STATE_EXECUTE:
+                        begin
+                            // Don't increment if the microinstruction is done or if
+                            // fetching next opcode.
+                            // @todo: Check if we can just remove the condition on
+                            // microinstruction_done.
+                            if(pk == 1 && !microinstruction_done && !fetch_opcode)
+                            begin
+                                microprogram_counter <= microprogram_counter + 4'd1;
+                                if(micro_op_type == MICRO_TYPE_JMP && jump_condition_true)
                                 begin
-                                    case(micro_bus_reg)
-                                        MICRO_MOV_A:
-                                            data_out <= BA[7:0];
+                                    microprogram_counter <= microprogram_counter + 4'd2;
+                                end
+                            end
 
-                                        MICRO_MOV_B:
-                                            data_out <= BA[15:8];
+                            if(micro_mov_src == MICRO_MOV_DATA && pk == 0)
+                                read <= 1;
 
-                                        MICRO_MOV_L:
-                                            data_out <= L;
+                            if(micro_op_type == MICRO_TYPE_BUS)
+                            begin
+                                if(micro_bus_op == MICRO_BUS_MEM_READ)
+                                begin
+                                    if(pk == 0)
+                                    begin
+                                        read <= 1;
+                                    end
+                                end
+                                else // MICRO_BUS_MEM_WRITE
+                                begin
+                                    if(pk == 0)
+                                    begin
+                                        case(micro_bus_reg)
+                                            MICRO_MOV_A:
+                                                data_out <= BA[7:0];
 
-                                        MICRO_MOV_H:
-                                            data_out <= H;
+                                            MICRO_MOV_B:
+                                                data_out <= BA[15:8];
 
-                                        MICRO_MOV_IXL:
-                                            data_out <= IX[7:0];
+                                            MICRO_MOV_L:
+                                                data_out <= L;
 
-                                        MICRO_MOV_IXH:
-                                            data_out <= IX[15:8];
+                                            MICRO_MOV_H:
+                                                data_out <= H;
 
-                                        MICRO_MOV_IYL:
-                                            data_out <= IY[7:0];
+                                            MICRO_MOV_IXL:
+                                                data_out <= IX[7:0];
 
-                                        MICRO_MOV_IYH:
-                                            data_out <= IY[15:8];
+                                            MICRO_MOV_IXH:
+                                                data_out <= IX[15:8];
 
-                                        MICRO_MOV_ALU_A:
-                                            data_out <= alu_A[7:0];
+                                            MICRO_MOV_IYL:
+                                                data_out <= IY[7:0];
 
-                                        MICRO_MOV_ALU_B:
-                                            data_out <= alu_B[7:0];
+                                            MICRO_MOV_IYH:
+                                                data_out <= IY[15:8];
 
-                                        MICRO_MOV_IMML:
-                                            data_out <= imm_low;
+                                            MICRO_MOV_ALU_A:
+                                                data_out <= alu_A[7:0];
 
-                                        MICRO_MOV_IMMH:
-                                            data_out <= imm_high;
+                                            MICRO_MOV_ALU_B:
+                                                data_out <= alu_B[7:0];
 
-                                        MICRO_MOV_ALU_R:
-                                            data_out <= alu_R[7:0];
+                                            MICRO_MOV_IMML:
+                                                data_out <= imm_low;
 
-                                        MICRO_MOV_PCL:
-                                            data_out <= PC[7:0];
+                                            MICRO_MOV_IMMH:
+                                                data_out <= imm_high;
 
-                                        MICRO_MOV_PCH:
-                                            data_out <= PC[15:8];
+                                            MICRO_MOV_ALU_R:
+                                                data_out <= alu_R[7:0];
 
-                                        MICRO_MOV_CB:
-                                            data_out <= CB;
+                                            MICRO_MOV_PCL:
+                                                data_out <= PC[7:0];
 
-                                        MICRO_MOV_EP:
-                                            data_out <= EP;
+                                            MICRO_MOV_PCH:
+                                                data_out <= PC[15:8];
 
-                                        MICRO_MOV_BR:
-                                            data_out <= BR;
+                                            MICRO_MOV_CB:
+                                                data_out <= CB;
 
-                                        MICRO_MOV_SC:
-                                            data_out <= SC;
+                                            MICRO_MOV_EP:
+                                                data_out <= EP;
 
-                                        MICRO_MOV_XP:
-                                            data_out <= XP;
+                                            MICRO_MOV_BR:
+                                                data_out <= BR;
 
-                                        MICRO_MOV_YP:
-                                            data_out <= YP;
+                                            MICRO_MOV_SC:
+                                                data_out <= SC;
 
-                                        default:
-                                        begin
-                                            not_implemented_data_out_error <= 1;
-                                        end
-                                    endcase
+                                            MICRO_MOV_XP:
+                                                data_out <= XP;
+
+                                            MICRO_MOV_YP:
+                                                data_out <= YP;
+
+                                            default:
+                                            begin
+                                                not_implemented_data_out_error <= 1;
+                                            end
+                                        endcase
+                                    end
                                 end
                             end
                         end
-                    end
 
-                    default:
-                    begin
-                    end
-                endcase
-            end
-            else
-            begin
-                pk   <= 0;
-                read <= 0;
+                        default:
+                        begin
+                        end
+                    endcase
+                end
+                else
+                begin
+                    pk   <= 0;
+                    read <= 0;
+                end
             end
         end
     end

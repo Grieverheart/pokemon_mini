@@ -1,6 +1,7 @@
 module irq
 (
     input clk,
+    input clk_ce,
     input reset,
     input bus_write,
     input bus_read,
@@ -47,59 +48,65 @@ module irq
     reg write_latch;
     always_ff @ (negedge clk)
     begin
-        if(reset)
+        if(clk_ce)
         begin
-        end
-        else
-        begin
-            for(int i = 0; i < 32; ++i)
+            if(reset)
             begin
-                if(irqs[i])
-                    reg_irq_active[irq_reg_map[i]] <= 1;
             end
-
-            if(write_latch)
+            else
             begin
-                if(bus_address_in == 24'h2020)
-                    reg_irq_priority[7:0] <= bus_data_in;
+                for(int i = 0; i < 32; ++i)
+                begin
+                    if(irqs[i])
+                        reg_irq_active[irq_reg_map[i]] <= 1;
+                end
 
-                if(bus_address_in == 24'h2021)
-                    reg_irq_priority[15:8] <= bus_data_in;
+                if(write_latch)
+                begin
+                    if(bus_address_in == 24'h2020)
+                        reg_irq_priority[7:0] <= bus_data_in;
 
-                if(bus_address_in == 24'h2022)
-                    reg_irq_priority[17:16] <= bus_data_in[1:0];
+                    if(bus_address_in == 24'h2021)
+                        reg_irq_priority[15:8] <= bus_data_in;
 
-                if(bus_address_in == 24'h2023)
-                    reg_irq_enabled[7:0] <= bus_data_in;
+                    if(bus_address_in == 24'h2022)
+                        reg_irq_priority[17:16] <= bus_data_in[1:0];
 
-                if(bus_address_in == 24'h2024)
-                    reg_irq_enabled[15:8] <= bus_data_in;
+                    if(bus_address_in == 24'h2023)
+                        reg_irq_enabled[7:0] <= bus_data_in;
 
-                if(bus_address_in == 24'h2025)
-                    reg_irq_enabled[23:16] <= bus_data_in;
+                    if(bus_address_in == 24'h2024)
+                        reg_irq_enabled[15:8] <= bus_data_in;
 
-                if(bus_address_in == 24'h2026)
-                    reg_irq_enabled[31:24] <= bus_data_in;
+                    if(bus_address_in == 24'h2025)
+                        reg_irq_enabled[23:16] <= bus_data_in;
 
-                if(bus_address_in == 24'h2027)
-                    reg_irq_active[7:0] <= reg_irq_active[7:0] & ~bus_data_in;
+                    if(bus_address_in == 24'h2026)
+                        reg_irq_enabled[31:24] <= bus_data_in;
 
-                if(bus_address_in == 24'h2028)
-                    reg_irq_active[15:8] <= reg_irq_active[15:8] & ~bus_data_in;
+                    if(bus_address_in == 24'h2027)
+                        reg_irq_active[7:0] <= reg_irq_active[7:0] & ~bus_data_in;
 
-                if(bus_address_in == 24'h2029)
-                    reg_irq_active[23:16] <= reg_irq_active[23:16] & ~bus_data_in;
+                    if(bus_address_in == 24'h2028)
+                        reg_irq_active[15:8] <= reg_irq_active[15:8] & ~bus_data_in;
 
-                if(bus_address_in == 24'h202A)
-                    reg_irq_active[31:24] <= reg_irq_active[31:24] & ~bus_data_in;
+                    if(bus_address_in == 24'h2029)
+                        reg_irq_active[23:16] <= reg_irq_active[23:16] & ~bus_data_in;
+
+                    if(bus_address_in == 24'h202A)
+                        reg_irq_active[31:24] <= reg_irq_active[31:24] & ~bus_data_in;
+                end
             end
         end
     end
 
     always_ff @ (posedge clk)
     begin
-        write_latch <= 0;
-        if(bus_write) write_latch <= 1;
+        if(clk_ce)
+        begin
+            write_latch <= 0;
+            if(bus_write) write_latch <= 1;
+        end
     end
 
     // @todo: Handle NMI.

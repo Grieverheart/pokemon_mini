@@ -218,6 +218,7 @@ void sim_init(SimData* sim, const char* cartridge_path)
     sim->minx = new Vminx;
     sim->minx->clk = 0;
     sim->minx->reset = 1;
+    sim->minx->clk_ce = 0;
 
     sim->osc1_clocks = 4000000.0 / 32768.0 + 0.5;
     sim->osc1_next_clock = sim->osc1_clocks;
@@ -256,6 +257,8 @@ void simulate_steps(SimData* sim, int n_steps)
 {
     for(int i = 0; i < n_steps && !Verilated::gotFinish(); ++i)
     {
+        sim->minx->clk_ce = !sim->minx->clk_ce;
+
         sim->minx->clk = 1;
         sim->minx->eval();
         if(sim->timestamp == sim->osc1_next_clock)
@@ -424,11 +427,14 @@ void simulate_steps(SimData* sim, int n_steps)
             data_sent = true;
         }
 
-        if(sim->minx->sync && sim->minx->pl == 1)
-            num_cycles_since_sync = 0;
+        if(sim->minx->clk_ce)
+        {
+            if(sim->minx->sync && sim->minx->pl == 1)
+                num_cycles_since_sync = 0;
 
-        if(sim->minx->pl == 1 && !sim->minx->bus_ack)
-            ++num_cycles_since_sync;
+            if(sim->minx->pl == 1 && !sim->minx->bus_ack)
+                ++num_cycles_since_sync;
+        }
     }
 }
 

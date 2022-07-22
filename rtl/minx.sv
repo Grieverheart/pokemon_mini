@@ -1,6 +1,7 @@
 module minx
 (
     input clk,
+    input clk_ce,
     input rt_clk,
     input rt_ce,
     input reset,
@@ -37,7 +38,7 @@ module minx
     wire [7:0] eeprom_data = {4'h0, reg_io_data[3], (reg_io_dir[2]? reg_io_data[2]: eeprom_data_out), 2'd0};
     always_ff @ (negedge clk)
     begin
-        if(cpu_write_latch)
+        if(clk_ce && cpu_write_latch)
         begin
             if(cpu_address_out == 24'h2060)
                 reg_io_dir <= cpu_data_out;
@@ -49,8 +50,11 @@ module minx
 
     always_ff @ (posedge clk)
     begin
-        cpu_write_latch <= 0;
-        if(cpu_write) cpu_write_latch <= 1;
+        if(clk_ce)
+        begin
+            cpu_write_latch <= 0;
+            if(cpu_write) cpu_write_latch <= 1;
+        end
     end
 
     reg [7:0] io_data_out;
@@ -82,6 +86,7 @@ module minx
     irq irq
     (
         .clk             (clk),
+        .clk_ce          (clk_ce),
         .reset           (reset),
         .bus_write       (write),
         .bus_read        (read),
@@ -107,6 +112,7 @@ module minx
     system_control system_control
     (
         .clk            (clk),
+        .clk_ce         (clk_ce),
         .reset          (reset),
         .bus_write      (write),
         .bus_address_in (cpu_address_out),
@@ -118,6 +124,7 @@ module minx
     sound sound
     (
         .clk            (clk),
+        .clk_ce         (clk_ce),
         .reset          (reset),
         .bus_write      (write),
         .bus_address_in (cpu_address_out),
@@ -131,6 +138,7 @@ module minx
     timer timer1
     (
         .clk            (clk),
+        .clk_ce         (clk_ce),
         .rt_clk         (rt_clk),
         .rt_ce          (rt_ce),
         .reset          (reset),
@@ -147,6 +155,7 @@ module minx
     rtc rtc
     (
         .clk            (clk),
+        .clk_ce         (clk_ce),
         .rt_clk         (rt_clk),
         .rt_ce          (rt_ce),
         .reset          (reset),
@@ -161,6 +170,7 @@ module minx
     timer256 timer256
     (
         .clk            (clk),
+        .clk_ce         (clk_ce),
         .rt_clk         (rt_clk),
         .reset          (reset),
         .bus_write      (write),
@@ -174,11 +184,12 @@ module minx
 
     eeprom rom
     (
-        .clk(clk),
-        .reset(reset),
-        .ce(reg_io_data[3] | ~reg_io_dir[3]),
-        .data_in(reg_io_data[2] | ~reg_io_dir[2]),
-        .data_out(eeprom_data_out)
+        .clk      (clk),
+        .clk_ce   (clk_ce),
+        .reset    (reset),
+        .ce       (reg_io_data[3] | ~reg_io_dir[3]),
+        .data_in  (reg_io_data[2] | ~reg_io_dir[2]),
+        .data_out (eeprom_data_out)
     );
 
     assign data_out    = bus_ack? prc_data_out    : cpu_data_out;
@@ -190,14 +201,15 @@ module minx
     wire [7:0] lcd_data_out;
     lcd_controller lcd
     (
-        .clk(clk),
-        .reset(reset),
-        .bus_write(write),
-        .bus_read(read),
-        .address_in(address_out),
-        .data_in(data_out),
-        .data_out(lcd_data_out),
-        .lcd_contrast(lcd_contrast)
+        .clk          (clk),
+        .clk_ce       (clk_ce),
+        .reset        (reset),
+        .bus_write    (write),
+        .bus_read     (read),
+        .address_in   (address_out),
+        .data_in      (data_out),
+        .data_out     (lcd_data_out),
+        .lcd_contrast (lcd_contrast)
     );
 
     wire [7:0] prc_data_out;
@@ -211,6 +223,7 @@ module minx
     prc prc
     (
         .clk               (clk),
+        .clk_ce            (clk_ce),
         .reset             (reset),
         .bus_write         (write),
         .bus_read          (read),
@@ -256,6 +269,7 @@ module minx
     s1c88 cpu
     (
         .clk                   (clk),
+        .clk_ce                (clk_ce),
         .reset                 (reset),
         .data_in               ((cpu_bus_status == BUS_COMMAND_IRQ_READ)? irq_data_out: cpu_data_in),
         .irq                   (cpu_irq),
