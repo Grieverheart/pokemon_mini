@@ -27,6 +27,11 @@
 #endif
 
 
+int min(int a, int b)
+{
+    return a < b? a: b;
+}
+
 enum
 {
     BUS_IDLE      = 0x0,
@@ -204,13 +209,13 @@ void sim_init(SimData* sim, const char* cartridge_path)
 
     // Load a cartridge.
     sim->cartridge = (uint8_t*) calloc(1, 0x200000);
-    //fp = fopen(cartridge_path, "rb");
 
-    //fseek(fp, 0, SEEK_END);
-    //sim->cartridge_file_size = ftell(fp);
-    //fseek(fp, 0, SEEK_SET);  /* same as rewind(f); */
-    //fread(sim->cartridge, 1, sim->cartridge_file_size, fp);
-    //fclose(fp);
+    fp = fopen(cartridge_path, "rb");
+    fseek(fp, 0, SEEK_END);
+    sim->cartridge_file_size = ftell(fp);
+    fseek(fp, 0, SEEK_SET);  /* same as rewind(f); */
+    fread(sim->cartridge, 1, sim->cartridge_file_size, fp);
+    fclose(fp);
 
     sim->cartridge_touched = (uint8_t*) calloc(1, sim->cartridge_file_size);
     sim->instructions_executed = (uint8_t*) calloc(1, 0x300);
@@ -249,7 +254,7 @@ void sim_dump_start(SimData* sim, const char* filepath)
 
     sim->tfp = new VerilatedVcdC;
     sim->minx->trace(sim->tfp, 99);  // Trace 99 levels of hierarchy
-    sim->tfp->rolloverMB(209715200);
+    //sim->tfp->rolloverMB(209715200);
     sim->tfp->open(filepath);
 }
 
@@ -310,6 +315,7 @@ void simulate_steps(SimData* sim, int n_steps)
                 (sim->minx->pl == 0) &&
                 (sim->minx->rootp->minx__DOT__cpu__DOT__micro_op & 0x1000) &&
                 sim->minx->iack == 0 &&
+                sim->minx->clk_ce &&
                 !sim->minx->bus_ack)
             {
                 if(irq_processing)
@@ -371,8 +377,11 @@ void simulate_steps(SimData* sim, int n_steps)
         //    if(!sim->tfp)
         //        sim_dump_start(sim, "temp.vcd");
         //}
-        //if(sim->timestamp == 23475360-1000)
+        //if(sim->timestamp == 33871476-100000)
         //    sim_dump_start(sim, "temp.vcd");
+
+        //if(sim->timestamp == 33871476+100000)
+        //    sim_dump_stop(sim);
 
         if(sim->timestamp >= 8)
             sim->minx->reset = 0;
@@ -468,7 +477,7 @@ int main(int argc, char** argv)
     int num_sim_steps = 150000;
 
     SimData sim;
-    //const char* rom_filepath = "data/party_j.min";
+    const char* rom_filepath = "data/party_j.min";
     // Possibly problem with display starting 2 pixels from the left.
     //const char* rom_filepath = "data/6shades.min";
     //const char* rom_filepath = "data/pichu_bros_mini_j.min";
@@ -476,7 +485,7 @@ int main(int argc, char** argv)
     //const char* rom_filepath = "data/snorlaxs_lunch_time_j.min";
     //const char* rom_filepath = "data/pokemon_shock_tetris_j.min";
     // Glitching when clock is reaching zero while counting down.
-    const char* rom_filepath = "data/togepi_no_daibouken_j.min";
+    //const char* rom_filepath = "data/togepi_no_daibouken_j.min";
     //const char* rom_filepath = "data/pokemon_race_mini_j.min";
     //const char* rom_filepath = "data/pokemon_sodateyasan_mini_j.min";
     //const char* rom_filepath = "data/pokemon_puzzle_collection_j.min";
@@ -542,6 +551,9 @@ int main(int argc, char** argv)
     int drawable_width, drawable_height;
     SDL_GL_GetDrawableSize(window, &drawable_width, &drawable_height);
     gl_renderer_init(96, 64);
+
+    uint64_t cpu_frequency = SDL_GetPerformanceFrequency();
+    uint64_t current_clock = SDL_GetPerformanceCounter();
 
     bool sim_is_running = true;
     bool program_is_running = true;
@@ -652,8 +664,14 @@ int main(int argc, char** argv)
             }
         }
 
+
+        uint64_t new_clock = SDL_GetPerformanceCounter();
+        double frame_sec = double(new_clock - current_clock) / cpu_frequency;
+        current_clock = new_clock;
+        //printf("%f\n", 4000000 * frame_sec);
+
         if(sim_is_running)
-            simulate_steps(&sim, num_sim_steps);
+            simulate_steps(&sim, min(num_sim_steps, (int)4000000 * frame_sec));
         uint8_t* lcd_image = get_lcd_image(&sim);
         gl_renderer_draw(96, 64, lcd_image);
         delete[] lcd_image;

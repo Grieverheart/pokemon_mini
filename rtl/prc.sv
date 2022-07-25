@@ -255,13 +255,35 @@ wire [7:0] map_y = {1'd0, yC, 3'd0} + {1'd0, reg_scroll_y};
 
 always_ff @ (negedge clk)
 begin
+    if(reset)
+    begin
+        prc_osc_counter <= 10'd0;
+        reg_counter     <= 7'd1;
+    end
+    else
+    begin
+        prc_osc_counter <= prc_osc_counter + 1;
+
+        if(prc_osc_counter == 10'd854)
+        begin
+            prc_osc_counter <= 10'd0;
+            reg_counter <= reg_counter + 1;
+            if(reg_counter == 7'h41) reg_counter <= 7'h1;
+        end
+    end
+end
+
+reg [6:0] reg_counter_old;
+reg [31:0] cycle_count;
+always_ff @ (negedge clk)
+begin
+    cycle_count <= cycle_count + 1;
     if(clk_ce)
     begin
         if(reset)
         begin
-            prc_osc_counter   <= 10'd0;
+            cycle_count <= 0;
             bus_cycle         <= 1'd0;
-            reg_counter       <= 7'd1;
             reg_mode          <= 6'h0;
             reg_rate          <= 8'h0;
             reg_map_base      <= 24'h0;
@@ -320,14 +342,12 @@ begin
                 endcase
             end
 
-            prc_osc_counter <= prc_osc_counter + 1;
+            irq_copy_complete  <= 0;
+            irq_render_done <= 0;
 
-            if(prc_osc_counter == 10'd854)
+            reg_counter_old <= reg_counter;
+            if(reg_counter != reg_counter_old)
             begin
-                prc_osc_counter <= 10'd0;
-                reg_counter <= reg_counter + 1;
-                irq_copy_complete  <= 0;
-                irq_render_done <= 0;
 
                 if(reg_rate[7:4] == rate_match)
                 begin
@@ -349,8 +369,9 @@ begin
                     end
                     else if(reg_counter == 7'h41)
                     begin
+                        //$display("%d", cycle_count);
+                        cycle_count <= 0;
                         bus_request     <= 0;
-                        reg_counter     <= 7'h1;
                         reg_rate[7:4]   <= 4'd0;
                         irq_render_done <= 1;
                     end
@@ -358,7 +379,6 @@ begin
                 else if(reg_counter == 7'h41)
                 begin
                     // Non-active frame
-                    reg_counter <= 7'd1;
                     reg_rate[7:4] <= reg_rate[7:4] + 4'd1;
                 end
             end

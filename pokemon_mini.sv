@@ -171,7 +171,6 @@ module emu
 );
 
 // TODO list:
-// * Load roms
 // * Input
 // * Use lcd gdram
 // * implement n-buffering and sample average from all buffers.
@@ -204,6 +203,7 @@ assign BUTTONS = 0;
 
 //////////////////////////////////////////////////////////////////
 
+wire [1:0] scale = status[3:2];
 wire [1:0] ar = status[122:121];
 
 assign VIDEO_ARX = (!ar) ? 12'd4 : (ar - 1'd1);
@@ -211,27 +211,13 @@ assign VIDEO_ARY = (!ar) ? 12'd3 : 12'd0;
 
 `include "build_id.v"
 localparam CONF_STR = {
-    "MyCore;;",
+    "PokemonMini;;",
+    "-;",
+    "F,min,Load ROM;",
     "-;",
     "O[122:121],Aspect ratio,Original,Full Screen,[ARC1],[ARC2];",
-    "O[2],TV Mode,NTSC,PAL;",
-    "O[4:3],Noise,White,Red,Green,Blue;",
-    "-;",
-    "P1,Test Page 1;",
-    "P1-;",
-    "P1-, -= Options in page 1 =-;",
-    "P1-;",
-    "P1O[5],Option 1-1,Off,On;",
-    "d0P1F1,BIN;",
-    "H0P1O[10],Option 1-2,Off,On;",
-    "-;",
-    "P2,Test Page 2;",
-    "P2-;",
-    "P2-, -= Options in page 2 =-;",
-    "P2-;",
-    "P2S0,DSK;",
-    "P2O[7:6],Option 2,1,2,3,4;",
-    "-;",
+    "O23,Scandoubler Fx,None,HQ2x,CRT 25%,CRT 50%;",
+    "OAB,Scale,Normal,V-Integer,Narrower HV-Integer,Wider HV-Integer;",
     "-;",
     "T[0],Reset;",
     "R[0],Reset and close OSD;",
@@ -244,20 +230,42 @@ wire [127:0] status;
 wire  [10:0] ps2_key;
 wire [21:0] gamma_bus;
 
+wire ioctl_download;
+wire ioctl_wr;
+wire [24:0] ioctl_addr;
+wire [15:0] ioctl_dout;
+wire ioctl_wait;
+wire [7:0]  filetype;
+
+wire cart_busy;
+assign ioctl_wait = cart_busy & cart_download;
+
+wire [15:0] joystick_0;
+
 hps_io #(.CONF_STR(CONF_STR)) hps_io
 (
     .clk_sys(clk_sys),
     .HPS_BUS(HPS_BUS),
     .EXT_BUS(),
+
+
+    .ioctl_download(ioctl_download),
+    .ioctl_wr(ioctl_wr),
+    .ioctl_addr(ioctl_addr),
+    .ioctl_dout(ioctl_dout),
+    .ioctl_wait(ioctl_wait),
+    .ioctl_index(filetype),
+
     .gamma_bus(gamma_bus),
 
     .forced_scandoubler(forced_scandoubler),
 
     .buttons(buttons),
     .status(status),
-    .status_menumask({status[5]}),
+    .status_menumask(cart_download),
 
-    .ps2_key(ps2_key)
+    .ps2_key(ps2_key),
+    .joystick_0(joystick_0)
 );
 
 ///////////////////////   CLOCKS   ///////////////////////////////
@@ -265,27 +273,32 @@ hps_io #(.CONF_STR(CONF_STR)) hps_io
 wire clk_sys;
 wire clk_rt;
 wire clk_ram;
+wire pll_locked;
 pll pll
 (
-    .refclk(CLK_50M),
-    .rst(0),
-    .outclk_0(clk_sys),
-    .outclk_1(clk_rt),
-    .outclk_2(clk_ram)
+    .refclk   (CLK_50M),
+    .rst      (0),
+    .outclk_0 (clk_ram),
+    .outclk_1 (clk_rt),
+    .outclk_2 (clk_sys),
+    .locked   (pll_locked)
 );
 
 reg [7:0] clk_rt_prescale = 0;
 always_ff @ (posedge clk_rt) clk_rt_prescale <= clk_rt_prescale + 1;
 
 reg [1:0] clk_prescale = 0;
-reg [1:0] minx_clk_prescale = 0;
+reg minx_clk_prescale = 0;
 always_ff @ (posedge clk_sys)
 begin
     clk_prescale <= clk_prescale + 1;
     minx_clk_prescale  <= minx_clk_prescale + 1;
 end
 
-wire reset = RESET | status[0] | buttons[1];
+//reg sdram_read = 0;
+//always_ff @ (posedge clk_sys) sdram_read <= ~sdram_read;
+
+wire reset = RESET | status[0] | buttons[1] | cart_download;
 reg [3:0] reset_counter;
 always_ff @ (posedge clk_sys)
 begin
@@ -300,7 +313,7 @@ wire [7:0] video;
 
 assign CLK_VIDEO = clk_sys;
 
-assign LED_USER  = frame_complete;//ioctl_download | sav_pending;
+assign LED_USER  = ioctl_download;// | sav_pending;
 
 reg hs, vs, hbl, vbl;
 
@@ -385,7 +398,7 @@ wire [1:0] bus_status;
 minx minx
 (
     .clk                   (clk_sys),
-    .clk_ce                (&minx_clk_prescale),
+    .clk_ce                (minx_clk_prescale),
     .rt_clk                (rt_clk),
     .rt_ce                 (clk_rt_prescale[7]),
     .reset                 (reset | (|reset_counter)),
@@ -438,6 +451,35 @@ spram #(
     )
 );
 
+
+// @check: Correct filetype?
+wire cart_download = ioctl_download;// && (filetype[5:0] == 6'h01 || filetype[7:6] == 0);
+wire [7:0] cartridge_data;
+sdram cartridge_rom
+(
+    .SDRAM_DQ   (SDRAM_DQ),
+    .SDRAM_A    (SDRAM_A),
+    .SDRAM_DQML (SDRAM_DQML),
+    .SDRAM_DQMH (SDRAM_DQMH),
+    .SDRAM_BA   (SDRAM_BA),
+    .SDRAM_nCS  (SDRAM_nCS),
+    .SDRAM_nWE  (SDRAM_nWE),
+    .SDRAM_nRAS (SDRAM_nRAS),
+    .SDRAM_nCAS (SDRAM_nCAS),
+    .SDRAM_CLK  (SDRAM_CLK),
+    .SDRAM_CKE  (SDRAM_CKE),
+
+    .init       (~pll_locked),
+    .clk        (clk_ram),
+
+    .ch0_addr   (cart_download? ioctl_addr: minx_address_out[20:0]),
+    .ch0_rd     (~cart_download & clk_sys), // @todo?
+    .ch0_wr     (cart_download & ioctl_wr),
+    .ch0_din    (ioctl_dout),
+    .ch0_dout   (cartridge_data),
+    .ch0_busy   (cart_busy)
+);
+
 // @todo: Use the lcd gdram instead of memory.
 wire [7:0] fb0_data_out;
 wire [7:0] fb0_pixel_value;
@@ -458,7 +500,7 @@ dpram #(
     ),
 
     .clock_b(clk_sys),
-    .address_b({5'd0, ypos[7:3]} * 96 + {4'd0, xpos[5:0]}),
+    .address_b({5'd0, ypos[7:3]} * 96 + {3'd0, xpos[6:0]}),
     .q_b(fb0_pixel_value),
     .wren_b(1'b0)
 );
@@ -467,14 +509,14 @@ assign minx_data_in =
      (minx_address_out < 24'h1000)? bios_data_out:
     ((minx_address_out < 24'h1300)? fb0_data_out:
     ((minx_address_out < 24'h2000)? ram_data_out:
-                                    0));
+                                    cartridge_data));
 
 video_mixer #(640, 0) mixer
 (
     .*,
     .CE_PIXEL       (CE_PIXEL),
-    .hq2x           (0),
-    .scandoubler    (forced_scandoubler),
+    .hq2x           (scale == 1),
+    .scandoubler    (scale || forced_scandoubler),
     .freeze_sync    (),
     .gamma_bus      (gamma_bus),
     .R              (red),
