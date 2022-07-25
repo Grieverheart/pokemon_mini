@@ -221,6 +221,8 @@ localparam CONF_STR = {
     "-;",
     "T[0],Reset;",
     "R[0],Reset and close OSD;",
+// out: {power, right, left, down, up, c, b, a}
+    "J0,A,B,R,select;",
     "V,v",`BUILD_DATE
 };
 
@@ -267,6 +269,7 @@ hps_io #(.CONF_STR(CONF_STR)) hps_io
     .ps2_key(ps2_key),
     .joystick_0(joystick_0)
 );
+
 
 ///////////////////////   CLOCKS   ///////////////////////////////
 
@@ -386,6 +389,20 @@ begin
 end
 
 
+// in:  {select, R, b, a, up, down, left, right}
+// out: {power, right, left, down, up, c, b, a}
+wire [7:0] keys_active =
+{
+    joystick_0[7], // (select) power
+    joystick_0[0], //  (right) right
+    joystick_0[1], //   (left) left
+    joystick_0[2], //   (down) down
+    joystick_0[3], //     (up) up
+    joystick_0[6], //      (R) c
+    joystick_0[5], //      (b) b
+    joystick_0[4]  //      (a) a
+};
+
 wire [5:0] lcd_contrast;
 wire [7:0] minx_data_in;
 wire [7:0] minx_data_out;
@@ -403,7 +420,7 @@ minx minx
     .rt_ce                 (clk_rt_prescale[7]),
     .reset                 (reset | (|reset_counter)),
     .data_in               (minx_data_in),
-    //.keys_active           (keys_active),
+    .keys_active           (keys_active),
     //.pk                    (pk),
     //.pl                    (pl),
     //.i01                   (i01),
