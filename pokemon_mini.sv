@@ -171,7 +171,6 @@ module emu
 );
 
 // TODO list:
-// * Input
 // * Use lcd gdram
 // * implement n-buffering and sample average from all buffers.
 // * color palette
@@ -366,11 +365,12 @@ begin
             if(vpos == V_HEIGHT - 1'd1) vpos <= 0;
         end
 
+        // @todo: 1 pixel off.
         if(~hbl && ~vbl) // if(VGA_DE) ?
         begin
-            red   <= fb0_pixel_value[ypos[2:0]]? 8'h0: pixel_on;
-            green <= fb0_pixel_value[ypos[2:0]]? 8'h0: pixel_on;
-            blue  <= fb0_pixel_value[ypos[2:0]]? 8'h0: pixel_on;
+            red   <= lcd_read_column[ypos[2:0]]? 8'h0: pixel_on;
+            green <= lcd_read_column[ypos[2:0]]? 8'h0: pixel_on;
+            blue  <= lcd_read_column[ypos[2:0]]? 8'h0: pixel_on;
             pixel_address <= pixel_address + 1;
         end
         else if(vbl)
@@ -412,6 +412,7 @@ wire bus_request;
 wire bus_ack;
 wire minx_we;
 wire [1:0] bus_status;
+wire [7:0] lcd_read_column;
 minx minx
 (
     .clk                   (clk_sys),
@@ -433,8 +434,11 @@ minx minx
     //.sync                  (sync),
     //.iack                  (iack),
 
-    .lcd_contrast(lcd_contrast),
-    .frame_complete(frame_complete)
+    .lcd_contrast          (lcd_contrast),
+    .lcd_read_x            (xpos[6:0]),
+    .lcd_read_y            (ypos[7:3]),
+    .lcd_read_column       (lcd_read_column),
+    .frame_complete        (frame_complete)
 );
 
 wire [7:0] bios_data_out;
@@ -497,7 +501,7 @@ sdram cartridge_rom
     .ch0_busy   (cart_busy)
 );
 
-// @todo: Use the lcd gdram instead of memory.
+// @todo: Remove fb0.
 wire [7:0] fb0_data_out;
 wire [7:0] fb0_pixel_value;
 dpram #(

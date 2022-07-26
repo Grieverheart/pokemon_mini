@@ -20,6 +20,10 @@ module minx
     output iack,
 
     output [5:0] lcd_contrast,
+    input [6:0] lcd_read_x,
+    input [4:0] lcd_read_y,
+    output logic [7:0] lcd_read_column,
+
     output frame_complete,
 
     output bus_request,
@@ -199,6 +203,9 @@ module minx
     assign bus_status  = bus_ack? prc_bus_status  : cpu_bus_status;
 
     wire [7:0] lcd_data_out;
+    wire [6:0] read_x = 0;
+    wire [4:0] read_y = 0;
+    wire [7:0] read_column;
     lcd_controller lcd
     (
         .clk          (clk),
@@ -209,7 +216,10 @@ module minx
         .address_in   (address_out),
         .data_in      (data_out),
         .data_out     (lcd_data_out),
-        .lcd_contrast (lcd_contrast)
+        .lcd_contrast (lcd_contrast),
+        .read_x       (lcd_read_x),
+        .read_y       (lcd_read_y),
+        .read_column  (lcd_read_column)
     );
 
     wire [7:0] prc_data_out;
