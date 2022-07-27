@@ -171,7 +171,6 @@ module emu
 );
 
 // TODO list:
-// * Use lcd gdram
 // * implement n-buffering and sample average from all buffers.
 // * color palette
 // * save eeprom as file
@@ -323,24 +322,96 @@ localparam H_WIDTH   = 8'd140;
 localparam V_HEIGHT  = 8'd119;
 localparam LCD_XSIZE = 8'd96;
 localparam LCD_YSIZE = 8'd64;
+localparam LCD_COLS  = LCD_YSIZE >> 3;
 
-reg [7:0] green;
-reg [7:0] red;
-reg [7:0] blue;
-reg [7:0] hpos,vpos;
-reg [12:0] pixel_address;
-//reg frame_complete_latch;
-wire [7:0] xpos = hpos - 8'd17;
-wire [7:0] ypos = vpos - 8'd33;
-wire [7:0] pixel_on = (lcd_contrast >= 6'h20)? 8'd255: {lcd_contrast[4:0], 3'd0};
-always @ (posedge CLK_VIDEO, posedge reset)
+reg frame_complete_latch;
+(* ramstyle = "no_rw_check" *) reg [7:0] fb0[768];
+(* ramstyle = "no_rw_check" *) reg [7:0] fb1[768];
+(* ramstyle = "no_rw_check" *) reg [7:0] fb2[768];
+(* ramstyle = "no_rw_check" *) reg [7:0] fb3[768];
+reg [1:0] fb_write_index = 0;
+wire [9:0] fb_read_address  = {2'b0, LCD_XSIZE} * {6'b0, ypos[6:3]} + {2'b0, xpos};
+wire [9:0] fb_write_address = {2'b0, LCD_XSIZE} * {6'b0, lcd_read_ypos} + {2'b0, lcd_read_xpos};
+reg [7:0] fb0_read;
+reg [7:0] fb1_read;
+reg [7:0] fb2_read;
+reg [7:0] fb3_read;
+// Try putting them in same always block as lcd read block, below.
+// @todo: 6shades doesn't work because we are copying at copy complete instead
+// of render complete, and 6shades does not issue copy complete; it writes
+// straight to the lcd.
+
+reg [7:0] lcd_read_xpos;
+reg [4:0] lcd_read_ypos;
+always @ (posedge clk_sys)
 begin
     if(reset)
     begin
-        //frame_complete_latch <= 0;
-        pixel_address <= 0;
+        fb_write_index <= 0;
+        frame_complete_latch <= 0;
+        lcd_read_xpos <= 0;
+        lcd_read_ypos <= 0;
     end
-    else if(ce_pix)
+    else
+    begin
+        if(frame_complete)
+            frame_complete_latch <= 1;
+
+        // Need to wait 2 clocks for data from lcd?
+        if(frame_complete_latch && minx_clk_prescale)
+        begin
+            case(fb_write_index)
+                0:
+                    fb0[fb_write_address] <= lcd_read_column;
+                1:
+                    fb1[fb_write_address] <= lcd_read_column;
+                2:
+                    fb2[fb_write_address] <= lcd_read_column;
+                3:
+                    fb3[fb_write_address] <= lcd_read_column;
+            endcase
+
+            lcd_read_xpos <= lcd_read_xpos + 1;
+            if(lcd_read_xpos == LCD_XSIZE - 1)
+            begin
+                lcd_read_xpos <= 0;
+                lcd_read_ypos <= lcd_read_ypos + 1;
+                if(lcd_read_ypos == LCD_COLS - 1)
+                begin
+                    fb_write_index <= fb_write_index + 1;
+                    frame_complete_latch <= 0;
+                    lcd_read_ypos <= 0;
+                end
+            end
+        end
+    end
+
+    fb0_read <= fb0[fb_read_address];
+    fb1_read <= fb1[fb_read_address];
+    fb2_read <= fb2[fb_read_address];
+    fb3_read <= fb3[fb_read_address];
+end
+
+reg [7:0] hpos,vpos;
+reg [7:0] pixel_value;
+// @todo: Latch lcd_contrast for each fb0-3?
+wire [7:0] pixel_on = (lcd_contrast >= 6'h20)? 8'd255: {lcd_contrast[4:0], 3'd0};
+
+// @todo: Change the color.
+wire [7:0] red   = pixel_value;
+wire [7:0] green = pixel_value;
+wire [7:0] blue  = pixel_value;
+wire [9:0] pixel_sum = (
+    {2'b0, pixel_on} * {9'b0, ~fb0_read[ypos[2:0]]} +
+    {2'b0, pixel_on} * {9'b0, ~fb1_read[ypos[2:0]]} +
+    {2'b0, pixel_on} * {9'b0, ~fb2_read[ypos[2:0]]} +
+    {2'b0, pixel_on} * {9'b0, ~fb3_read[ypos[2:0]]}
+);
+
+reg [7:0] xpos, ypos;
+always @ (posedge CLK_VIDEO)
+begin
+    if(ce_pix)
     begin
         if(hpos == LCD_XSIZE + 16) hbl <= 1;
         if(hpos == 16)             hbl <= 0;
@@ -365,27 +436,36 @@ begin
             if(vpos == V_HEIGHT - 1'd1) vpos <= 0;
         end
 
-        // @todo: 1 pixel off.
-        if(~hbl && ~vbl) // if(VGA_DE) ?
+        if(vbl)
         begin
-            red   <= lcd_read_column[ypos[2:0]]? 8'h0: pixel_on;
-            green <= lcd_read_column[ypos[2:0]]? 8'h0: pixel_on;
-            blue  <= lcd_read_column[ypos[2:0]]? 8'h0: pixel_on;
-            pixel_address <= pixel_address + 1;
+            ypos <= 0;
+            xpos <= 0;
         end
-        else if(vbl)
+        else if(!hbl)
         begin
-            pixel_address <= 0;
+            xpos <= xpos + 1;
+            if(xpos == LCD_XSIZE - 1)
+            begin
+                xpos <= 0;
+                ypos <= ypos + 1;
+            end
         end
 
-        //if(frame_complete)
-        //    frame_complete_latch <= 1;
-
-        //if(frame_complete_latch)
+        //@note: This one doesn't work properly.
+        //if(vbl)
         //begin
-        //    frame_complete_latch <= 0;
+        //    ypos <= 0;
+        //    xpos <= 0;
         //end
+        //else if(!hbl)
+        //begin
+        //    xpos <= hpos - 8'd16;
+        //    ypos <= vpos - 8'd32;
+        //end
+
     end
+
+    pixel_value <= pixel_sum[9:2];
 end
 
 
@@ -413,6 +493,7 @@ wire bus_ack;
 wire minx_we;
 wire [1:0] bus_status;
 wire [7:0] lcd_read_column;
+wire frame_complete;
 minx minx
 (
     .clk                   (clk_sys),
@@ -435,8 +516,8 @@ minx minx
     //.iack                  (iack),
 
     .lcd_contrast          (lcd_contrast),
-    .lcd_read_x            (xpos[6:0]),
-    .lcd_read_y            (ypos[7:3]),
+    .lcd_read_x            (lcd_read_xpos),
+    .lcd_read_y            (lcd_read_ypos),
     .lcd_read_column       (lcd_read_column),
     .frame_complete        (frame_complete)
 );
@@ -461,13 +542,13 @@ spram #(
 ) minx_ram
 (
     .clock(clk_sys),
-    .address(minx_address_out[11:0] - 12'h300),
+    .address(minx_address_out[11:0]),
     .q(ram_data_out),
     .data(minx_data_out),
     .wren(
         minx_we &&
         (bus_status == BUS_COMMAND_MEM_WRITE) &&
-        (minx_address_out >= 24'h1300) &&
+        (minx_address_out >= 24'h1000) &&
         (minx_address_out < 24'h2000)
     )
 );
@@ -494,43 +575,17 @@ sdram cartridge_rom
     .clk        (clk_ram),
 
     .ch0_addr   (cart_download? ioctl_addr: minx_address_out[20:0]),
-    .ch0_rd     (~cart_download & clk_sys), // @todo?
+    .ch0_rd     (~cart_download & clk_sys),
     .ch0_wr     (cart_download & ioctl_wr),
     .ch0_din    (ioctl_dout),
     .ch0_dout   (cartridge_data),
     .ch0_busy   (cart_busy)
 );
 
-// @todo: Remove fb0.
-wire [7:0] fb0_data_out;
-wire [7:0] fb0_pixel_value;
-dpram #(
-    .widthad_a(10),
-    .width_a(8)
-) fb0
-(
-    .clock_a(clk_sys),
-    .address_a(minx_address_out[9:0]),
-    .q_a(fb0_data_out),
-    .data_a(minx_data_out),
-    .wren_a(
-        minx_we &&
-        (bus_status == BUS_COMMAND_MEM_WRITE) &&
-        (minx_address_out >= 24'h1000) &&
-        (minx_address_out < 24'h1300)
-    ),
-
-    .clock_b(clk_sys),
-    .address_b({5'd0, ypos[7:3]} * 96 + {3'd0, xpos[6:0]}),
-    .q_b(fb0_pixel_value),
-    .wren_b(1'b0)
-);
-
 assign minx_data_in =
      (minx_address_out < 24'h1000)? bios_data_out:
-    ((minx_address_out < 24'h1300)? fb0_data_out:
     ((minx_address_out < 24'h2000)? ram_data_out:
-                                    cartridge_data));
+                                    cartridge_data);
 
 video_mixer #(640, 0) mixer
 (

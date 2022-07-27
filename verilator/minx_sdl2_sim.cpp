@@ -480,6 +480,10 @@ int main(int argc, char** argv)
     const char* rom_filepath = "data/party_j.min";
     // Possibly problem with display starting 2 pixels from the left.
     //const char* rom_filepath = "data/6shades.min";
+    // Possibly problem with sprite of pichu showing some noise when passing
+    // by extreme extreme left and right of screen?
+    // Also problem with second selection screen where a pixel appears behind
+    // right arrow.
     //const char* rom_filepath = "data/pichu_bros_mini_j.min";
     //const char* rom_filepath = "data/pokemon_anime_card_daisakusen_j.min";
     //const char* rom_filepath = "data/snorlaxs_lunch_time_j.min";

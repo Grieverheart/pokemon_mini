@@ -20,8 +20,8 @@ module minx
     output iack,
 
     output [5:0] lcd_contrast,
-    input [6:0] lcd_read_x,
-    input [4:0] lcd_read_y,
+    input [7:0] lcd_read_x,
+    input [3:0] lcd_read_y,
     output logic [7:0] lcd_read_column,
 
     output frame_complete,
@@ -30,7 +30,8 @@ module minx
     output bus_ack
 );
 
-    assign frame_complete = irq_copy_complete;
+    // @todo: Perhaps use irq_render_done instead?
+    assign frame_complete = irq_render_done;
 
     // @todo: Design question: Move this logic to inside the eeprom module?
     // The idea of putting this logic here is that eeprom is part of the gpio

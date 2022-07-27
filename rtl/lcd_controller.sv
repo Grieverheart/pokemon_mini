@@ -9,8 +9,8 @@ module lcd_controller
     input [7:0] data_in,
     output logic [7:0] data_out,
     output [5:0] lcd_contrast,
-    input [6:0] read_x,
-    input [4:0] read_y,
+    input [7:0] read_x,
+    input [3:0] read_y,
     output logic [7:0] read_column
 );
 assign lcd_contrast = contrast;
@@ -43,7 +43,7 @@ reg [7:0] lcd_read;
 
 always_ff @ (posedge clk)
 begin
-    read_column <= lcd_data[read_y * 132 + read_x];
+    read_column <= lcd_data[{7'b0, read_y} * 132 + {3'b0, read_x}];
     lcd_read    <= lcd_data[pixel_address];
 end
 
