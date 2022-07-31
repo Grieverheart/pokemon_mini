@@ -1,4 +1,5 @@
 set_global_assignment -name SYSTEMVERILOG_FILE rtl/s1c88.sv
+set_global_assignment -name SYSTEMVERILOG_FILE rtl/bcd_addsub.sv
 set_global_assignment -name SYSTEMVERILOG_FILE rtl/alu.sv
 set_global_assignment -name SYSTEMVERILOG_FILE rtl/eeprom.sv
 set_global_assignment -name SYSTEMVERILOG_FILE rtl/irq.sv

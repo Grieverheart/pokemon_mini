@@ -41,7 +41,7 @@ enum bit[1:0]
 } AluFlags;
 
 
-// @todo: Need to implement decimal and unpack operations.
+// @todo: Need to implement unpack operations.
 module alu
 (
     input [4:0] alu_op,
@@ -49,6 +49,7 @@ module alu
     input [15:0] A,
     input [15:0] B,
     input C,
+    input D,
     output reg [15:0] R,
     output reg [3:0] flags
 );
@@ -66,12 +67,32 @@ module alu
     wire [3:0] msb = (size == 1)? 4'd15: 4'd7;
     reg [16:0] R_temp;
 
+    wire add_sub = (
+        alu_op == ALUOP_INC  ||
+        alu_op == ALUOP_INC2 ||
+        alu_op == ALUOP_ADD  ||
+        alu_op == ALUOP_ADC
+    )? 0: 1;
+
+    wire bcd_c;
+    wire [7:0] temp_bcd;
+    wire [3:0] bcd_flags;
+    reg [7:0] bcd_B;
+    bcd_addsub bcd(
+        add_sub,
+        A[7:0], bcd_B,
+        (alu_op == ALUOP_ADC || alu_op == ALUOP_SBC)? C: 0,
+        temp_bcd,
+        bcd_flags
+    );
+
     // @todo: Should we put flags in separate always_comb? It's annoying that we have
     // to check again if it's ADD, INC, etc.
     always_comb
     begin
         R_temp = 0;
         flags = 4'h0;
+        bcd_B = B[7:0];
         case(alu_op)
 
             ALUOP_AND:
@@ -106,27 +127,40 @@ module alu
             ALUOP_ADD,
             ALUOP_ADC:
             begin
-                if(alu_op == ALUOP_ADD)
+                if(D && size == 0)
                 begin
-                    R_temp = {1'b0, A} + {1'b0, B};
-                    R = R_temp[15:0];
-                    flags[ALU_FLAG_C] = R_temp[{1'b0, msb} + 5'd1];
-                end
-                else if(alu_op == ALUOP_ADC)
-                begin
-                    R_temp = {1'b0, A} + {1'b0, B} + {16'd0, C};
-                    R = R_temp[15:0];
-                    flags[ALU_FLAG_C] = R_temp[{1'b0, msb} + 5'd1];
-                end
-                else if(alu_op == ALUOP_INC)
-                    R = A + 16'd1;
-                else
-                    R = A + 16'd2;
+                    if(alu_op == ALUOP_INC)
+                        bcd_B = 8'd1;
+                    else if(alu_op == ALUOP_INC2)
+                        bcd_B = 8'd2;
 
-                flags[ALU_FLAG_V] = (A[msb] & B[msb] & ~R[msb]) | (~A[msb] & ~B[msb] & R[msb]);
-                // can we do this? flags[ALU_FLAG_V] = (R[msb] == flags[ALU_FLAG_C]);
-                flags[ALU_FLAG_Z] = (size == 1)? (R == 0): (R[7:0] == 0);
-                flags[ALU_FLAG_S] = R[msb];
+                    R = {8'd0, temp_bcd};
+                    flags = bcd_flags;
+                end
+                else
+                begin
+                    if(alu_op == ALUOP_ADD)
+                    begin
+                        R_temp = {1'b0, A} + {1'b0, B};
+                        R = R_temp[15:0];
+                        flags[ALU_FLAG_C] = R_temp[{1'b0, msb} + 5'd1];
+                    end
+                    else if(alu_op == ALUOP_ADC)
+                    begin
+                        R_temp = {1'b0, A} + {1'b0, B} + {16'd0, C};
+                        R = R_temp[15:0];
+                        flags[ALU_FLAG_C] = R_temp[{1'b0, msb} + 5'd1];
+                    end
+                    else if(alu_op == ALUOP_INC)
+                        R = A + 16'd1;
+                    else
+                        R = A + 16'd2;
+
+                    flags[ALU_FLAG_V] = (A[msb] & B[msb] & ~R[msb]) | (~A[msb] & ~B[msb] & R[msb]);
+                    // can we do this? flags[ALU_FLAG_V] = (R[msb] == flags[ALU_FLAG_C]);
+                    flags[ALU_FLAG_Z] = (size == 1)? (R == 0): (R[7:0] == 0);
+                    flags[ALU_FLAG_S] = R[msb];
+                end
             end
 
             ALUOP_DEC,
@@ -135,26 +169,39 @@ module alu
             ALUOP_SUB,
             ALUOP_SBC:
             begin
-                if(alu_op == ALUOP_DEC)
-                    R = A - 16'd1;
-                else if(alu_op == ALUOP_DEC2)
-                    R = A - 16'd2;
-                else if(alu_op == ALUOP_SBC)
+                if(D && size == 0)
                 begin
-                    R_temp = {1'b0, A} - {1'b0, B} - {16'd0, C};
-                    R = R_temp[15:0];
-                    flags[ALU_FLAG_C] = R_temp[{1'b0, msb} + 5'd1];
+                    if(alu_op == ALUOP_DEC)
+                        bcd_B = 8'd1;
+                    else if(alu_op == ALUOP_DEC2)
+                        bcd_B = 8'd2;
+
+                    R = {8'd0, temp_bcd};
+                    flags = bcd_flags;
                 end
                 else
                 begin
-                    R_temp = {1'b0, A} - {1'b0, B};
-                    R = R_temp[15:0];
-                    flags[ALU_FLAG_C] = R_temp[{1'b0, msb} + 5'd1];
-                end
+                    if(alu_op == ALUOP_DEC)
+                        R = A - 16'd1;
+                    else if(alu_op == ALUOP_DEC2)
+                        R = A - 16'd2;
+                    else if(alu_op == ALUOP_SBC)
+                    begin
+                        R_temp = {1'b0, A} - {1'b0, B} - {16'd0, C};
+                        R = R_temp[15:0];
+                        flags[ALU_FLAG_C] = R_temp[{1'b0, msb} + 5'd1];
+                    end
+                    else
+                    begin
+                        R_temp = {1'b0, A} - {1'b0, B};
+                        R = R_temp[15:0];
+                        flags[ALU_FLAG_C] = R_temp[{1'b0, msb} + 5'd1];
+                    end
 
-                flags[ALU_FLAG_V] = (A[msb] & ~B[msb] & ~R[msb]) | (~A[msb] & B[msb] & R[msb]);
-                flags[ALU_FLAG_Z] = (size == 1)? (R == 0): (R[7:0] == 0);
-                flags[ALU_FLAG_S] = R[msb];
+                    flags[ALU_FLAG_V] = (A[msb] & ~B[msb] & ~R[msb]) | (~A[msb] & B[msb] & R[msb]);
+                    flags[ALU_FLAG_Z] = (size == 1)? (R == 0): (R[7:0] == 0);
+                    flags[ALU_FLAG_S] = R[msb];
+                end
             end
 
             ALUOP_DIV:

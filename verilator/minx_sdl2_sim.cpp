@@ -338,28 +338,28 @@ void simulate_steps(SimData* sim, int n_steps)
                 }
             }
 
-            if(sim->minx->rootp->minx__DOT__cpu__DOT__not_implemented_addressing_error == 1 && sim->minx->pl == 0)
+            if(sim->minx->rootp->minx__DOT__cpu__DOT__not_implemented_addressing_error == 1)
                 PRINTE(" ** Addressing not implemented error: 0x%llx, timestamp: %llu** \n", (sim->minx->rootp->minx__DOT__cpu__DOT__micro_op & 0x3F00000) >> 20, sim->timestamp);
 
-            if(sim->minx->rootp->minx__DOT__cpu__DOT__not_implemented_jump_error == 1 && sim->minx->pl == 0)
+            if(sim->minx->rootp->minx__DOT__cpu__DOT__not_implemented_jump_error == 1)
                 PRINTE(" ** Jump not implemented error, 0x%llx, timestamp: %llu** \n", (sim->minx->rootp->minx__DOT__cpu__DOT__micro_op & 0x7C000) >> 14, sim->timestamp);
 
-            if(sim->minx->rootp->minx__DOT__cpu__DOT__not_implemented_data_out_error == 1 && sim->minx->pl == 1)
+            if(sim->minx->rootp->minx__DOT__cpu__DOT__not_implemented_data_out_error == 1)
                 PRINTE(" ** Data-out not implemented error, timestamp: %llu** \n", sim->timestamp);
 
-            if(sim->minx->rootp->minx__DOT__cpu__DOT__not_implemented_mov_src_error == 1 && sim->minx->pl == 0)
+            if(sim->minx->rootp->minx__DOT__cpu__DOT__not_implemented_mov_src_error == 1)
                 PRINTE(" ** Mov src not implemented error, timestamp: %llu** \n", sim->timestamp);
 
-            if(sim->minx->rootp->minx__DOT__cpu__DOT__not_implemented_write_error == 1 && sim->minx->pl == 0)
+            if(sim->minx->rootp->minx__DOT__cpu__DOT__not_implemented_write_error == 1)
                 PRINTE(" ** Write not implemented error, timestamp: %llu** \n", sim->timestamp);
 
-            if(sim->minx->rootp->minx__DOT__cpu__DOT__alu_op_error == 1 && sim->minx->pl == 0)
+            if(sim->minx->rootp->minx__DOT__cpu__DOT__alu_op_error == 1)
                 PRINTE(" ** Alu not implemented error, timestamp: %llu** \n", sim->timestamp);
 
-            if(sim->minx->rootp->minx__DOT__cpu__DOT__not_implemented_alu_dec_pack_ops_error == 1 && sim->minx->pl == 0)
-                PRINTE(" ** Alu decimal and packed operations not implemented error, sim->timestamp: %llu** \n", sim->timestamp);
+            if(sim->minx->rootp->minx__DOT__cpu__DOT__not_implemented_alu_pack_ops_error == 1)
+                PRINTE(" ** Alu packed operations not implemented error, sim->timestamp: %llu, 0x%x** \n", sim->timestamp, sim->minx->rootp->minx__DOT__cpu__DOT__top_address);
 
-            if(sim->minx->rootp->minx__DOT__cpu__DOT__not_implemented_divzero_error == 1 && sim->minx->pl == 0)
+            if(sim->minx->rootp->minx__DOT__cpu__DOT__not_implemented_divzero_error == 1)
                 PRINTE(" ** Division by zero exception not implemented error, sim->timestamp: %llu**\n", sim->timestamp);
 
             if(sim->minx->rootp->minx__DOT__cpu__DOT__SP > 0x2000 && sim->minx->pl == 0)
@@ -477,18 +477,22 @@ int main(int argc, char** argv)
     int num_sim_steps = 150000;
 
     SimData sim;
-    const char* rom_filepath = "data/party_j.min";
-    // Possibly problem with display starting 2 pixels from the left.
+    //const char* rom_filepath = "data/party_j.min";
+    // Problem with display starting 2 pixels from the left. This is due to a
+    // difference in how the LCD controller is implemented. In e.g. PokeMini it
+    // is implemented in such a way that if End RWM mode is issued, it always
+    // sets the column to the cached value when Start RWM mode was issued,
+    // which is initialized to 0 if Start was not issued. 6shades calls End
+    // without Start.
     //const char* rom_filepath = "data/6shades.min";
     // Possibly problem with sprite of pichu showing some noise when passing
     // by extreme extreme left and right of screen?
     // Also problem with second selection screen where a pixel appears behind
     // right arrow.
-    //const char* rom_filepath = "data/pichu_bros_mini_j.min";
+    const char* rom_filepath = "data/pichu_bros_mini_j.min";
     //const char* rom_filepath = "data/pokemon_anime_card_daisakusen_j.min";
     //const char* rom_filepath = "data/snorlaxs_lunch_time_j.min";
     //const char* rom_filepath = "data/pokemon_shock_tetris_j.min";
-    // Glitching when clock is reaching zero while counting down.
     //const char* rom_filepath = "data/togepi_no_daibouken_j.min";
     //const char* rom_filepath = "data/pokemon_race_mini_j.min";
     //const char* rom_filepath = "data/pokemon_sodateyasan_mini_j.min";
