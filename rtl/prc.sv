@@ -25,7 +25,7 @@ module prc
 
 // @todo: What about page 8?
 
-// @note: For the sprite rendering basically implemented the folliowing as
+// @note: For the sprite rendering basically implemented the following as
 // a finite-state machine:
 // 
 //     if ((X < -7) || (X >= 96)) return;
@@ -573,7 +573,10 @@ begin
                                         begin
                                             xC <= 0;
                                             if(sprite_tile_index < 3)
+                                            begin
+                                                sprite_draw_state <= SPRITE_DRAW_STATE_READ_SPRITE_DATA;
                                                 sprite_tile_index <= sprite_tile_index + 1;
+                                            end
                                             else
                                             begin
                                                 sprite_tile_index <= 0;
@@ -616,7 +619,10 @@ begin
                                         begin
                                             xC <= 0;
                                             if(sprite_tile_index < 3)
+                                            begin
                                                 sprite_tile_index <= sprite_tile_index + 1;
+                                                sprite_draw_state <= SPRITE_DRAW_STATE_READ_SPRITE_DATA;
+                                            end
                                             else
                                             begin
                                                 sprite_tile_index <= 0;

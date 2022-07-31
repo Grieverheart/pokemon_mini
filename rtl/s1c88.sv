@@ -6,7 +6,7 @@ enum bit [1:0]
     BUS_COMMAND_MEM_WRITE = 2'd2,
     BUS_COMMAND_MEM_READ  = 2'd3
 }BusCommand;
-		  
+
 module s1c88
 (
     input clk,
