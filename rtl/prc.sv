@@ -27,39 +27,39 @@ module prc
 
 // @note: For the sprite rendering basically implemented the following as
 // a finite-state machine:
-// 
+//
 //     if ((X < -7) || (X >= 96)) return;
 //     if ((Y < -7) || (Y >= 64)) return;
-//     
+//
 //     // Pre calculate
 //     vaddr = 0x1000 + ((Y >> 3) * 96) + X;
-//     
+//
 //     // Process top columns
 //     for (xC=0; xC<8; xC++, X++) {
 //         if ((X >= 0) && (X < 96)) {
 //             xP = (cfg & 0x01) ? (7 - xC) : xC;
-//     
+//
 //             sdata = MinxPRC_OnRead(0, MinxPRC.PRCSprBase + (DrawT * 8) + xP);
 //             smask = MinxPRC_OnRead(0, MinxPRC.PRCSprBase + (MaskT * 8) + xP);
-//     
+//
 //             if (cfg & 0x02) {
 //                 sdata = PRCInvertBit[sdata];
 //                 smask = PRCInvertBit[smask];
 //             }
 //             if (cfg & 0x04) sdata = ~sdata;
-//     
+//
 //             if (Y >= 0) {
 //                 vdata = MinxPRC_OnRead(0, vaddr + xC);
 //                 data = vdata & ((smask << (Y & 7)) | (0xFF >> (8 - (Y & 7))));
 //                 data |= (sdata & ~smask) << (Y & 7);
-//     
+//
 //                 MinxPRC_OnWrite(0, vaddr + xC, data);
 //             }
 //             if ((Y < 56) && (Y & 7)) {
 //                 vdata = MinxPRC_OnRead(0, vaddr + 96 + xC);
 //                 data = vdata & ((smask >> (8-(Y & 7))) | (0xFF << (Y & 7)));
 //                 data |= (sdata & ~smask) >> (8-(Y & 7));
-//     
+//
 //                 MinxPRC_OnWrite(0, vaddr + 96 + xC, data);
 //             }
 //         }
@@ -326,7 +326,7 @@ begin
                         if(bus_data_in[6:0] <= (map_height*8-64))
                             reg_scroll_y <= bus_data_in[6:0];
                     24'h2086: // PRC Map Horizontal Scroll
-                        if(bus_data_in[6:0] <= (map_width*8-96)) 
+                        if(bus_data_in[6:0] <= (map_width*8-96))
                             reg_scroll_x <= bus_data_in[6:0];
 
                     24'h2087: // PRC Sprite Tile Base Low
@@ -520,7 +520,7 @@ begin
                                     end
                                     else
                                     begin
-                                        bus_address_out <= reg_sprite_base + 
+                                        bus_address_out <= reg_sprite_base +
                                             8 * (8 * {16'd0, sprite_tile_address} + {16'd0, sprite_tile_offset} + 24'd2) +
                                             {21'd0, sprite_info[0]? 3'd7 - xC[2:0]: xC[2:0]};
                                         bus_status <= BUS_COMMAND_MEM_READ;
@@ -529,7 +529,7 @@ begin
                                 end
                                 SPRITE_DRAW_STATE_READ_SPRITE_MASK:
                                 begin
-                                    bus_address_out <= reg_sprite_base + 
+                                    bus_address_out <= reg_sprite_base +
                                         8 * (8 * {16'd0, sprite_tile_address} + {16'd0, sprite_tile_offset}) +
                                         {21'd0, sprite_info[0]? 3'd7 - xC[2:0]: xC[2:0]};
                                     bus_status <= BUS_COMMAND_MEM_READ;
@@ -601,7 +601,7 @@ begin
                                     sprite_draw_state <= SPRITE_DRAW_STATE_READ_SPRITE_DATA;
 
                                     if(
-                                        (top_or_bottom == 0) && 
+                                        (top_or_bottom == 0) &&
                                         (sprite_abs_y < 72) && (sprite_abs_y[2:0] != 0) &&
                                         (sprite_row_x >= 16) && (sprite_row_x < 112)
                                     )
