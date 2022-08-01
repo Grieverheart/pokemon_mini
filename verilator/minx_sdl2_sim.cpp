@@ -477,7 +477,7 @@ int main(int argc, char** argv)
     int num_sim_steps = 150000;
 
     SimData sim;
-    //const char* rom_filepath = "data/party_j.min";
+    const char* rom_filepath = "data/party_j.min";
     // Problem with display starting 2 pixels from the left. This is due to a
     // difference in how the LCD controller is implemented. In e.g. PokeMini it
     // is implemented in such a way that if End RWM mode is issued, it always
@@ -485,9 +485,7 @@ int main(int argc, char** argv)
     // which is initialized to 0 if Start was not issued. 6shades calls End
     // without Start.
     //const char* rom_filepath = "data/6shades.min";
-    // Possibly problem with sprite of pichu showing some noise when passing
-    // by extreme extreme left and right of screen?
-    const char* rom_filepath = "data/pichu_bros_mini_j.min";
+    //const char* rom_filepath = "data/pichu_bros_mini_j.min";
     //const char* rom_filepath = "data/pokemon_anime_card_daisakusen_j.min";
     //const char* rom_filepath = "data/snorlaxs_lunch_time_j.min";
     //const char* rom_filepath = "data/pokemon_shock_tetris_j.min";

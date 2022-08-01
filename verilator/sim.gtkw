@@ -1,23 +1,24 @@
 [*]
-[*] GTKWave Analyzer v3.3.107 (w)1999-2020 BSI
-[*] Sun Jul 31 09:32:32 2022
+[*] GTKWave Analyzer v3.3.111 (w)1999-2020 BSI
+[*] Mon Aug  1 19:08:39 2022
 [*]
-[dumpfile] "/Users/nicktasios/Programming/fpga/pokemon_mini/verilator/sim.vcd"
-[dumpfile_mtime] "Sun Jul 31 08:32:56 2022"
-[dumpfile_size] 569425341
-[savefile] "/Users/nicktasios/Programming/fpga/pokemon_mini/verilator/sim.gtkw"
-[timestart] 211748040
-[size] 1280 755
-[pos] -1 -1
-*-4.288506 211748073 14447805 22806772 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[dumpfile] "/home/nicktasios/Programming/fpga/pokemon_mini/verilator/sim.vcd"
+[dumpfile_mtime] "Mon Aug  1 13:06:41 2022"
+[dumpfile_size] 124456363
+[savefile] "/home/nicktasios/Programming/fpga/pokemon_mini/verilator/sim.gtkw"
+[timestart] 217492504
+[size] 2560 1371
+[pos] -101 -101
+*-4.288506 217492573 14447805 22806772 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] minx.
 [treeopen] minx.cpu.
-[sst_width] 193
-[signals_width] 380
+[sst_width] 227
+[signals_width] 538
 [sst_expanded] 1
-[sst_vpaned_height] 499
+[sst_vpaned_height] 500
 @28
 minx.clk
+minx.cpu.clk_ce
 minx.cpu.pk
 minx.cpu.pl
 minx.read
@@ -81,7 +82,6 @@ minx.cpu.imm[15:0]
 -group_end
 @22
 minx.cpu.top_address[15:0]
-@24
 minx.cpu.data_in[7:0]
 @c00022
 minx.data_out[7:0]
@@ -94,7 +94,7 @@ minx.data_out[7:0]
 (5)minx.data_out[7:0]
 (6)minx.data_out[7:0]
 (7)minx.data_out[7:0]
-@1401200
+@1401202
 -group_end
 @24
 minx.bus_status[1:0]
@@ -214,6 +214,26 @@ minx.irq.reg_irq_active[31:0]
 @22
 minx.prc.bus_address_out[23:0]
 minx.prc.state[1:0]
+@24
+minx.prc.sprite_row_x[7:0]
+minx.prc.sprite_abs_x[6:0]
+minx.prc.sprite_abs_y[6:0]
+@25
+minx.prc.xC[6:0]
+@24
+minx.prc.sprite_draw_state[2:0]
+minx.prc.sprite_draw_state_current[2:0]
+@28
+minx.prc.top_or_bottom
+@22
+minx.prc.sprite_data[7:0]
+minx.prc.sprite_mask[7:0]
+minx.prc.sprite_tile_address[7:0]
+@24
+minx.prc.sprite_tile_index[1:0]
+minx.prc.current_sprite_id[4:0]
+@22
+minx.prc.reg_sprite_base[23:0]
 @c00200
 -irq
 @24
@@ -419,7 +439,7 @@ minx.rom.state[2:0]
 minx.rom.address[12:0]
 @1401200
 -eeprom
-@800200
+@c00200
 -cpu
 @c00022
 minx.cpu.SC[7:0]
@@ -455,7 +475,7 @@ minx.cpu.SP[15:0]
 (15)minx.cpu.SP[15:0]
 @1401200
 -group_end
-@c00023
+@c00022
 minx.cpu.alu_A[15:0]
 @28
 (0)minx.cpu.alu_A[15:0]
@@ -474,7 +494,7 @@ minx.cpu.alu_A[15:0]
 (13)minx.cpu.alu_A[15:0]
 (14)minx.cpu.alu_A[15:0]
 (15)minx.cpu.alu_A[15:0]
-@1401203
+@1401200
 -group_end
 @22
 minx.cpu.alu_B[15:0]
@@ -535,7 +555,7 @@ minx.cpu.PC[15:0]
 minx.cpu.XP[7:0]
 minx.cpu.YP[7:0]
 minx.cpu.imm[15:0]
-@1000200
+@1401200
 -cpu
 [pattern_trace] 1
 [pattern_trace] 0

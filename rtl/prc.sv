@@ -555,6 +555,7 @@ begin
                                         (sprite_row_x >= 16) && (sprite_row_x < 112)
                                     )
                                     begin
+                                        // @todo: Is it a problem if top_or_bottom == 0?
                                         top_or_bottom <= 1;
                                         bus_address_out <= 24'h1000 +
                                             {19'h0, sprite_abs_y[6:3] - 4'd1} * 96 +
@@ -564,10 +565,11 @@ begin
                                     end
                                     else
                                     begin
-                                        // @todo?
+                                        // @todo: Can make into task?
                                         if(xC < 7)
                                         begin
                                             xC <= xC + 1;
+                                            sprite_draw_state <= SPRITE_DRAW_STATE_READ_SPRITE_DATA;
                                         end
                                         else
                                         begin
@@ -598,7 +600,6 @@ begin
                                         {19'h0, (sprite_abs_y[6:3] + {3'd0, top_or_bottom}) - 4'd2} * 96 +
                                         {15'h0, sprite_row_x - 8'd16};
                                     bus_status <= BUS_COMMAND_MEM_WRITE;
-                                    sprite_draw_state <= SPRITE_DRAW_STATE_READ_SPRITE_DATA;
 
                                     if(
                                         (top_or_bottom == 0) &&
@@ -614,6 +615,7 @@ begin
                                         if(xC < 7)
                                         begin
                                             xC <= xC + 1;
+                                            sprite_draw_state <= SPRITE_DRAW_STATE_READ_SPRITE_DATA;
                                         end
                                         else
                                         begin
