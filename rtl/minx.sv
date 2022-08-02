@@ -78,8 +78,12 @@ module minx
     wire [31:0]  irqs;
     assign irqs[5'h03] = irq_copy_complete;
     assign irqs[5'h04] = irq_render_done;
+    assign irqs[5'h05] = t2_irqs[1];
+    assign irqs[5'h06] = t2_irqs[0];
     assign irqs[5'h07] = t1_irqs[1];
     assign irqs[5'h08] = t1_irqs[0];
+    assign irqs[5'h09] = t3_irqs[1];
+    assign irqs[5'h0A] = t3_irqs[2];
     assign irqs[5'h0B] = t256_irqs[0];
     assign irqs[5'h0C] = t256_irqs[1];
     assign irqs[5'h0D] = t256_irqs[2];
@@ -140,7 +144,15 @@ module minx
     wire [2:0] t1_irqs;
     wire [7:0] timer1_data_out;
     wire osc256;
-    timer timer1
+    timer
+    #(
+        .TMR_SCALE (24'h2018),
+        .TMR_OSC   (24'h2019),
+        .TMR_CTRL  (24'h2030),
+        .TMR_PRE   (24'h2032),
+        .TMR_PVT   (24'h2034),
+        .TMR_CNT   (24'h2036)
+    ) timer1
     (
         .clk            (clk),
         .clk_ce         (clk_ce),
@@ -154,6 +166,58 @@ module minx
         .bus_data_out   (timer1_data_out),
         .irqs           (t1_irqs),
         .osc256         (osc256)
+    );
+
+    wire [2:0] t2_irqs;
+    wire [7:0] timer2_data_out;
+    timer
+    #(
+        .TMR_SCALE (24'h201A),
+        .TMR_OSC   (24'h201B),
+        .TMR_CTRL  (24'h2038),
+        .TMR_PRE   (24'h203A),
+        .TMR_PVT   (24'h203C),
+        .TMR_CNT   (24'h203E)
+    ) timer2
+    (
+        .clk            (clk),
+        .clk_ce         (clk_ce),
+        .rt_clk         (rt_clk),
+        .rt_ce          (rt_ce),
+        .reset          (reset),
+        .bus_write      (write),
+        .bus_read       (read),
+        .bus_address_in (cpu_address_out),
+        .bus_data_in    (cpu_data_out),
+        .bus_data_out   (timer2_data_out),
+        .irqs           (t2_irqs),
+        .osc256         ()
+    );
+
+    wire [2:0] t3_irqs;
+    wire [7:0] timer3_data_out;
+    timer
+    #(
+        .TMR_SCALE (24'h201C),
+        .TMR_OSC   (24'h201D),
+        .TMR_CTRL  (24'h2048),
+        .TMR_PRE   (24'h204A),
+        .TMR_PVT   (24'h204C),
+        .TMR_CNT   (24'h204E)
+    ) timer3
+    (
+        .clk            (clk),
+        .clk_ce         (clk_ce),
+        .rt_clk         (rt_clk),
+        .rt_ce          (rt_ce),
+        .reset          (reset),
+        .bus_write      (write),
+        .bus_read       (read),
+        .bus_address_in (cpu_address_out),
+        .bus_data_in    (cpu_data_out),
+        .bus_data_out   (timer3_data_out),
+        .irqs           (t3_irqs),
+        .osc256         ()
     );
 
     wire [7:0] rtc_data_out;
@@ -262,10 +326,12 @@ module minx
         | rtc_data_out
         | timer256_data_out
         | timer1_data_out
+        | timer2_data_out
+        | timer3_data_out
         | irq_data_out
         | sys_batt;
 
-    wire [7:0] cpu_data_in = 
+    wire [7:0] cpu_data_in =
     (
         (address_out >= 24'h2000) &&
         (address_out <  24'h2100) &&

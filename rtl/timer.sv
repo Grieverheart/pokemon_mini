@@ -1,7 +1,9 @@
 // @todo: Implement interrupts
 
 module timer
-// @todo: parameters.
+#(
+    parameter TMR_SCALE, TMR_OSC, TMR_CTRL, TMR_PRE, TMR_PVT, TMR_CNT
+)
 (
     input clk,
     input clk_ce,
@@ -16,6 +18,15 @@ module timer
     output logic [2:0] irqs,
     output osc256
 );
+
+localparam TMR_CTRL_L = TMR_CTRL;
+localparam TMR_CTRL_H = TMR_CTRL+1;
+localparam TMR_PRE_L  = TMR_PRE;
+localparam TMR_PRE_H  = TMR_PRE+1;
+localparam TMR_PVT_L  = TMR_PVT;
+localparam TMR_PVT_H  = TMR_PVT+1;
+localparam TMR_CNT_L  = TMR_CNT;
+localparam TMR_CNT_H  = TMR_CNT+1;
 
 assign osc256 = (osc2_prescaler[6:0] == 7'h7F);
 
@@ -113,21 +124,21 @@ begin
             if(write_latch)
             begin
                 case(bus_address_in)
-                    24'h2018:
+                    TMR_SCALE:
                         reg_scale         <= bus_data_in;
-                    24'h2019:
+                    TMR_OSC:
                         reg_osc_control   <= bus_data_in;
-                    24'h2030:
+                    TMR_CTRL_L:
                         reg_control[7:0]  <= bus_data_in;
-                    24'h2031:
+                    TMR_CTRL_H:
                         reg_control[15:8] <= bus_data_in;
-                    24'h2032:
+                    TMR_PRE_L:
                         reg_preset[7:0]   <= bus_data_in;
-                    24'h2033:
+                    TMR_PRE_H:
                         reg_preset[15:8]  <= bus_data_in;
-                    24'h2034:
+                    TMR_PVT_L:
                         reg_compare[7:0]  <= bus_data_in;
-                    24'h2035:
+                    TMR_PVT_H:
                         reg_compare[15:8] <= bus_data_in;
                     default:
                     begin
@@ -150,25 +161,25 @@ end
 always_comb
 begin
     case(bus_address_in)
-        24'h2018:
+        TMR_SCALE:
             bus_data_out = reg_scale;
-        24'h2019:
+        TMR_OSC:
             bus_data_out = reg_osc_control;
-        24'h2030:
+        TMR_CTRL_L:
             bus_data_out = reg_control[7:0];
-        24'h2031:
+        TMR_CTRL_H:
             bus_data_out = reg_control[15:8];
-        24'h2032:
+        TMR_PRE_L:
             bus_data_out = reg_preset[7:0];
-        24'h2033:
+        TMR_PRE_H:
             bus_data_out = reg_preset[15:8];
-        24'h2034:
+        TMR_PVT_L:
             bus_data_out = reg_compare[7:0];
-        24'h2035:
+        TMR_PVT_H:
             bus_data_out = reg_compare[15:8];
-        24'h2036:
+        TMR_CNT_L:
             bus_data_out = timer[7:0];
-        24'h2037:
+        TMR_CNT_H:
             bus_data_out = timer[15:8];
         default:
             bus_data_out = 8'd0;
