@@ -194,8 +194,8 @@ begin
     if(clk_ce)
     begin
         osc1_prescaler <= osc1_prescaler + 1;
-        rt_clk_latch   <= rt_ce;
-        irqs <= 0;
+        rt_clk_latch   <= rt_ce & rt_clk; // @todo: What is correct?
+        irqs <= 0; // @todo: When should we really zero the irqs?
 
         if(reset_l)
             timer <= reg_preset;

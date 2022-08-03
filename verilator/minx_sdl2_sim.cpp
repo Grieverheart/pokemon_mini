@@ -246,6 +246,17 @@ void sim_dump_stop(SimData* sim)
     sim->tfp = nullptr;
 }
 
+void sim_dump_eeprom(SimData* sim, const char* filepath)
+{
+    VlUnpacked<unsigned char, 8192> rom = sim->minx->rootp->minx__DOT__rom__DOT__rom;
+    const uint8_t* data = rom.m_storage;
+    FILE* fp = fopen(filepath, "wb");
+    {
+        fwrite(data, 8192, 1, fp);
+    }
+    fclose(fp);
+}
+
 void sim_dump_start(SimData* sim, const char* filepath)
 {
     printf("Starting dump at timestamp: %llu.\n", sim->timestamp);
@@ -562,6 +573,7 @@ int main(int argc, char** argv)
     bool sim_is_running = true;
     bool program_is_running = true;
     bool dump_sim = false;
+    int eeprom_dump_id = 0;
     while(program_is_running)
     {
         // Process input
@@ -588,6 +600,12 @@ int main(int argc, char** argv)
                         dump_sim = false;
                         sim_dump_stop(&sim);
                     }
+                }
+                else if(sdl_event.key.keysym.sym == SDLK_e)
+                {
+                    char filename[256];
+                    snprintf(filename, 256, "eeprom%03d.bin", eeprom_dump_id++);
+                    sim_dump_eeprom(&sim, filename);
                 }
                 else
                 {
