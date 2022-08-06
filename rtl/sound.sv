@@ -6,11 +6,14 @@ module sound
     input bus_write,
     input [23:0] bus_address_in,
     input [7:0] bus_data_in,
-    output logic [7:0] bus_data_out
+    output logic [7:0] bus_data_out,
+    output [1:0] sound_volume
 );
 
 reg [2:0] reg_sound_control;
 reg [2:0] reg_sound_volume;
+
+assign sound_volume = reg_sound_volume[1:0];
 
 reg write_latch;
 always_ff @ (negedge clk)

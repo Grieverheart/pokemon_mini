@@ -192,6 +192,13 @@ struct SimData
     uint8_t* instructions_executed;
 };
 
+struct AudioBuffer
+{
+    uint8_t* data;
+    size_t size;
+    size_t read_position;
+};
+
 void sim_init(SimData* sim, const char* cartridge_path)
 {
     FILE* fp = fopen("data/bios.min", "rb");
@@ -252,8 +259,27 @@ void sim_dump_eeprom(SimData* sim, const char* filepath)
     const uint8_t* data = rom.m_storage;
     FILE* fp = fopen(filepath, "wb");
     {
-        fwrite(data, 8192, 1, fp);
+        fwrite(data, 1, 8192, fp);
     }
+    fclose(fp);
+}
+
+void sim_load_eeprom(SimData* sim, const char* filepath)
+{
+    uint8_t* data = sim->minx->rootp->minx__DOT__rom__DOT__rom.m_storage;
+    FILE* fp = fopen(filepath, "rb");
+    {
+        fread(data, 1, 8192, fp);
+    }
+    int sum = 0;
+    printf("sum is: ");
+    for(int i = 0; i < 8192; ++i)
+        sum += data[i];
+    // @todo: Why can't we restore the eeprom properly? Game asks for data/time again.
+    sim->minx->rootp->minx__DOT__rtc__DOT__timer = ((data[0x1FF8] << 16) | (data[0x1FF7] << 8) | data[0x1FF6]) + 1;
+    sim->minx->rootp->minx__DOT__rtc__DOT__reg_enabled = 1;
+    printf("%d\n", sum);
+    printf("%d\n", sim->minx->rootp->minx__DOT__rtc__DOT__timer);
     fclose(fp);
 }
 
@@ -269,7 +295,7 @@ void sim_dump_start(SimData* sim, const char* filepath)
     sim->tfp->open(filepath);
 }
 
-void simulate_steps(SimData* sim, int n_steps)
+void simulate_steps(SimData* sim, int n_steps, AudioBuffer* audio_buffer = nullptr)
 {
     for(int i = 0; i < n_steps && !Verilated::gotFinish(); ++i)
     {
@@ -298,6 +324,15 @@ void simulate_steps(SimData* sim, int n_steps)
         }
         else if(sim->tfp) sim->tfp->dump(sim->timestamp);
         sim->timestamp++;
+
+        if(audio_buffer)
+        {
+            uint8_t volume = sim->minx->sound_volume;
+            uint8_t sound_pulse = sim->minx->sound_pulse;
+            int8_t multiplier = (volume == 0)? 0: ((volume == 3)? 127: 63);
+            audio_buffer->data[i] = (2 * sound_pulse - 1) * multiplier;
+            //if(audio_buffer->data[i] < 0) --audio_buffer->data[i];
+        }
 
         if(sim->minx->rootp->minx__DOT__irq_copy_complete && irq_copy_complete_old == 0)
         {
@@ -380,6 +415,9 @@ void simulate_steps(SimData* sim, int n_steps)
             }
         }
 
+        //if(sim->minx->rootp->minx__DOT__sound__DOT__reg_sound_volume == 3)
+        //    printf("%llu\n", sim->timestamp);
+
         //if(
         //    sim->minx->rootp->minx__DOT__cpu__DOT__postpone_exception == 1 &&
         //    sim->minx->rootp->iack == 1 &&
@@ -388,11 +426,11 @@ void simulate_steps(SimData* sim, int n_steps)
         //    if(!sim->tfp)
         //        sim_dump_start(sim, "temp.vcd");
         //}
-        //if(sim->timestamp == 33871476-100000)
-        //    sim_dump_start(sim, "temp.vcd");
+        if(sim->timestamp == 5033010 - 1000000)
+            sim_dump_start(sim, "temp.vcd");
 
-        //if(sim->timestamp == 33871476+100000)
-        //    sim_dump_stop(sim);
+        if(sim->timestamp == 5033010 + 1000000)
+            sim_dump_stop(sim);
 
         if(sim->timestamp >= 8)
             sim->minx->reset = 0;
@@ -482,10 +520,20 @@ uint8_t* get_lcd_image(const SimData* sim)
     return image_data;
 }
 
+void audio_callback(void* userdata, uint8_t* stream, int len)
+{
+    memset(stream, 0, len);
+    AudioBuffer* audio_buffer = (AudioBuffer*) userdata;
+    for(int i = 0; i < len; ++i)
+        ((int8_t*)stream)[i] = audio_buffer->data[(91 * i + audio_buffer->read_position) % audio_buffer->size];
+    audio_buffer->read_position += 91 * len;
+    audio_buffer->read_position = audio_buffer->read_position % audio_buffer->size;
+}
+
 // @todo: Create a call stack for keeping track call/return problems.
 int main(int argc, char** argv)
 {
-    int num_sim_steps = 150000;
+    size_t num_sim_steps = 150000;
 
     SimData sim;
     const char* rom_filepath = "data/party_j.min";
@@ -507,6 +555,7 @@ int main(int argc, char** argv)
     //const char* rom_filepath = "data/pokemon_puzzle_collection_vol2_j.min";
     //const char* rom_filepath = "data/pokemon_pinball_mini_j.min";
     sim_init(&sim, rom_filepath);
+    sim_load_eeprom(&sim, "eeprom000.bin");
 
     // Create window and gl context, and game controller
     int window_width = 960/2;
@@ -515,7 +564,7 @@ int main(int argc, char** argv)
     SDL_Window* window;
     SDL_GLContext gl_context;
     {
-        if(SDL_Init(SDL_INIT_VIDEO) < 0)// | SDL_INIT_AUDIO) < 0)
+        if(SDL_Init(SDL_INIT_VIDEO| SDL_INIT_AUDIO) < 0)
         {
             fprintf(stderr, "Error initializing SDL. SDL_Error: %s\n", SDL_GetError());
             return -1;
@@ -567,6 +616,31 @@ int main(int argc, char** argv)
     SDL_GL_GetDrawableSize(window, &drawable_width, &drawable_height);
     gl_renderer_init(96, 64);
 
+    AudioBuffer sim_audio_buffer;
+    sim_audio_buffer.size          = num_sim_steps;
+    sim_audio_buffer.data          = (uint8_t*)malloc(num_sim_steps);
+    sim_audio_buffer.read_position = 0;
+
+    SDL_AudioSpec audio_spec_want;
+    SDL_memset(&audio_spec_want, 0, sizeof(audio_spec_want));
+
+    audio_spec_want.freq     = 44100;
+    audio_spec_want.format   = AUDIO_S8;
+    audio_spec_want.channels = 1;
+    audio_spec_want.samples  = 512;
+    audio_spec_want.callback = audio_callback;
+    audio_spec_want.userdata = (void*) &sim_audio_buffer;
+
+    SDL_AudioSpec audio_spec;
+    SDL_AudioDeviceID audio_device_id = SDL_OpenAudioDevice(NULL, 0, &audio_spec_want, &audio_spec, SDL_AUDIO_ALLOW_FORMAT_CHANGE);
+    if(!audio_device_id)
+    {
+        fprintf(stderr, "Error creating SDL audio device. SDL_Error: %s\n", SDL_GetError());
+        return -1;
+    }
+
+    SDL_PauseAudioDevice(audio_device_id, 0);
+
     uint64_t cpu_frequency = SDL_GetPerformanceFrequency();
     uint64_t current_clock = SDL_GetPerformanceCounter();
 
@@ -576,6 +650,7 @@ int main(int argc, char** argv)
     int eeprom_dump_id = 0;
     while(program_is_running)
     {
+        //printf("%d, %d\n", sim.minx->rootp->minx__DOT__rtc__DOT__timer, sim.minx->rootp->minx__DOT__rom__DOT__rom.m_storage[0x1FF6]);
         // Process input
         SDL_Event sdl_event;
         while(SDL_PollEvent(&sdl_event) != 0)
@@ -693,7 +768,7 @@ int main(int argc, char** argv)
         //printf("%f\n", 4000000 * frame_sec);
 
         if(sim_is_running)
-            simulate_steps(&sim, min(num_sim_steps, (int)4000000 * frame_sec));
+            simulate_steps(&sim, min(num_sim_steps, (int)4000000 * frame_sec), &sim_audio_buffer);
         uint8_t* lcd_image = get_lcd_image(&sim);
         gl_renderer_draw(96, 64, lcd_image);
         delete[] lcd_image;
@@ -703,6 +778,7 @@ int main(int argc, char** argv)
 
     sim_dump_stop(&sim);
 
+    SDL_CloseAudioDevice(audio_device_id);
     SDL_GL_DeleteContext(gl_context);
     SDL_DestroyWindow(window);
     SDL_Quit();

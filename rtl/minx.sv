@@ -27,7 +27,10 @@ module minx
     output frame_complete,
 
     output bus_request,
-    output bus_ack
+    output bus_ack,
+
+    output sound_pulse,
+    output [1:0] sound_volume
 );
 
     // @todo: Perhaps use irq_render_done instead?
@@ -138,7 +141,8 @@ module minx
         .bus_write      (write),
         .bus_address_in (cpu_address_out),
         .bus_data_in    (cpu_data_out),
-        .bus_data_out   (sound_data_out)
+        .bus_data_out   (sound_data_out),
+        .sound_volume   (sound_volume)
     );
 
     wire [2:0] t1_irqs;
@@ -165,6 +169,7 @@ module minx
         .bus_data_in    (cpu_data_out),
         .bus_data_out   (timer1_data_out),
         .irqs           (t1_irqs),
+        .tout           (),
         .osc256         (osc256)
     );
 
@@ -191,6 +196,7 @@ module minx
         .bus_data_in    (cpu_data_out),
         .bus_data_out   (timer2_data_out),
         .irqs           (t2_irqs),
+        .tout           (),
         .osc256         ()
     );
 
@@ -217,6 +223,7 @@ module minx
         .bus_data_in    (cpu_data_out),
         .bus_data_out   (timer3_data_out),
         .irqs           (t3_irqs),
+        .tout           (sound_pulse),
         .osc256         ()
     );
 

@@ -1,19 +1,19 @@
 [*]
-[*] GTKWave Analyzer v3.3.111 (w)1999-2020 BSI
-[*] Mon Aug  1 19:08:39 2022
+[*] GTKWave Analyzer v3.3.107 (w)1999-2020 BSI
+[*] Thu Aug  4 19:07:55 2022
 [*]
-[dumpfile] "/home/nicktasios/Programming/fpga/pokemon_mini/verilator/sim.vcd"
-[dumpfile_mtime] "Mon Aug  1 13:06:41 2022"
-[dumpfile_size] 124456363
-[savefile] "/home/nicktasios/Programming/fpga/pokemon_mini/verilator/sim.gtkw"
-[timestart] 217492504
-[size] 2560 1371
-[pos] -101 -101
-*-4.288506 217492573 14447805 22806772 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[dumpfile] "/Users/nicktasios/Programming/fpga/pokemon_mini/verilator/temp.vcd"
+[dumpfile_mtime] "Thu Aug  4 18:48:52 2022"
+[dumpfile_size] 9944010
+[savefile] "/Users/nicktasios/Programming/fpga/pokemon_mini/verilator/sim.gtkw"
+[timestart] 2
+[size] 1280 755
+[pos] -1 -1
+*-7.288506 217492573 14447805 22806772 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
 [treeopen] minx.
 [treeopen] minx.cpu.
 [sst_width] 227
-[signals_width] 538
+[signals_width] 366
 [sst_expanded] 1
 [sst_vpaned_height] 500
 @28
@@ -94,7 +94,7 @@ minx.data_out[7:0]
 (5)minx.data_out[7:0]
 (6)minx.data_out[7:0]
 (7)minx.data_out[7:0]
-@1401202
+@1401200
 -group_end
 @24
 minx.bus_status[1:0]
@@ -213,14 +213,15 @@ minx.irq.reg_irq_active[31:0]
 -group_end
 @22
 minx.prc.bus_address_out[23:0]
+@c00201
+-prc
+@22
 minx.prc.state[1:0]
 @24
 minx.prc.sprite_row_x[7:0]
 minx.prc.sprite_abs_x[6:0]
 minx.prc.sprite_abs_y[6:0]
-@25
 minx.prc.xC[6:0]
-@24
 minx.prc.sprite_draw_state[2:0]
 minx.prc.sprite_draw_state_current[2:0]
 @28
@@ -234,6 +235,8 @@ minx.prc.sprite_tile_index[1:0]
 minx.prc.current_sprite_id[4:0]
 @22
 minx.prc.reg_sprite_base[23:0]
+@1401201
+-prc
 @c00200
 -irq
 @24

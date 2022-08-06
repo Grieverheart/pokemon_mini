@@ -16,6 +16,7 @@ module timer
     input [7:0] bus_data_in,
     output logic [7:0] bus_data_out,
     output logic [2:0] irqs,
+    output logic tout,
     output osc256
 );
 
@@ -213,14 +214,16 @@ begin
                     begin
                         if(timer == 0)
                         begin
+                            tout <= 1;
                             irqs[1] <= 1;
                             timer <= reg_preset;
                         end
                         else
                             timer <= timer - 1;
 
-                        if(timer <= reg_compare)
+                        if(timer == reg_compare)
                         begin
+                            tout <= 0;
                             irqs[2] <= 1;
                         end
                     end
@@ -240,14 +243,16 @@ begin
                     begin
                         if(timer == 0)
                         begin
+                            tout <= 1;
                             irqs[0] <= 1;
                             timer[7:0] <= reg_preset[7:0];
                         end
                         else
                             timer[7:0] <= timer[7:0] - 1;
 
-                        if(timer[7:0] <= reg_compare[7:0])
+                        if(timer[7:0] == reg_compare[7:0])
                         begin
+                            tout <= 0;
                             irqs[2] <= 1;
                         end
                     end
