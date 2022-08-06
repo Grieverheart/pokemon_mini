@@ -264,25 +264,6 @@ void sim_dump_eeprom(SimData* sim, const char* filepath)
     fclose(fp);
 }
 
-void sim_load_eeprom(SimData* sim, const char* filepath)
-{
-    uint8_t* data = sim->minx->rootp->minx__DOT__rom__DOT__rom.m_storage;
-    FILE* fp = fopen(filepath, "rb");
-    {
-        fread(data, 1, 8192, fp);
-    }
-    int sum = 0;
-    printf("sum is: ");
-    for(int i = 0; i < 8192; ++i)
-        sum += data[i];
-    // @todo: Why can't we restore the eeprom properly? Game asks for data/time again.
-    sim->minx->rootp->minx__DOT__rtc__DOT__timer = ((data[0x1FF8] << 16) | (data[0x1FF7] << 8) | data[0x1FF6]) + 1;
-    sim->minx->rootp->minx__DOT__rtc__DOT__reg_enabled = 1;
-    printf("%d\n", sum);
-    printf("%d\n", sim->minx->rootp->minx__DOT__rtc__DOT__timer);
-    fclose(fp);
-}
-
 void sim_dump_start(SimData* sim, const char* filepath)
 {
     printf("Starting dump at timestamp: %llu.\n", sim->timestamp);
@@ -293,6 +274,41 @@ void sim_dump_start(SimData* sim, const char* filepath)
     sim->minx->trace(sim->tfp, 99);  // Trace 99 levels of hierarchy
     //sim->tfp->rolloverMB(209715200);
     sim->tfp->open(filepath);
+}
+
+void eeprom_set_timestamp(uint8_t* eeprom, uint8_t year, uint8_t month, uint8_t day, uint8_t hour, uint8_t min, uint8_t sec)
+{
+	if (!eeprom) return;
+	uint8_t checksum = year + month + day + hour + min + sec;
+	eeprom[0x1FF6] = 0x00;
+	eeprom[0x1FF7] = 0x00;
+	eeprom[0x1FF8] = 0x00;
+	eeprom[0x1FF9] = year;
+	eeprom[0x1FFA] = month;
+	eeprom[0x1FFB] = day;
+	eeprom[0x1FFC] = hour;
+	eeprom[0x1FFD] = min;
+	eeprom[0x1FFE] = sec;
+	eeprom[0x1FFF] = checksum;
+}
+
+void sim_load_eeprom(SimData* sim, const char* filepath)
+{
+    uint8_t* eeprom = sim->minx->rootp->minx__DOT__rom__DOT__rom.m_storage;
+    {
+        FILE* fp = fopen(filepath, "rb");
+        fread(eeprom, 1, 8192, fp);
+        fclose(fp);
+    }
+
+    time_t tim = time(NULL);
+    struct tm* now = localtime(&tim);
+    eeprom_set_timestamp(eeprom, now->tm_year % 100, now->tm_mon+1, now->tm_mday, now->tm_hour, now->tm_min, now->tm_sec);
+
+    // @todo: Why can't we restore the eeprom properly? Game asks for data/time again.
+    sim->minx->rootp->minx__DOT__rtc__DOT__timer = 0;
+    sim->minx->rootp->minx__DOT__rtc__DOT__reg_enabled = 1;
+    sim->minx->rootp->minx__DOT__system_control__DOT__reg_system_control[2] |= 2;
 }
 
 void simulate_steps(SimData* sim, int n_steps, AudioBuffer* audio_buffer = nullptr)
@@ -324,6 +340,10 @@ void simulate_steps(SimData* sim, int n_steps, AudioBuffer* audio_buffer = nullp
         }
         else if(sim->tfp) sim->tfp->dump(sim->timestamp);
         sim->timestamp++;
+
+        //if(sim->minx->address_out == 0xAB)
+        if(sim->timestamp == 230)
+            sim_load_eeprom(sim, "eeprom000.bin");
 
         if(audio_buffer)
         {
@@ -426,11 +446,11 @@ void simulate_steps(SimData* sim, int n_steps, AudioBuffer* audio_buffer = nullp
         //    if(!sim->tfp)
         //        sim_dump_start(sim, "temp.vcd");
         //}
-        if(sim->timestamp == 5033010 - 1000000)
-            sim_dump_start(sim, "temp.vcd");
+        //if(sim->timestamp == 5033010 - 1000000)
+        //    sim_dump_start(sim, "temp.vcd");
 
-        if(sim->timestamp == 5033010 + 1000000)
-            sim_dump_stop(sim);
+        //if(sim->timestamp == 5033010 + 1000000)
+        //    sim_dump_stop(sim);
 
         if(sim->timestamp >= 8)
             sim->minx->reset = 0;
@@ -555,7 +575,6 @@ int main(int argc, char** argv)
     //const char* rom_filepath = "data/pokemon_puzzle_collection_vol2_j.min";
     //const char* rom_filepath = "data/pokemon_pinball_mini_j.min";
     sim_init(&sim, rom_filepath);
-    sim_load_eeprom(&sim, "eeprom000.bin");
 
     // Create window and gl context, and game controller
     int window_width = 960/2;
