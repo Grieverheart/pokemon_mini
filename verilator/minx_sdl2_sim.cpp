@@ -278,18 +278,18 @@ void sim_dump_start(SimData* sim, const char* filepath)
 
 void eeprom_set_timestamp(uint8_t* eeprom, uint8_t year, uint8_t month, uint8_t day, uint8_t hour, uint8_t min, uint8_t sec)
 {
-	if (!eeprom) return;
-	uint8_t checksum = year + month + day + hour + min + sec;
-	eeprom[0x1FF6] = 0x00;
-	eeprom[0x1FF7] = 0x00;
-	eeprom[0x1FF8] = 0x00;
-	eeprom[0x1FF9] = year;
-	eeprom[0x1FFA] = month;
-	eeprom[0x1FFB] = day;
-	eeprom[0x1FFC] = hour;
-	eeprom[0x1FFD] = min;
-	eeprom[0x1FFE] = sec;
-	eeprom[0x1FFF] = checksum;
+    if (!eeprom) return;
+    uint8_t checksum = year + month + day + hour + min + sec;
+    eeprom[0x1FF6] = 0x00;
+    eeprom[0x1FF7] = 0x00;
+    eeprom[0x1FF8] = 0x00;
+    eeprom[0x1FF9] = year;
+    eeprom[0x1FFA] = month;
+    eeprom[0x1FFB] = day;
+    eeprom[0x1FFC] = hour;
+    eeprom[0x1FFD] = min;
+    eeprom[0x1FFE] = sec;
+    eeprom[0x1FFF] = checksum;
 }
 
 void sim_load_eeprom(SimData* sim, const char* filepath)
@@ -300,12 +300,14 @@ void sim_load_eeprom(SimData* sim, const char* filepath)
         fread(eeprom, 1, 8192, fp);
         fclose(fp);
     }
+    // @todo: Try initializing just a few required fields, like the GBMN and
+    // see if that's sufficient for accepting the set datetime.
 
     time_t tim = time(NULL);
     struct tm* now = localtime(&tim);
     eeprom_set_timestamp(eeprom, now->tm_year % 100, now->tm_mon+1, now->tm_mday, now->tm_hour, now->tm_min, now->tm_sec);
 
-    // @todo: Why can't we restore the eeprom properly? Game asks for data/time again.
+    // @todo: Are the first two required?
     sim->minx->rootp->minx__DOT__rtc__DOT__timer = 0;
     sim->minx->rootp->minx__DOT__rtc__DOT__reg_enabled = 1;
     sim->minx->rootp->minx__DOT__system_control__DOT__reg_system_control[2] |= 2;

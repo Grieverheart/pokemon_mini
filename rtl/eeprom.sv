@@ -22,6 +22,7 @@ module eeprom
     reg [12:0] address;
     reg [2:0] state;
     reg [3:0] bit_count;
+
     // @todo: Move to explicit bram?
     (* ramstyle = "no_rw_check" *) reg [7:0] rom[0:8191];
 

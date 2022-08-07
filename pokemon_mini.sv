@@ -494,6 +494,9 @@ wire minx_we;
 wire [1:0] bus_status;
 wire [7:0] lcd_read_column;
 wire frame_complete;
+
+// @todo: Need access to eeprom for initialization. While initializing it, we
+// can set clk_ce to low so that the cpu is paused.
 minx minx
 (
     .clk                   (clk_sys),
