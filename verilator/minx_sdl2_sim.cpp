@@ -5,6 +5,7 @@
 #include <cstdio>
 #include <cstring>
 #include <cstdint>
+#include <cstring>
 
 #include "instruction_cycles.h"
 
@@ -296,6 +297,11 @@ void sim_load_eeprom(SimData* sim, const char* filepath)
 {
     uint8_t* eeprom = sim->minx->rootp->minx__DOT__rom__DOT__rom.m_storage;
     {
+        //strncpy((char*)eeprom, "GBMN", 4);
+        //eeprom[0x1FF2] = 0x01;
+        //eeprom[0x1FF3] = 0x03;
+        //eeprom[0x1FF4] = 0x01;
+        //eeprom[0x1FF5] = 0x1F;
         FILE* fp = fopen(filepath, "rb");
         fread(eeprom, 1, 8192, fp);
         fclose(fp);
@@ -558,7 +564,7 @@ int main(int argc, char** argv)
     size_t num_sim_steps = 150000;
 
     SimData sim;
-    const char* rom_filepath = "data/party_j.min";
+    //const char* rom_filepath = "data/party_j.min";
     // Problem with display starting 2 pixels from the left. This is due to a
     // difference in how the LCD controller is implemented. In e.g. PokeMini it
     // is implemented in such a way that if End RWM mode is issued, it always
@@ -566,7 +572,7 @@ int main(int argc, char** argv)
     // which is initialized to 0 if Start was not issued. 6shades calls End
     // without Start.
     //const char* rom_filepath = "data/6shades.min";
-    //const char* rom_filepath = "data/pichu_bros_mini_j.min";
+    const char* rom_filepath = "data/pichu_bros_mini_j.min";
     //const char* rom_filepath = "data/pokemon_anime_card_daisakusen_j.min";
     //const char* rom_filepath = "data/snorlaxs_lunch_time_j.min";
     //const char* rom_filepath = "data/pokemon_shock_tetris_j.min";
