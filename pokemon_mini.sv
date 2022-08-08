@@ -191,8 +191,8 @@ assign VGA_SCALER = 0;
 assign HDMI_FREEZE = 0;
 
 assign AUDIO_S = 0;
-assign AUDIO_L = 0;
-assign AUDIO_R = 0;
+//assign AUDIO_L = 0;
+//assign AUDIO_R = 0;
 assign AUDIO_MIX = 0;
 
 assign LED_DISK = {1'b1, bus_ack};
@@ -497,6 +497,8 @@ wire frame_complete;
 
 // @todo: Need access to eeprom for initialization. While initializing it, we
 // can set clk_ce to low so that the cpu is paused.
+wire sound_pulse;
+wire [1:0] sound_volume;
 minx minx
 (
     .clk                   (clk_sys),
@@ -522,8 +524,25 @@ minx minx
     .lcd_read_x            (lcd_read_xpos),
     .lcd_read_y            (lcd_read_ypos),
     .lcd_read_column       (lcd_read_column),
-    .frame_complete        (frame_complete)
+    .frame_complete        (frame_complete),
+
+    .sound_pulse           (sound_pulse),
+    .sound_volume          (sound_volume)
 );
+
+reg [15:0] sound_out;
+always_comb
+begin
+    case({sound_volume, sound_pulse})
+        3'b000, 3'b001: sound_out = 16'h7FFF;
+        3'b010, 3'b100: sound_out = 16'h4000;
+        3'b011, 3'b101: sound_out = 16'hBFFE;
+        3'b110:         sound_out = 16'h0000;
+        3'b111:         sound_out = 16'hFFFF;
+    endcase
+end
+assign AUDIO_L = sound_out;
+assign AUDIO_R = sound_out;
 
 wire [7:0] bios_data_out;
 spram #(
