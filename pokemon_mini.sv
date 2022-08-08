@@ -171,9 +171,9 @@ module emu
 );
 
 // TODO list:
-// * implement n-buffering and sample average from all buffers.
+// * set RTC in eeprom.
+// * save/load eeprom.
 // * color palette
-// * save eeprom as file
 // * savestates + hold instruction?
 
 ///////// Default values for ports not used in this core /////////
@@ -191,8 +191,6 @@ assign VGA_SCALER = 0;
 assign HDMI_FREEZE = 0;
 
 assign AUDIO_S = 0;
-//assign AUDIO_L = 0;
-//assign AUDIO_R = 0;
 assign AUDIO_MIX = 0;
 
 assign LED_DISK = {1'b1, bus_ack};
@@ -219,7 +217,7 @@ localparam CONF_STR = {
     "-;",
     "T[0],Reset;",
     "R[0],Reset and close OSD;",
-// out: {power, right, left, down, up, c, b, a}
+    // out: {power, right, left, down, up, c, b, a}
     "J0,A,B,R,select;",
     "V,v",`BUILD_DATE
 };
@@ -450,18 +448,6 @@ begin
                 ypos <= ypos + 1;
             end
         end
-
-        //@note: This one doesn't work properly.
-        //if(vbl)
-        //begin
-        //    ypos <= 0;
-        //    xpos <= 0;
-        //end
-        //else if(!hbl)
-        //begin
-        //    xpos <= hpos - 8'd16;
-        //    ypos <= vpos - 8'd32;
-        //end
 
     end
 
