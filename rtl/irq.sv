@@ -43,6 +43,7 @@ module irq
     reg [31:0] reg_irq_enabled;
 
     reg [4:0] next_irq;
+    reg [4:0] next_irq_latch;
     reg [1:0] next_priority;
 
     reg write_latch;
@@ -52,6 +53,7 @@ module irq
         begin
             if(reset)
             begin
+                next_irq_latch <= 0;
             end
             else
             begin
@@ -60,6 +62,9 @@ module irq
                     if(irqs[i])
                         reg_irq_active[irq_reg_map[i]] <= 1;
                 end
+
+                if(next_priority > 0)
+                    next_irq_latch <= next_irq;
 
                 if(write_latch)
                 begin
@@ -147,7 +152,7 @@ module irq
             cpu_irq[next_priority] = 1;
 
         if(cpu_iack)
-            bus_data_out = {2'd0, next_irq, 1'd0};
+            bus_data_out = {2'd0, next_irq_latch, 1'd0};
         else
         begin
             case(bus_address_in)
