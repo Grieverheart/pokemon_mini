@@ -316,7 +316,7 @@ void sim_load_eeprom(SimData* sim, const char* filepath)
     // @note: The commented out part is not required; these already have these values.
     //sim->minx->rootp->minx__DOT__rtc__DOT__timer = 0;
     //sim->minx->rootp->minx__DOT__rtc__DOT__reg_enabled = 1;
-    /sim->minx->rootp->minx__DOT__system_control__DOT__reg_system_control[2] |= 2;
+    sim->minx->rootp->minx__DOT__system_control__DOT__reg_system_control[2] |= 2;
 }
 
 void simulate_steps(SimData* sim, int n_steps, AudioBuffer* audio_buffer = nullptr)
