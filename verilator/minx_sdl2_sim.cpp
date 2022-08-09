@@ -297,14 +297,14 @@ void sim_load_eeprom(SimData* sim, const char* filepath)
 {
     uint8_t* eeprom = sim->minx->rootp->minx__DOT__rom__DOT__rom.m_storage;
     {
-        strncpy((char*)eeprom, "GBMN", 4);
-        eeprom[0x1FF2] = 0x01;
-        eeprom[0x1FF3] = 0x03;
-        eeprom[0x1FF4] = 0x01;
-        eeprom[0x1FF5] = 0x1F;
-        //FILE* fp = fopen(filepath, "rb");
-        //fread(eeprom, 1, 8192, fp);
-        //fclose(fp);
+        //strncpy((char*)eeprom, "GBMN", 4);
+        //eeprom[0x1FF2] = 0x01;
+        //eeprom[0x1FF3] = 0x03;
+        //eeprom[0x1FF4] = 0x01;
+        //eeprom[0x1FF5] = 0x1F;
+        FILE* fp = fopen(filepath, "rb");
+        fread(eeprom, 1, 8192, fp);
+        fclose(fp);
     }
     // @todo: Try initializing just a few required fields, like the GBMN and
     // see if that's sufficient for accepting the set datetime.
@@ -313,10 +313,10 @@ void sim_load_eeprom(SimData* sim, const char* filepath)
     struct tm* now = localtime(&tim);
     eeprom_set_timestamp(eeprom, now->tm_year % 100, now->tm_mon+1, now->tm_mday, now->tm_hour, now->tm_min, now->tm_sec);
 
-    // @todo: Are the first two required?
-    sim->minx->rootp->minx__DOT__rtc__DOT__timer = 0;
-    sim->minx->rootp->minx__DOT__rtc__DOT__reg_enabled = 1;
-    sim->minx->rootp->minx__DOT__system_control__DOT__reg_system_control[2] |= 2;
+    // @note: The commented out part is not required; these already have these values.
+    //sim->minx->rootp->minx__DOT__rtc__DOT__timer = 0;
+    //sim->minx->rootp->minx__DOT__rtc__DOT__reg_enabled = 1;
+    /sim->minx->rootp->minx__DOT__system_control__DOT__reg_system_control[2] |= 2;
 }
 
 void simulate_steps(SimData* sim, int n_steps, AudioBuffer* audio_buffer = nullptr)

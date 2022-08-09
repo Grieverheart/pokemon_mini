@@ -132,7 +132,7 @@ module eeprom
                             end
                             else if(state == EEPROM_STATE_DATA_WRITE)
                             begin
-                                //$display("Wrote byte 0x%x at %d", input_byte, address);
+                                $display("Wrote byte 0x%x at 0x%x", input_byte, address);
                                 rom[address] <= input_byte;
                                 address <= address + 1;
                                 reg_data_out <= 1'd0;
