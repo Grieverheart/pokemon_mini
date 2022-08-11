@@ -171,7 +171,6 @@ module emu
 );
 
 // TODO list:
-// * set RTC in eeprom.
 // * save/load eeprom.
 // * color palette
 // * savestates + hold instruction?
@@ -217,7 +216,7 @@ localparam CONF_STR = {
     "-;",
     "T[0],Reset;",
     "R[0],Reset and close OSD;",
-    // out: {power, right, left, down, up, c, b, a}
+    // A, B, C, Power
     "J0,A,B,R,select;",
     "V,v",`BUILD_DATE
 };
@@ -240,6 +239,7 @@ assign ioctl_wait = cart_busy & cart_download;
 
 wire [15:0] joystick_0;
 
+wire [64:0] rtc_timestamp;
 hps_io #(.CONF_STR(CONF_STR)) hps_io
 (
     .clk_sys(clk_sys),
@@ -263,7 +263,9 @@ hps_io #(.CONF_STR(CONF_STR)) hps_io
     .status_menumask(cart_download),
 
     .ps2_key(ps2_key),
-    .joystick_0(joystick_0)
+    .joystick_0(joystick_0),
+
+	.RTC(rtc_timestamp)
 );
 
 
@@ -513,7 +515,12 @@ minx minx
     .frame_complete        (frame_complete),
 
     .sound_pulse           (sound_pulse),
-    .sound_volume          (sound_volume)
+    .sound_volume          (sound_volume),
+
+    .eeprom_we             (eeprom_we),
+    .eeprom_write_address  (eeprom_write_address),
+    .eeprom_write_data     (eeprom_write_data),
+    .validate_rtc          (validate_rtc)
 );
 
 reg [15:0] sound_out;
@@ -560,6 +567,123 @@ spram #(
         (minx_address_out < 24'h2000)
     )
 );
+
+reg eeprom_we;
+reg [12:0] eeprom_write_address;
+reg [7:0] eeprom_write_data;
+reg validate_rtc;
+
+
+function [7:0] bcd2bin(input [7:0] bcd);
+    bcd2bin = {4'd0, bcd[7:4]} * 8'd10 + {4'd0, bcd[3:0]};
+endfunction
+
+wire [7:0] rtc_year  = bcd2bin(rtc_timestamp[47:40]);
+wire [7:0] rtc_month = bcd2bin(rtc_timestamp[39:32]);
+wire [7:0] rtc_day   = bcd2bin(rtc_timestamp[31:24]);
+wire [7:0] rtc_hour  = bcd2bin(rtc_timestamp[23:16]);
+wire [7:0] rtc_min   = bcd2bin(rtc_timestamp[15:8]);
+wire [7:0] rtc_sec   = bcd2bin(rtc_timestamp[7:0]);
+
+wire [7:0] rtc_checksum = rtc_year + rtc_month + rtc_day + rtc_hour + rtc_min + rtc_sec;
+
+reg [3:0] eeprom_write_stage;
+// @todo: Test eeprom datetime setting.
+// @todo: Should we check that this only runs once?
+always_ff @ (posedge clk_sys)
+begin
+    if(minx_address_out == 24'hAB)
+        eeprom_write_stage <= 1;
+
+    if(eeprom_write_stage > 0)
+    begin
+        eeprom_write_stage <= eeprom_write_stage + 1;
+        case(eeprom_write_stage)
+            1:
+            begin
+                eeprom_we            <= 1;
+                validate_rtc         <= 1;
+
+                eeprom_write_address <= 13'h0;
+                eeprom_write_data    <= 8'h47;
+            end
+            2:
+            begin
+                eeprom_write_address <= 13'h1;
+                eeprom_write_data    <= 8'h42;
+            end
+            3:
+            begin
+                eeprom_write_address <= 13'h2;
+                eeprom_write_data    <= 8'h4D;
+            end
+            4:
+            begin
+                eeprom_write_address <= 13'h3;
+                eeprom_write_data    <= 8'h4E;
+            end
+            5:
+            begin
+                eeprom_write_address <= 13'h1FF6;
+                eeprom_write_data    <= 0;
+            end
+            6:
+            begin
+                eeprom_write_address <= 13'h1FF7;
+                eeprom_write_data    <= 0;
+            end
+            7:
+            begin
+                eeprom_write_address <= 13'h1FF8;
+                eeprom_write_data    <= 0;
+            end
+            8:
+            begin
+                eeprom_write_address <= 13'h1FF9;
+                eeprom_write_data    <= rtc_year;
+            end
+            9:
+            begin
+                eeprom_write_address <= 13'h1FFA;
+                eeprom_write_data    <= rtc_month;
+            end
+            10:
+            begin
+                eeprom_write_address <= 13'h1FFB;
+                eeprom_write_data    <= rtc_day;
+            end
+            11:
+            begin
+                eeprom_write_address <= 13'h1FFC;
+                eeprom_write_data    <= rtc_hour;
+            end
+            12:
+            begin
+                eeprom_write_address <= 13'h1FFD;
+                eeprom_write_data    <= rtc_min;
+            end
+            13:
+            begin
+                eeprom_write_address <= 13'h1FFE;
+                eeprom_write_data    <= rtc_sec;
+            end
+            14:
+            begin
+                eeprom_write_address <= 13'h1FFF;
+                eeprom_write_data    <= rtc_checksum;
+            end
+            15:
+            begin
+                validate_rtc       <= 0;
+                eeprom_we          <= 0;
+                eeprom_write_stage <= 0;
+            end
+            default:
+            begin
+            end
+        endcase
+    end
+end
 
 
 // @check: Correct filetype?

@@ -5,7 +5,11 @@ module eeprom
     input reset,
     input ce,
     input data_in,
-    output data_out
+    output data_out,
+
+    input we,
+    input [12:0] write_address,
+    input [7:0] write_data
 );
     localparam [2:0]
         EEPROM_STATE_IDLE              = 3'd0,
@@ -19,7 +23,9 @@ module eeprom
     reg data_latch;
     reg reg_data_out;
     reg [7:0] input_byte;
+    reg [7:0] input_byte_latch;
     reg [12:0] address;
+    reg [12:0] address_latch;
     reg [2:0] state;
     reg [3:0] bit_count;
 
@@ -29,6 +35,14 @@ module eeprom
     assign data_out = reg_data_out & data_latch;
 
     reg [7:0] rom_read;
+    always_ff @ (posedge clk)
+    begin
+        rom_read <= rom[address];
+        if(we) rom[write_address] <= write_data;
+        else if(rom_we) rom[address_latch] <= input_byte_latch;
+    end
+
+    reg rom_we;
     always_ff @ (posedge clk)
     begin
         if(clk_ce)
@@ -42,7 +56,6 @@ module eeprom
             end
             else
             begin
-                rom_read <= rom[address];
                 clock_posedge <= ce;
                 data_latch <= data_in;
 
@@ -88,6 +101,8 @@ module eeprom
                     end
                     else
                     begin
+                        rom_we <= 0;
+
                         if(state != EEPROM_STATE_DATA_READ)
                             reg_data_out <= 1'd1;
                         bit_count <= bit_count + 1;
@@ -132,10 +147,13 @@ module eeprom
                             end
                             else if(state == EEPROM_STATE_DATA_WRITE)
                             begin
-                                $display("Wrote byte 0x%x at 0x%x", input_byte, address);
-                                rom[address] <= input_byte;
+                                //$display("Wrote byte 0x%x at 0x%x", input_byte, address);
+                                address_latch    <= address;
+                                input_byte_latch <= input_byte;
+
                                 address <= address + 1;
                                 reg_data_out <= 1'd0;
+                                rom_we <= 1;
                             end
                             else if(state == EEPROM_STATE_DATA_READ)
                             begin

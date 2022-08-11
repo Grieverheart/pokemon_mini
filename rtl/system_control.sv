@@ -6,7 +6,9 @@ module system_control
     input bus_write,
     input [23:0] bus_address_in,
     input [7:0] bus_data_in,
-    output logic [7:0] bus_data_out
+    output logic [7:0] bus_data_out,
+
+    input validate_rtc
 );
 
 reg [7:0] reg_system_control[0:2];
@@ -30,6 +32,11 @@ begin
                 begin
                     reg_system_control[bus_address_in[1:0]] <= bus_data_in;
                 end
+            end
+
+            if(validate_rtc)
+            begin
+                reg_system_control[2] <= reg_system_control[2] | 3'd2;
             end
         end
     end
