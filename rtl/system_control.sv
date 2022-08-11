@@ -35,9 +35,7 @@ begin
             end
 
             if(validate_rtc)
-            begin
-                reg_system_control[2] <= reg_system_control[2] | 3'd2;
-            end
+                reg_system_control[2][1] <= 1;
         end
     end
 end

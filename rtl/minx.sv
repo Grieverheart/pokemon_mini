@@ -33,9 +33,13 @@ module minx
     output [1:0] sound_volume,
 
     input validate_rtc,
+
     input eeprom_we,
     input [12:0] eeprom_write_address,
-    input [7:0] eeprom_write_data
+    input [7:0] eeprom_write_data,
+
+    input [12:0] eeprom_read_address,
+    output [7:0] eeprom_read_data
 );
 
     // @todo: Perhaps use irq_render_done instead?
@@ -275,7 +279,10 @@ module minx
 
         .we(eeprom_we),
         .write_address(eeprom_write_address),
-        .write_data(eeprom_write_data)
+        .write_data(eeprom_write_data),
+
+        .read_address(eeprom_read_address),
+        .read_data(eeprom_read_data)
     );
 
     assign data_out    = bus_ack? prc_data_out    : cpu_data_out;

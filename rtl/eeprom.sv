@@ -9,7 +9,10 @@ module eeprom
 
     input we,
     input [12:0] write_address,
-    input [7:0] write_data
+    input [7:0] write_data,
+
+    input [12:0] read_address,
+    output logic [7:0] read_data
 );
     localparam [2:0]
         EEPROM_STATE_IDLE              = 3'd0,
@@ -29,7 +32,6 @@ module eeprom
     reg [2:0] state;
     reg [3:0] bit_count;
 
-    // @todo: Move to explicit bram?
     (* ramstyle = "no_rw_check" *) reg [7:0] rom[0:8191];
 
     assign data_out = reg_data_out & data_latch;
@@ -37,7 +39,8 @@ module eeprom
     reg [7:0] rom_read;
     always_ff @ (posedge clk)
     begin
-        rom_read <= rom[address];
+        rom_read  <= rom[address];
+        read_data <= rom[read_address];
         if(we) rom[write_address] <= write_data;
         else if(rom_we) rom[address_latch] <= input_byte_latch;
     end

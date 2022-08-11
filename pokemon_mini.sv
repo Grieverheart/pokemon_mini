@@ -217,7 +217,7 @@ localparam CONF_STR = {
     "T[0],Reset;",
     "R[0],Reset and close OSD;",
     // A, B, C, Power
-    "J0,A,B,R,select;",
+    "J0,A,B,R;"//,select;",
     "V,v",`BUILD_DATE
 };
 
@@ -461,7 +461,7 @@ end
 // out: {power, right, left, down, up, c, b, a}
 wire [7:0] keys_active =
 {
-    joystick_0[7], // (select) power
+    0,//joystick_0[7], // (select) power
     joystick_0[0], //  (right) right
     joystick_0[1], //   (left) left
     joystick_0[2], //   (down) down
@@ -517,10 +517,10 @@ minx minx
     .sound_pulse           (sound_pulse),
     .sound_volume          (sound_volume),
 
+    .validate_rtc          (validate_rtc),
     .eeprom_we             (eeprom_we),
     .eeprom_write_address  (eeprom_write_address),
-    .eeprom_write_data     (eeprom_write_data),
-    .validate_rtc          (validate_rtc)
+    .eeprom_write_data     (eeprom_write_data)
 );
 
 reg [15:0] sound_out;
@@ -568,6 +568,7 @@ spram #(
     )
 );
 
+/////////////   EEPROM saving/loading/RTC   //////////////////////
 reg eeprom_we;
 reg [12:0] eeprom_write_address;
 reg [7:0] eeprom_write_data;
@@ -684,6 +685,8 @@ begin
         endcase
     end
 end
+
+//////////////////////////////////////////////////////////////////
 
 
 // @check: Correct filetype?
