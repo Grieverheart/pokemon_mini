@@ -6,13 +6,12 @@ module eeprom
     input ce,
     input data_in,
     output data_out,
+    output logic we, // output so that we can find out if the eeprom was changed.
 
-    input we,
-    input [12:0] write_address,
-    input [7:0] write_data,
-
-    input [12:0] read_address,
-    output logic [7:0] read_data
+    input rom_we,
+    input [12:0] rom_address_in,
+    input [7:0] rom_data_in,
+    output logic [7:0] rom_data_out
 );
     localparam [2:0]
         EEPROM_STATE_IDLE              = 3'd0,
@@ -40,12 +39,11 @@ module eeprom
     always_ff @ (posedge clk)
     begin
         rom_read  <= rom[address];
-        read_data <= rom[read_address];
-        if(we) rom[write_address] <= write_data;
-        else if(rom_we) rom[address_latch] <= input_byte_latch;
+        rom_data_out <= rom[rom_address_in];
+        if(rom_we) rom[rom_address_in] <= rom_data_in;
+        else if(we) rom[address_latch] <= input_byte_latch;
     end
 
-    reg rom_we;
     always_ff @ (posedge clk)
     begin
         if(clk_ce)
@@ -104,7 +102,7 @@ module eeprom
                     end
                     else
                     begin
-                        rom_we <= 0;
+                        we <= 0;
 
                         if(state != EEPROM_STATE_DATA_READ)
                             reg_data_out <= 1'd1;
@@ -156,7 +154,7 @@ module eeprom
 
                                 address <= address + 1;
                                 reg_data_out <= 1'd0;
-                                rom_we <= 1;
+                                we <= 1;
                             end
                             else if(state == EEPROM_STATE_DATA_READ)
                             begin

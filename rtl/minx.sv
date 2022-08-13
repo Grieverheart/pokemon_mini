@@ -2,8 +2,8 @@ module minx
 (
     input clk,
     input clk_ce,
-    input rt_clk,
-    input rt_ce,
+    input clk_rt,
+    input clk_rt_ce,
     input reset,
     input [7:0] data_in,
     input [7:0] keys_active,
@@ -34,11 +34,10 @@ module minx
 
     input validate_rtc,
 
+    output eeprom_internal_we,
     input eeprom_we,
-    input [12:0] eeprom_write_address,
+    input [12:0] eeprom_address,
     input [7:0] eeprom_write_data,
-
-    input [12:0] eeprom_read_address,
     output [7:0] eeprom_read_data
 );
 
@@ -170,8 +169,8 @@ module minx
     (
         .clk            (clk),
         .clk_ce         (clk_ce),
-        .rt_clk         (rt_clk),
-        .rt_ce          (rt_ce),
+        .clk_rt         (clk_rt),
+        .clk_rt_ce      (clk_rt_ce),
         .reset          (reset),
         .bus_write      (write),
         .bus_read       (read),
@@ -197,8 +196,8 @@ module minx
     (
         .clk            (clk),
         .clk_ce         (clk_ce),
-        .rt_clk         (rt_clk),
-        .rt_ce          (rt_ce),
+        .clk_rt         (clk_rt),
+        .clk_rt_ce      (clk_rt_ce),
         .reset          (reset),
         .bus_write      (write),
         .bus_read       (read),
@@ -224,8 +223,8 @@ module minx
     (
         .clk            (clk),
         .clk_ce         (clk_ce),
-        .rt_clk         (rt_clk),
-        .rt_ce          (rt_ce),
+        .clk_rt         (clk_rt),
+        .clk_rt_ce      (clk_rt_ce),
         .reset          (reset),
         .bus_write      (write),
         .bus_read       (read),
@@ -242,8 +241,8 @@ module minx
     (
         .clk            (clk),
         .clk_ce         (clk_ce),
-        .rt_clk         (rt_clk),
-        .rt_ce          (rt_ce),
+        .clk_rt         (clk_rt),
+        .clk_rt_ce      (clk_rt_ce),
         .reset          (reset),
         .bus_write      (write),
         .bus_address_in (cpu_address_out),
@@ -257,7 +256,8 @@ module minx
     (
         .clk            (clk),
         .clk_ce         (clk_ce),
-        .rt_clk         (rt_clk),
+        .clk_rt         (clk_rt),
+        .clk_rt_ce      (clk_rt_ce),
         .reset          (reset),
         .bus_write      (write),
         .bus_read       (read),
@@ -268,7 +268,7 @@ module minx
         .osc256         (osc256)
     );
 
-    eeprom rom
+    eeprom eeprom
     (
         .clk      (clk),
         .clk_ce   (clk_ce),
@@ -276,13 +276,12 @@ module minx
         .ce       (reg_io_data[3] | ~reg_io_dir[3]),
         .data_in  (reg_io_data[2] | ~reg_io_dir[2]),
         .data_out (eeprom_data_out),
+        .we       (eeprom_internal_we),
 
-        .we(eeprom_we),
-        .write_address(eeprom_write_address),
-        .write_data(eeprom_write_data),
-
-        .read_address(eeprom_read_address),
-        .read_data(eeprom_read_data)
+        .rom_we(eeprom_we),
+        .rom_address_in(eeprom_address),
+        .rom_data_in(eeprom_write_data),
+        .rom_data_out(eeprom_read_data)
     );
 
     assign data_out    = bus_ack? prc_data_out    : cpu_data_out;

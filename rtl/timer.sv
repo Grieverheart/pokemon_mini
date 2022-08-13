@@ -7,8 +7,8 @@ module timer
 (
     input clk,
     input clk_ce,
-    input rt_clk,
-    input rt_ce,
+    input clk_rt,
+    input clk_rt_ce,
     input reset,
     input bus_write,
     input bus_read,
@@ -188,14 +188,14 @@ begin
 end
 
 reg rt_clk_latch;
-wire rt_clk_edge = (rt_ce & ~rt_clk_latch);
+wire rt_clk_edge = (clk_rt_ce & ~rt_clk_latch);
 reg [11:0] osc1_prescaler;
 always_ff @ (posedge clk)
 begin
     irqs <= 0; // @todo: When should we really zero the irqs?
 
     osc1_prescaler <= osc1_prescaler + 1;
-    rt_clk_latch   <= rt_ce & rt_clk; // @todo: What is correct?
+    rt_clk_latch   <= clk_rt_ce & clk_rt; // @todo: What is correct?
 
     if(reset_l)
         timer <= reg_preset;
@@ -279,9 +279,9 @@ begin
 end
 
 reg [6:0] osc2_prescaler;
-always_ff @ (posedge rt_clk)
+always_ff @ (posedge clk_rt)
 begin
-    if(rt_ce) osc2_prescaler <= osc2_prescaler + 1;
+    if(clk_rt_ce) osc2_prescaler <= osc2_prescaler + 1;
 end
 
 endmodule

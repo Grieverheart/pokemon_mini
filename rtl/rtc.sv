@@ -2,8 +2,8 @@ module rtc
 (
     input clk,
     input clk_ce,
-    input rt_clk,
-    input rt_ce,
+    input clk_rt,
+    input clk_rt_ce,
     input reset,
     input bus_write,
     input [23:0] bus_address_in,
@@ -64,14 +64,14 @@ begin
     endcase
 end
 
-always_ff @ (posedge rt_clk)
+always_ff @ (posedge clk_rt)
 begin
     if(reset | reg_reset)
     begin
         timer    <= 0;
         prescale <= 0;
     end
-    else if(rt_ce)
+    else if(clk_rt_ce)
     begin
         prescale <= prescale + 15'd1;
         if(prescale == 15'h7FFF)

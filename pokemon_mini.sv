@@ -171,7 +171,6 @@ module emu
 );
 
 // TODO list:
-// * save/load eeprom.
 // * color palette
 // * savestates + hold instruction?
 
@@ -208,7 +207,11 @@ assign VIDEO_ARY = (!ar) ? 12'd3 : 12'd0;
 localparam CONF_STR = {
     "PokemonMini;;",
     "-;",
-    "F,min,Load ROM;",
+    "FS1,min,Load ROM;",
+    "-;",
+    "d0R[09],Reload Backup RAM;",
+    "d0R[10],Save Backup RAM;",
+    "d0O[11],Autosave,Off,On;",
     "-;",
     "O[122:121],Aspect ratio,Original,Full Screen,[ARC1],[ARC2];",
     "O23,Scandoubler Fx,None,HQ2x,CRT 25%,CRT 50%;",
@@ -217,7 +220,7 @@ localparam CONF_STR = {
     "T[0],Reset;",
     "R[0],Reset and close OSD;",
     // A, B, C, Power
-    "J0,A,B,R;"//,select;",
+    "J0,A,B,R;",//,select;",
     "V,v",`BUILD_DATE
 };
 
@@ -230,7 +233,7 @@ wire [21:0] gamma_bus;
 wire ioctl_download;
 wire ioctl_wr;
 wire [24:0] ioctl_addr;
-wire [15:0] ioctl_dout;
+wire [7:0] ioctl_dout;
 wire ioctl_wait;
 wire [7:0]  filetype;
 
@@ -238,9 +241,27 @@ wire cart_busy;
 assign ioctl_wait = cart_busy & cart_download;
 
 wire [15:0] joystick_0;
-
 wire [64:0] rtc_timestamp;
-hps_io #(.CONF_STR(CONF_STR)) hps_io
+
+reg  [31:0] sd_lba;
+reg         sd_rd = 0;
+reg         sd_wr = 0;
+wire        sd_ack;
+wire [13:0] sd_buff_addr;
+wire [7:0]  sd_buff_dout;
+wire [7:0]  sd_buff_din;
+wire        sd_buff_wr;
+wire        img_mounted;
+wire        img_readonly;
+wire [63:0] img_size;
+
+hps_io
+#(
+    .CONF_STR(CONF_STR),
+    .WIDE(0),
+    .BLKSZ(2)
+)
+hps_io
 (
     .clk_sys(clk_sys),
     .HPS_BUS(HPS_BUS),
@@ -254,18 +275,30 @@ hps_io #(.CONF_STR(CONF_STR)) hps_io
     .ioctl_wait(ioctl_wait),
     .ioctl_index(filetype),
 
+    .sd_lba('{sd_lba}),
+    .sd_rd(sd_rd),
+    .sd_wr(sd_wr),
+    .sd_ack(sd_ack),
+    .sd_buff_addr(sd_buff_addr),
+    .sd_buff_dout(sd_buff_dout),
+    .sd_buff_din('{sd_buff_din}),
+    .sd_buff_wr(sd_buff_wr),
+    .img_mounted(img_mounted),
+    .img_readonly(img_readonly),
+    .img_size(img_size),
+
     .gamma_bus(gamma_bus),
 
     .forced_scandoubler(forced_scandoubler),
 
     .buttons(buttons),
     .status(status),
-    .status_menumask(cart_download),
+    .status_menumask(cart_ready),
 
     .ps2_key(ps2_key),
     .joystick_0(joystick_0),
 
-	.RTC(rtc_timestamp)
+    .RTC(rtc_timestamp)
 );
 
 
@@ -285,7 +318,7 @@ pll pll
     .locked   (pll_locked)
 );
 
-reg [7:0] clk_rt_prescale = 0;
+reg [6:0] clk_rt_prescale = 0;
 always_ff @ (posedge clk_rt) clk_rt_prescale <= clk_rt_prescale + 1;
 
 reg [1:0] clk_prescale = 0;
@@ -299,11 +332,11 @@ end
 //reg sdram_read = 0;
 //always_ff @ (posedge clk_sys) sdram_read <= ~sdram_read;
 
-wire reset = RESET | status[0] | buttons[1] | cart_download;
+wire reset = RESET | status[0] | buttons[1] | cart_download | bk_loading;
 reg [3:0] reset_counter;
 always_ff @ (posedge clk_sys)
 begin
-    if(reset) reset_counter = 4'hF;
+    if(reset) reset_counter <= 4'hF;
     else if(reset_counter > 4'd0) reset_counter <= reset_counter - 4'd1;
 end
 
@@ -314,7 +347,7 @@ wire [7:0] video;
 
 assign CLK_VIDEO = clk_sys;
 
-assign LED_USER  = ioctl_download;// | sav_pending;
+assign LED_USER  = ioctl_download | sav_pending;
 
 reg hs, vs, hbl, vbl;
 
@@ -330,8 +363,8 @@ reg frame_complete_latch;
 (* ramstyle = "no_rw_check" *) reg [7:0] fb2[768];
 (* ramstyle = "no_rw_check" *) reg [7:0] fb3[768];
 reg [1:0] fb_write_index = 0;
-wire [9:0] fb_read_address  = {2'b0, LCD_XSIZE} * {6'b0, ypos[6:3]} + {2'b0, xpos};
-wire [9:0] fb_write_address = {2'b0, LCD_XSIZE} * {6'b0, lcd_read_ypos} + {2'b0, lcd_read_xpos};
+wire [9:0] fb_read_address  = {1'b0, LCD_XSIZE} * {5'b0, ypos[6:3]} + {1'b0, xpos};
+wire [9:0] fb_write_address = {1'b0, LCD_XSIZE} * {5'b0, lcd_read_ypos} + {1'b0, lcd_read_xpos};
 reg [7:0] fb0_read;
 reg [7:0] fb1_read;
 reg [7:0] fb2_read;
@@ -342,7 +375,7 @@ reg [7:0] fb3_read;
 // straight to the lcd.
 
 reg [7:0] lcd_read_xpos;
-reg [4:0] lcd_read_ypos;
+reg [3:0] lcd_read_ypos;
 always @ (posedge clk_sys)
 begin
     if(reset)
@@ -461,7 +494,7 @@ end
 // out: {power, right, left, down, up, c, b, a}
 wire [7:0] keys_active =
 {
-    0,//joystick_0[7], // (select) power
+    1'b0,//joystick_0[7], // (select) power
     joystick_0[0], //  (right) right
     joystick_0[1], //   (left) left
     joystick_0[2], //   (down) down
@@ -487,12 +520,16 @@ wire frame_complete;
 // can set clk_ce to low so that the cpu is paused.
 wire sound_pulse;
 wire [1:0] sound_volume;
+wire eeprom_internal_we;
+wire eeprom_we = eeprom_we_rtc | bk_wr;
+wire [12:0] eeprom_address = eeprom_we_rtc? eeprom_write_address_rtc: bk_addr;
+wire [7:0] eeprom_write_data = eeprom_we_rtc? eeprom_write_data_rtc: bk_data;
 minx minx
 (
     .clk                   (clk_sys),
     .clk_ce                (minx_clk_prescale),
-    .rt_clk                (rt_clk),
-    .rt_ce                 (clk_rt_prescale[7]),
+    .clk_rt                (clk_rt),
+    .clk_rt_ce             (&clk_rt_prescale),
     .reset                 (reset | (|reset_counter)),
     .data_in               (minx_data_in),
     .keys_active           (keys_active),
@@ -518,9 +555,11 @@ minx minx
     .sound_volume          (sound_volume),
 
     .validate_rtc          (validate_rtc),
+    .eeprom_internal_we    (eeprom_internal_we),
     .eeprom_we             (eeprom_we),
-    .eeprom_write_address  (eeprom_write_address),
-    .eeprom_write_data     (eeprom_write_data)
+    .eeprom_address        (eeprom_address),
+    .eeprom_write_data     (eeprom_write_data),
+    .eeprom_read_data      (bk_q)
 );
 
 reg [15:0] sound_out;
@@ -569,9 +608,9 @@ spram #(
 );
 
 /////////////   EEPROM saving/loading/RTC   //////////////////////
-reg eeprom_we;
-reg [12:0] eeprom_write_address;
-reg [7:0] eeprom_write_data;
+reg eeprom_we_rtc;
+reg [12:0] eeprom_write_address_rtc;
+reg [7:0] eeprom_write_data_rtc;
 reg validate_rtc;
 
 
@@ -602,87 +641,183 @@ begin
         case(eeprom_write_stage)
             1:
             begin
-                eeprom_we            <= 1;
-                validate_rtc         <= 1;
+                eeprom_we_rtc             <= 1;
+                validate_rtc              <= 1;
 
-                eeprom_write_address <= 13'h0;
-                eeprom_write_data    <= 8'h47;
+                eeprom_write_address_rtc <= 13'h0;
+                eeprom_write_data_rtc    <= 8'h47;
             end
             2:
             begin
-                eeprom_write_address <= 13'h1;
-                eeprom_write_data    <= 8'h42;
+                eeprom_write_address_rtc <= 13'h1;
+                eeprom_write_data_rtc    <= 8'h42;
             end
             3:
             begin
-                eeprom_write_address <= 13'h2;
-                eeprom_write_data    <= 8'h4D;
+                eeprom_write_address_rtc <= 13'h2;
+                eeprom_write_data_rtc    <= 8'h4D;
             end
             4:
             begin
-                eeprom_write_address <= 13'h3;
-                eeprom_write_data    <= 8'h4E;
+                eeprom_write_address_rtc <= 13'h3;
+                eeprom_write_data_rtc    <= 8'h4E;
             end
             5:
             begin
-                eeprom_write_address <= 13'h1FF6;
-                eeprom_write_data    <= 0;
+                eeprom_write_address_rtc <= 13'h1FF6;
+                eeprom_write_data_rtc    <= 0;
             end
             6:
             begin
-                eeprom_write_address <= 13'h1FF7;
-                eeprom_write_data    <= 0;
+                eeprom_write_address_rtc <= 13'h1FF7;
+                eeprom_write_data_rtc    <= 0;
             end
             7:
             begin
-                eeprom_write_address <= 13'h1FF8;
-                eeprom_write_data    <= 0;
+                eeprom_write_address_rtc <= 13'h1FF8;
+                eeprom_write_data_rtc    <= 0;
             end
             8:
             begin
-                eeprom_write_address <= 13'h1FF9;
-                eeprom_write_data    <= rtc_year;
+                eeprom_write_address_rtc <= 13'h1FF9;
+                eeprom_write_data_rtc    <= rtc_year;
             end
             9:
             begin
-                eeprom_write_address <= 13'h1FFA;
-                eeprom_write_data    <= rtc_month;
+                eeprom_write_address_rtc <= 13'h1FFA;
+                eeprom_write_data_rtc    <= rtc_month;
             end
             10:
             begin
-                eeprom_write_address <= 13'h1FFB;
-                eeprom_write_data    <= rtc_day;
+                eeprom_write_address_rtc <= 13'h1FFB;
+                eeprom_write_data_rtc    <= rtc_day;
             end
             11:
             begin
-                eeprom_write_address <= 13'h1FFC;
-                eeprom_write_data    <= rtc_hour;
+                eeprom_write_address_rtc <= 13'h1FFC;
+                eeprom_write_data_rtc    <= rtc_hour;
             end
             12:
             begin
-                eeprom_write_address <= 13'h1FFD;
-                eeprom_write_data    <= rtc_min;
+                eeprom_write_address_rtc <= 13'h1FFD;
+                eeprom_write_data_rtc    <= rtc_min;
             end
             13:
             begin
-                eeprom_write_address <= 13'h1FFE;
-                eeprom_write_data    <= rtc_sec;
+                eeprom_write_address_rtc <= 13'h1FFE;
+                eeprom_write_data_rtc    <= rtc_sec;
             end
             14:
             begin
-                eeprom_write_address <= 13'h1FFF;
-                eeprom_write_data    <= rtc_checksum;
+                eeprom_write_address_rtc <= 13'h1FFF;
+                eeprom_write_data_rtc    <= rtc_checksum;
             end
             15:
             begin
                 validate_rtc       <= 0;
-                eeprom_we          <= 0;
+                eeprom_we_rtc      <= 0;
                 eeprom_write_stage <= 0;
             end
             default:
             begin
             end
         endcase
+    end
+end
+
+/////////////////////////  BRAM SAVE/LOAD  /////////////////////////////
+
+// @note: Since bk_loading is taken into account in the reset signal, this
+// means that rtc setting will always come after the eeprom is already loaded.
+wire [12:0] bk_addr = {sd_lba[3:0], sd_buff_addr[8:0]};
+wire bk_wr = sd_buff_wr & sd_ack;
+wire [7:0] bk_data = sd_buff_dout;
+wire [7:0] bk_q;
+
+assign sd_buff_din = bk_q;
+wire downloading = cart_download;
+
+reg bk_ena          = 0;
+reg new_load        = 0;
+reg old_downloading = 0;
+reg sav_pending     = 0;
+reg cart_ready      = 0;
+
+always @(posedge clk_sys)
+begin
+    old_downloading <= downloading;
+    if(~old_downloading & downloading) bk_ena <= 0;
+
+    //Save file always mounted in the end of downloading state.
+    if(downloading && img_mounted && !img_readonly) bk_ena <= 1;
+
+    // Load eeprom after loading a rom.
+    if (old_downloading & ~downloading & bk_ena)
+    begin
+        new_load   <= 1'b1;
+        cart_ready <= 1'b1;
+    end
+    else if (bk_state)
+        new_load <= 1'b0;
+
+    // This enables a save whenever a write was done to the eeprom.
+    if(eeprom_internal_we & ~OSD_STATUS & bk_ena)
+        sav_pending <= 1'b1;
+    else if (bk_state)
+        sav_pending <= 1'b0;
+end
+
+wire bk_load    = status[9] | new_load;
+wire bk_save    = status[10] | (sav_pending & OSD_STATUS & status[11]);
+reg  bk_loading = 0;
+reg  bk_state   = 0;
+
+
+reg old_load = 0, old_save = 0, old_ack;
+always @(posedge clk_sys)
+begin
+    old_load <= bk_load;
+    old_save <= bk_save;
+    old_ack  <= sd_ack;
+
+    if(~old_ack & sd_ack) {sd_rd, sd_wr} <= 0;
+
+    if(!bk_state)
+    begin
+        if(bk_ena & ((~old_load & bk_load) | (~old_save & bk_save)))
+        begin
+            bk_state <= 1;
+            bk_loading <= bk_load;
+            sd_lba <= 32'd0;
+            sd_rd <=  bk_load;
+            sd_wr <= ~bk_load;
+        end
+        if(old_downloading & ~downloading & |img_size & bk_ena)
+        begin
+            bk_state <= 1;
+            bk_loading <= 1;
+            sd_lba <= 0;
+            sd_rd <= 1;
+            sd_wr <= 0;
+        end
+    end
+    else
+    begin
+        if(old_ack & ~sd_ack)
+        begin
+
+            if(&sd_lba[3:0])
+            begin
+                bk_loading <= 0;
+                bk_state <= 0;
+            end
+            else
+            begin
+                sd_lba <= sd_lba + 1'd1;
+                sd_rd  <=  bk_loading;
+                sd_wr  <= ~bk_loading;
+            end
+        end
     end
 end
 
@@ -709,7 +844,7 @@ sdram cartridge_rom
     .init       (~pll_locked),
     .clk        (clk_ram),
 
-    .ch0_addr   (cart_download? ioctl_addr: minx_address_out[20:0]),
+    .ch0_addr   (cart_download? ioctl_addr: {4'd0, minx_address_out[20:0]}),
     .ch0_rd     (~cart_download & clk_sys),
     .ch0_wr     (cart_download & ioctl_wr),
     .ch0_din    (ioctl_dout),

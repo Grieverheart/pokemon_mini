@@ -93,11 +93,11 @@ localparam [2:0]
     SPRITE_DRAW_STATE_READ_COLUMN        = 3'd6,
     SPRITE_DRAW_STATE_DRAW_SPRITE_COLUMN = 3'd7;
 
-localparam [1:0]
-    BUS_COMMAND_IDLE      = 2'd0,
-    BUS_COMMAND_IRQ_READ  = 2'd1,
-    BUS_COMMAND_MEM_WRITE = 2'd2,
-    BUS_COMMAND_MEM_READ  = 2'd3;
+//localparam [1:0]
+//    BUS_COMMAND_IDLE      = 2'd0,
+//    BUS_COMMAND_IRQ_READ  = 2'd1,
+//    BUS_COMMAND_MEM_WRITE = 2'd2,
+//    BUS_COMMAND_MEM_READ  = 2'd3;
 
 reg [5:0] reg_mode;
 reg [7:0] reg_rate;
@@ -172,8 +172,8 @@ reg [2:0] sprite_draw_state_current;
 reg [1:0] sprite_draw_tile_index;
 // @todo: Reuse execution_step? Rename to something else e.g.
 // prc_stage_state.
-task init_next_state(input [1:0] state);
-    case(state)
+task init_next_state(input [1:0] prc_state);
+    case(prc_state)
         PRC_STATE_MAP_DRAW:
             execution_step <= 0;
 

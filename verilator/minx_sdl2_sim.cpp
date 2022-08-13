@@ -242,7 +242,7 @@ void sim_init(SimData* sim, const char* cartridge_path)
     Verilated::traceEverOn(true);
     sim->tfp = nullptr;
 
-    sim->minx->rt_ce = 1;
+    sim->minx->clk_rt_ce = 1;
 }
 
 void sim_dump_stop(SimData* sim)
@@ -257,7 +257,7 @@ void sim_dump_stop(SimData* sim)
 
 void sim_dump_eeprom(SimData* sim, const char* filepath)
 {
-    VlUnpacked<unsigned char, 8192> rom = sim->minx->rootp->minx__DOT__rom__DOT__rom;
+    VlUnpacked<unsigned char, 8192> rom = sim->minx->rootp->minx__DOT__eeprom__DOT__rom;
     const uint8_t* data = rom.m_storage;
     FILE* fp = fopen(filepath, "wb");
     {
@@ -296,7 +296,7 @@ void eeprom_set_timestamp(uint8_t* eeprom, uint8_t year, uint8_t month, uint8_t 
 
 void sim_load_eeprom(SimData* sim, const char* filepath)
 {
-    uint8_t* eeprom = sim->minx->rootp->minx__DOT__rom__DOT__rom.m_storage;
+    uint8_t* eeprom = sim->minx->rootp->minx__DOT__eeprom__DOT__rom.m_storage;
     {
         strncpy((char*)eeprom, "GBMN", 4);
         //eeprom[0x1FF2] = 0x01;
@@ -330,7 +330,7 @@ void simulate_steps(SimData* sim, int n_steps, AudioBuffer* audio_buffer = nullp
         sim->minx->eval();
         if(sim->timestamp == sim->osc1_next_clock)
         {
-            sim->minx->rt_clk = !sim->minx->rt_clk;
+            sim->minx->clk_rt = !sim->minx->clk_rt;
             sim->minx->eval();
             if(sim->tfp) sim->tfp->dump(sim->timestamp);
             sim->osc1_next_clock += sim->osc1_clocks;
@@ -342,7 +342,7 @@ void simulate_steps(SimData* sim, int n_steps, AudioBuffer* audio_buffer = nullp
         sim->minx->eval();
         if(sim->timestamp == sim->osc1_next_clock)
         {
-            sim->minx->rt_clk = !sim->minx->rt_clk;
+            sim->minx->clk_rt = !sim->minx->clk_rt;
             sim->minx->eval();
             if(sim->tfp) sim->tfp->dump(sim->timestamp);
             sim->osc1_next_clock += sim->osc1_clocks;
@@ -350,8 +350,7 @@ void simulate_steps(SimData* sim, int n_steps, AudioBuffer* audio_buffer = nullp
         else if(sim->tfp) sim->tfp->dump(sim->timestamp);
         sim->timestamp++;
 
-        //if(sim->minx->address_out == 0xAB)
-        if(sim->timestamp == 230)
+        if(sim->minx->address_out == 0xAB)
             sim_load_eeprom(sim, "eeprom000.bin");
 
         if(audio_buffer)
@@ -678,7 +677,7 @@ int main(int argc, char** argv)
     int eeprom_dump_id = 0;
     while(program_is_running)
     {
-        //printf("%d, %d\n", sim.minx->rootp->minx__DOT__rtc__DOT__timer, sim.minx->rootp->minx__DOT__rom__DOT__rom.m_storage[0x1FF6]);
+        //printf("%d, %d\n", sim.minx->rootp->minx__DOT__rtc__DOT__timer, sim.minx->rootp->minx__DOT__eeprom__DOT__rom.m_storage[0x1FF6]);
         // Process input
         SDL_Event sdl_event;
         while(SDL_PollEvent(&sdl_event) != 0)

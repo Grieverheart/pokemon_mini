@@ -973,14 +973,12 @@ module s1c88
         endcase
     end
 
-    reg branch_taken;
     reg not_implemented_addressing_error;
     reg not_implemented_alu_pack_ops_error;
     always_ff @ (negedge clk)
     begin
         if(clk_ce)
         begin
-            branch_taken = 0;
             not_implemented_addressing_error <= 0;
             not_implemented_alu_pack_ops_error <= 0;
 
@@ -1174,7 +1172,6 @@ module s1c88
                                     begin
                                         //$display("%d, %x, %x, %x, %x: 0x%x", PC[15], PC, top_address, jump_dest, NB, {1'd0, (jump_dest[15]? NB: 8'd0), jump_dest[14:0]});
                                         address_out <= {1'd0, (jump_dest[15]? NB: 8'd0), jump_dest[14:0]};
-                                        branch_taken = 1;
                                     end
                                 end
                             end
@@ -1238,7 +1235,6 @@ module s1c88
                                 begin
                                     if(jump_condition_true)
                                     begin
-                                        branch_taken = 1;
                                         CB <= NB;
                                         // @note: Don't pre-increment PC when
                                         // interrupt acknowledged.

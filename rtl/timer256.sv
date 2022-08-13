@@ -2,7 +2,8 @@ module timer256
 (
     input clk,
     input clk_ce,
-    input rt_clk,
+    input clk_rt,
+    input clk_rt_ce,
     input reset,
     input bus_write,
     input bus_read,
@@ -71,7 +72,7 @@ end
 // This means we have to divide the clock by 128, or we need to provide the
 // correct frequency. We need to divide the clock anyway for timer.sv so
 // perhaps we can take the 256Hz frequency as output from there.
-always_ff @ (posedge rt_clk)
+always_ff @ (posedge clk_rt)
 begin
     irqs <= 4'd0;
 
@@ -79,7 +80,7 @@ begin
     begin
         timer <= 8'd0;
     end
-    else if(reg_enabled && osc256)
+    else if(clk_rt_ce && reg_enabled && osc256)
     begin
         timer <= timer + 8'd1;
 
