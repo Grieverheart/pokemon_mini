@@ -109,44 +109,41 @@ endfunction
 reg write_latch;
 always_ff @ (negedge clk)
 begin
-    if(clk_ce_cpu)
+    if(reset)
     begin
-        if(reset)
-        begin
-            reg_control <= 16'd0;
-        end
-        else
-        begin
-            if(reset_l)
-                reg_control[1] <= 0;
+        reg_control <= 16'd0;
+    end
+    else if(clk_ce_cpu)
+    begin
+        if(reset_l)
+            reg_control[1] <= 0;
 
-            if(reset_h)
-                reg_control[9] <= 0;
+        if(reset_h)
+            reg_control[9] <= 0;
 
-            if(write_latch)
-            begin
-                case(bus_address_in)
-                    TMR_SCALE:
-                        reg_scale         <= bus_data_in;
-                    TMR_OSC:
-                        reg_osc_control   <= bus_data_in;
-                    TMR_CTRL_L:
-                        reg_control[7:0]  <= bus_data_in;
-                    TMR_CTRL_H:
-                        reg_control[15:8] <= bus_data_in;
-                    TMR_PRE_L:
-                        reg_preset[7:0]   <= bus_data_in;
-                    TMR_PRE_H:
-                        reg_preset[15:8]  <= bus_data_in;
-                    TMR_PVT_L:
-                        reg_compare[7:0]  <= bus_data_in;
-                    TMR_PVT_H:
-                        reg_compare[15:8] <= bus_data_in;
-                    default:
-                    begin
-                    end
-                endcase
-            end
+        if(write_latch)
+        begin
+            case(bus_address_in)
+                TMR_SCALE:
+                    reg_scale         <= bus_data_in;
+                TMR_OSC:
+                    reg_osc_control   <= bus_data_in;
+                TMR_CTRL_L:
+                    reg_control[7:0]  <= bus_data_in;
+                TMR_CTRL_H:
+                    reg_control[15:8] <= bus_data_in;
+                TMR_PRE_L:
+                    reg_preset[7:0]   <= bus_data_in;
+                TMR_PRE_H:
+                    reg_preset[15:8]  <= bus_data_in;
+                TMR_PVT_L:
+                    reg_compare[7:0]  <= bus_data_in;
+                TMR_PVT_H:
+                    reg_compare[15:8] <= bus_data_in;
+                default:
+                begin
+                end
+            endcase
         end
     end
 end
@@ -193,10 +190,14 @@ wire rt_clk_edge = (clk_rt_ce & ~rt_clk_latch);
 reg [11:0] osc1_prescaler;
 always_ff @ (posedge clk)
 begin
+    // @note: It's important to zero irqs, only when clk_ce_cpu, otherwise the
+    // irq will not be activated in the irq handler, or we need to make the
+    // irq handler work off the clk_ce_cpu instead.
+    if(clk_ce_cpu)
+        irqs <= 0;
+
     if(clk_ce)
     begin
-        irqs <= 0; // @todo: When should we really zero the irqs?
-
         osc1_prescaler <= osc1_prescaler + 1;
         rt_clk_latch   <= clk_rt_ce & clk_rt; // @todo: What is correct?
 

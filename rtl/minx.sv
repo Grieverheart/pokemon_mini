@@ -64,11 +64,12 @@ module minx
         end
     end
 
-    reg clk_ce;
+    wire clk_ce = cpu_clk_prescale & clk_ce_4mhz;
+    reg cpu_clk_prescale = 0;
     always_ff @ (posedge clk)
     begin
         if(clk_ce_4mhz)
-            clk_ce <= clk_ce + 1;
+            cpu_clk_prescale <= cpu_clk_prescale + 1;
 
         if(clk_ce)
         begin

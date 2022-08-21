@@ -172,6 +172,7 @@ module emu
 
 // TODO list:
 // * color palette
+// * convert s1c88 from using posedge/negedge to just using posedge?
 // * savestates + hold instruction?
 
 ///////// Default values for ports not used in this core /////////
@@ -322,7 +323,7 @@ reg [6:0] clk_rt_prescale = 0;
 always_ff @ (posedge clk_rt) clk_rt_prescale <= clk_rt_prescale + 1;
 
 reg [1:0] clk_prescale = 0;
-reg [2:0] minx_clk_prescale = 0;
+reg [1:0] minx_clk_prescale = 0;
 always_ff @ (posedge clk_sys)
 begin
     clk_prescale <= clk_prescale + 1;
@@ -527,7 +528,7 @@ wire [7:0] eeprom_write_data = eeprom_we_rtc? eeprom_write_data_rtc: bk_data;
 minx minx
 (
     .clk                   (clk_sys),
-    .clk_ce                (&minx_clk_prescale),
+    .clk_ce_4mhz           (&minx_clk_prescale),
     .clk_rt                (clk_rt),
     .clk_rt_ce             (&clk_rt_prescale),
     .reset                 (reset | (|reset_counter)),

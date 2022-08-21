@@ -231,7 +231,7 @@ void sim_init(SimData* sim, const char* cartridge_path)
     sim->minx = new Vminx;
     sim->minx->clk = 0;
     sim->minx->reset = 1;
-    sim->minx->clk_ce_4mhz = 0;
+    sim->minx->clk_ce_4mhz = 1;
     sim->minx->eeprom_we = 0;
 
     sim->osc1_clocks = 4000000.0 / 32768.0 + 0.5;
@@ -324,8 +324,6 @@ void simulate_steps(SimData* sim, int n_steps, AudioBuffer* audio_buffer = nullp
 {
     for(int i = 0; i < n_steps && !Verilated::gotFinish(); ++i)
     {
-        sim->minx->clk_ce_4mhz = !sim->minx->clk_ce_4mhz;
-
         sim->minx->clk = 1;
         sim->minx->eval();
         if(sim->timestamp == sim->osc1_next_clock)
@@ -564,7 +562,7 @@ int main(int argc, char** argv)
     size_t num_sim_steps = 150000;
 
     SimData sim;
-    const char* rom_filepath = "data/party_j.min";
+    //const char* rom_filepath = "data/party_j.min";
     // Problem with display starting 2 pixels from the left. This is due to a
     // difference in how the LCD controller is implemented. In e.g. PokeMini it
     // is implemented in such a way that if End RWM mode is issued, it always
@@ -573,7 +571,9 @@ int main(int argc, char** argv)
     // without Start.
     //const char* rom_filepath = "data/6shades.min";
     //const char* rom_filepath = "data/pichu_bros_mini_j.min";
-    //const char* rom_filepath = "data/pokemon_anime_card_daisakusen_j.min";
+    // @todo: Problem with sound not playing and contrast not getting back to
+    // full after intro.
+    const char* rom_filepath = "data/pokemon_anime_card_daisakusen_j.min";
     //const char* rom_filepath = "data/snorlaxs_lunch_time_j.min";
     //const char* rom_filepath = "data/pokemon_shock_tetris_j.min";
     //const char* rom_filepath = "data/togepi_no_daibouken_j.min";
