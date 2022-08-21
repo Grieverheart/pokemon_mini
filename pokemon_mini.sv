@@ -312,9 +312,9 @@ pll pll
 (
     .refclk   (CLK_50M),
     .rst      (0),
-    .outclk_0 (clk_ram),
-    .outclk_1 (clk_rt),
-    .outclk_2 (clk_sys),
+    .outclk_0 (clk_ram), // 40 MHz
+    .outclk_1 (clk_rt),  // 4.194756 MHz
+    .outclk_2 (clk_sys), // 16 MHz
     .locked   (pll_locked)
 );
 
@@ -322,7 +322,7 @@ reg [6:0] clk_rt_prescale = 0;
 always_ff @ (posedge clk_rt) clk_rt_prescale <= clk_rt_prescale + 1;
 
 reg [1:0] clk_prescale = 0;
-reg minx_clk_prescale = 0;
+reg [2:0] minx_clk_prescale = 0;
 always_ff @ (posedge clk_sys)
 begin
     clk_prescale <= clk_prescale + 1;
@@ -337,7 +337,7 @@ reg [3:0] reset_counter;
 always_ff @ (posedge clk_sys)
 begin
     if(reset) reset_counter <= 4'hF;
-    else if(reset_counter > 4'd0) reset_counter <= reset_counter - 4'd1;
+    else if(reset_counter > 4'd0 && &minx_clk_prescale) reset_counter <= reset_counter - 4'd1;
 end
 
 //////////////////////////////////////////////////////////////////
@@ -351,10 +351,10 @@ assign LED_USER  = ioctl_download | sav_pending;
 
 reg hs, vs, hbl, vbl;
 
-localparam H_WIDTH   = 8'd140;
-localparam V_HEIGHT  = 8'd119;
-localparam LCD_XSIZE = 8'd96;
-localparam LCD_YSIZE = 8'd64;
+localparam H_WIDTH   = 9'd280;
+localparam V_HEIGHT  = 9'd238;
+localparam LCD_XSIZE = 9'd96;
+localparam LCD_YSIZE = 9'd64;
 localparam LCD_COLS  = LCD_YSIZE >> 3;
 
 reg frame_complete_latch;
@@ -391,7 +391,7 @@ begin
             frame_complete_latch <= 1;
 
         // Need to wait 2 clocks for data from lcd?
-        if(frame_complete_latch && minx_clk_prescale)
+        if(frame_complete_latch && &minx_clk_prescale)
         begin
             case(fb_write_index)
                 0:
@@ -425,7 +425,7 @@ begin
     fb3_read <= fb3[fb_read_address];
 end
 
-reg [7:0] hpos,vpos;
+reg [8:0] hpos,vpos;
 reg [7:0] pixel_value;
 // @todo: Latch lcd_contrast for each fb0-3?
 wire [7:0] pixel_on = (lcd_contrast >= 6'h20)? 8'd255: {lcd_contrast[4:0], 3'd0};
@@ -527,7 +527,7 @@ wire [7:0] eeprom_write_data = eeprom_we_rtc? eeprom_write_data_rtc: bk_data;
 minx minx
 (
     .clk                   (clk_sys),
-    .clk_ce                (minx_clk_prescale),
+    .clk_ce                (&minx_clk_prescale),
     .clk_rt                (clk_rt),
     .clk_rt_ce             (&clk_rt_prescale),
     .reset                 (reset | (|reset_counter)),
@@ -743,16 +743,18 @@ reg old_downloading = 0;
 reg sav_pending     = 0;
 reg cart_ready      = 0;
 
+wire downloading_negedge = old_downloading & ~downloading;
+wire downloading_posedge = ~old_downloading & downloading;
 always @(posedge clk_sys)
 begin
     old_downloading <= downloading;
-    if(~old_downloading & downloading) bk_ena <= 0;
+    if(downloading_posedge) bk_ena <= 0;
 
     //Save file always mounted in the end of downloading state.
     if(downloading && img_mounted && !img_readonly) bk_ena <= 1;
 
     // Load eeprom after loading a rom.
-    if (old_downloading & ~downloading & bk_ena)
+    if (downloading_negedge & bk_ena)
     begin
         new_load   <= 1'b1;
         cart_ready <= 1'b1;
@@ -774,49 +776,49 @@ reg  bk_state   = 0;
 
 
 reg old_load = 0, old_save = 0, old_ack;
+wire load_posedge = ~old_load &  bk_load;
+wire save_posedge = ~old_save &  bk_save;
+wire ack_posedge  = ~old_ack  &  sd_ack;
+wire ack_negedge  =  old_ack  & ~sd_ack;
 always @(posedge clk_sys)
 begin
     old_load <= bk_load;
     old_save <= bk_save;
     old_ack  <= sd_ack;
 
-    if(~old_ack & sd_ack) {sd_rd, sd_wr} <= 0;
+    if(ack_posedge) {sd_rd, sd_wr} <= 0;
 
     if(!bk_state)
     begin
-        if(bk_ena & ((~old_load & bk_load) | (~old_save & bk_save)))
+        if(bk_ena & (load_posedge | save_posedge))
         begin
-            bk_state <= 1;
+            bk_state   <= 1;
             bk_loading <= bk_load;
-            sd_lba <= 32'd0;
-            sd_rd <=  bk_load;
-            sd_wr <= ~bk_load;
+            sd_lba     <= 32'd0;
+            sd_rd      <= bk_load;
+            sd_wr      <= ~bk_load;
         end
-        if(old_downloading & ~downloading & |img_size & bk_ena)
+        if(bk_ena & downloading_negedge & |img_size)
         begin
-            bk_state <= 1;
+            bk_state   <= 1;
             bk_loading <= 1;
-            sd_lba <= 0;
-            sd_rd <= 1;
-            sd_wr <= 0;
+            sd_lba     <= 0;
+            sd_rd      <= 1;
+            sd_wr      <= 0;
         end
     end
-    else
+    else if(ack_negedge)
     begin
-        if(old_ack & ~sd_ack)
+        if(&sd_lba[3:0])
         begin
-
-            if(&sd_lba[3:0])
-            begin
-                bk_loading <= 0;
-                bk_state <= 0;
-            end
-            else
-            begin
-                sd_lba <= sd_lba + 1'd1;
-                sd_rd  <=  bk_loading;
-                sd_wr  <= ~bk_loading;
-            end
+            bk_loading <= 0;
+            bk_state   <= 0;
+        end
+        else
+        begin
+            sd_lba <= sd_lba + 1'd1;
+            sd_rd  <= bk_loading;
+            sd_wr  <= ~bk_loading;
         end
     end
 end

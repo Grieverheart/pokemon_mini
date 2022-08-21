@@ -7,6 +7,7 @@ module timer
 (
     input clk,
     input clk_ce,
+    input clk_ce_cpu,
     input clk_rt,
     input clk_rt_ce,
     input reset,
@@ -108,7 +109,7 @@ endfunction
 reg write_latch;
 always_ff @ (negedge clk)
 begin
-    if(clk_ce)
+    if(clk_ce_cpu)
     begin
         if(reset)
         begin
@@ -152,7 +153,7 @@ end
 
 always_ff @ (posedge clk)
 begin
-    if(clk_ce)
+    if(clk_ce_cpu)
     begin
         write_latch <= 0;
         if(bus_write) write_latch <= 1;
@@ -192,86 +193,89 @@ wire rt_clk_edge = (clk_rt_ce & ~rt_clk_latch);
 reg [11:0] osc1_prescaler;
 always_ff @ (posedge clk)
 begin
-    irqs <= 0; // @todo: When should we really zero the irqs?
-
-    osc1_prescaler <= osc1_prescaler + 1;
-    rt_clk_latch   <= clk_rt_ce & clk_rt; // @todo: What is correct?
-
-    if(reset_l)
-        timer <= reg_preset;
-
-    if(mode16)
+    if(clk_ce)
     begin
-        if(enabled_l)
-        begin
-            //if(osc1_prescaler == 2**prescale_osc1[prescale_l] - 1)
-            //begin
-            //    osc1_prescaler <= 0;
-            if(tick(osc_l, prescale_l))
-            begin
-                if(~osc_l || rt_clk_edge)
-                begin
-                    if(timer == 0)
-                    begin
-                        tout <= 1;
-                        irqs[1] <= 1;
-                        timer <= reg_preset;
-                    end
-                    else
-                        timer <= timer - 1;
+        irqs <= 0; // @todo: When should we really zero the irqs?
 
-                    if(timer == reg_compare)
+        osc1_prescaler <= osc1_prescaler + 1;
+        rt_clk_latch   <= clk_rt_ce & clk_rt; // @todo: What is correct?
+
+        if(reset_l)
+            timer <= reg_preset;
+
+        if(mode16)
+        begin
+            if(enabled_l)
+            begin
+                //if(osc1_prescaler == 2**prescale_osc1[prescale_l] - 1)
+                //begin
+                //    osc1_prescaler <= 0;
+                if(tick(osc_l, prescale_l))
+                begin
+                    if(~osc_l || rt_clk_edge)
                     begin
-                        tout <= 0;
-                        irqs[2] <= 1;
+                        if(timer == 0)
+                        begin
+                            tout <= 1;
+                            irqs[1] <= 1;
+                            timer <= reg_preset;
+                        end
+                        else
+                            timer <= timer - 1;
+
+                        if(timer == reg_compare)
+                        begin
+                            tout <= 0;
+                            irqs[2] <= 1;
+                        end
                     end
                 end
             end
         end
-    end
-    else
-    begin
-        if(reset_h)
-            timer[15:8] <= reg_preset[15:8];
-
-        if(enabled_l)
+        else
         begin
-            if(tick(osc_l, prescale_l))
-            begin
-                if(~osc_l || rt_clk_edge)
-                begin
-                    if(timer == 0)
-                    begin
-                        tout <= 1;
-                        irqs[0] <= 1;
-                        timer[7:0] <= reg_preset[7:0];
-                    end
-                    else
-                        timer[7:0] <= timer[7:0] - 1;
+            if(reset_h)
+                timer[15:8] <= reg_preset[15:8];
 
-                    if(timer[7:0] == reg_compare[7:0])
+            if(enabled_l)
+            begin
+                if(tick(osc_l, prescale_l))
+                begin
+                    if(~osc_l || rt_clk_edge)
                     begin
-                        tout <= 0;
-                        irqs[2] <= 1;
+                        if(timer == 0)
+                        begin
+                            tout <= 1;
+                            irqs[0] <= 1;
+                            timer[7:0] <= reg_preset[7:0];
+                        end
+                        else
+                            timer[7:0] <= timer[7:0] - 1;
+
+                        if(timer[7:0] == reg_compare[7:0])
+                        begin
+                            tout <= 0;
+                            irqs[2] <= 1;
+                        end
                     end
                 end
             end
-        end
 
-        if(enabled_h)
-        begin
-            if(tick(osc_h, prescale_h))
+            if(enabled_h)
             begin
-                if(~osc_h || rt_clk_edge)
+                if(tick(osc_h, prescale_h))
                 begin
-                    if(timer == 0)
+                    if(~osc_h || rt_clk_edge)
                     begin
-                        irqs[1] <= 1;
-                        timer[15:8] <= reg_preset[15:8];
+                        if(timer == 0)
+                        begin
+                            irqs[1] <= 1;
+                            timer[15:8] <= reg_preset[15:8];
+                        end
+                        else
+                            irqs[2] <= 1;
+                            timer[15:8] <= timer[15:8] - 1;
                     end
-                    else
-                        irqs[2] <= 1;
-                        timer[15:8] <= timer[15:8] - 1;
                 end
             end
         end

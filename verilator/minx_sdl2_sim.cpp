@@ -231,7 +231,7 @@ void sim_init(SimData* sim, const char* cartridge_path)
     sim->minx = new Vminx;
     sim->minx->clk = 0;
     sim->minx->reset = 1;
-    sim->minx->clk_ce = 0;
+    sim->minx->clk_ce_4mhz = 0;
     sim->minx->eeprom_we = 0;
 
     sim->osc1_clocks = 4000000.0 / 32768.0 + 0.5;
@@ -324,7 +324,7 @@ void simulate_steps(SimData* sim, int n_steps, AudioBuffer* audio_buffer = nullp
 {
     for(int i = 0; i < n_steps && !Verilated::gotFinish(); ++i)
     {
-        sim->minx->clk_ce = !sim->minx->clk_ce;
+        sim->minx->clk_ce_4mhz = !sim->minx->clk_ce_4mhz;
 
         sim->minx->clk = 1;
         sim->minx->eval();
@@ -389,7 +389,7 @@ void simulate_steps(SimData* sim, int n_steps, AudioBuffer* audio_buffer = nullp
                 (sim->minx->pl == 0) &&
                 (sim->minx->rootp->minx__DOT__cpu__DOT__micro_op & 0x1000) &&
                 sim->minx->iack == 0 &&
-                sim->minx->clk_ce &&
+                sim->minx->rootp->minx__DOT__clk_ce &&
                 !sim->minx->bus_ack)
             {
                 if(irq_processing)
@@ -513,7 +513,7 @@ void simulate_steps(SimData* sim, int n_steps, AudioBuffer* audio_buffer = nullp
             data_sent = true;
         }
 
-        if(sim->minx->clk_ce)
+        if(sim->minx->rootp->minx__DOT__clk_ce)
         {
             if(sim->minx->sync && sim->minx->pl == 1)
                 num_cycles_since_sync = 0;

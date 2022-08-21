@@ -1,7 +1,7 @@
 module minx
 (
     input clk,
-    input clk_ce,
+    input clk_ce_4mhz,
     input clk_rt,
     input clk_rt_ce,
     input reset,
@@ -64,8 +64,12 @@ module minx
         end
     end
 
+    reg clk_ce;
     always_ff @ (posedge clk)
     begin
+        if(clk_ce_4mhz)
+            clk_ce <= clk_ce + 1;
+
         if(clk_ce)
         begin
             cpu_write_latch <= 0;
@@ -168,7 +172,8 @@ module minx
     ) timer1
     (
         .clk            (clk),
-        .clk_ce         (clk_ce),
+        .clk_ce         (clk_ce_4mhz),
+        .clk_ce_cpu     (clk_ce),
         .clk_rt         (clk_rt),
         .clk_rt_ce      (clk_rt_ce),
         .reset          (reset),
@@ -195,7 +200,8 @@ module minx
     ) timer2
     (
         .clk            (clk),
-        .clk_ce         (clk_ce),
+        .clk_ce         (clk_ce_4mhz),
+        .clk_ce_cpu     (clk_ce),
         .clk_rt         (clk_rt),
         .clk_rt_ce      (clk_rt_ce),
         .reset          (reset),
@@ -222,7 +228,8 @@ module minx
     ) timer3
     (
         .clk            (clk),
-        .clk_ce         (clk_ce),
+        .clk_ce         (clk_ce_4mhz),
+        .clk_ce_cpu     (clk_ce),
         .clk_rt         (clk_rt),
         .clk_rt_ce      (clk_rt_ce),
         .reset          (reset),
@@ -321,7 +328,8 @@ module minx
     prc prc
     (
         .clk               (clk),
-        .clk_ce            (clk_ce),
+        .clk_ce            (clk_ce_4mhz),
+        .clk_ce_cpu        (clk_ce),
         .reset             (reset),
         .bus_write         (write),
         .bus_read          (read),

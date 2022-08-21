@@ -2,6 +2,7 @@ module prc
 (
     input clk,
     input clk_ce,
+    input clk_ce_cpu,
     input reset,
     input bus_write,
     input bus_read,
@@ -260,7 +261,7 @@ begin
         prc_osc_counter <= 10'd0;
         reg_counter     <= 7'd1;
     end
-    else
+    else if(clk_ce)
     begin
         prc_osc_counter <= prc_osc_counter + 1;
 
@@ -278,7 +279,7 @@ reg [31:0] cycle_count;
 always_ff @ (negedge clk)
 begin
     cycle_count <= cycle_count + 1;
-    if(clk_ce)
+    if(clk_ce_cpu)
     begin
         if(reset)
         begin
@@ -721,7 +722,7 @@ end
 
 always_ff @ (posedge clk)
 begin
-    if(clk_ce)
+    if(clk_ce_cpu)
     begin
         bus_write_latch <= 0;
 
