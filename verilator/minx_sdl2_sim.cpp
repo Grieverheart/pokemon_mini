@@ -298,14 +298,14 @@ void sim_load_eeprom(SimData* sim, const char* filepath)
 {
     uint8_t* eeprom = sim->minx->rootp->minx__DOT__eeprom__DOT__rom.m_storage;
     {
-        strncpy((char*)eeprom, "GBMN", 4);
+        //strncpy((char*)eeprom, "GBMN", 4);
         //eeprom[0x1FF2] = 0x01;
         //eeprom[0x1FF3] = 0x03;
         //eeprom[0x1FF4] = 0x01;
         //eeprom[0x1FF5] = 0x1F;
-        //FILE* fp = fopen(filepath, "rb");
-        //fread(eeprom, 1, 8192, fp);
-        //fclose(fp);
+        FILE* fp = fopen(filepath, "rb");
+        fread(eeprom, 1, 8192, fp);
+        fclose(fp);
     }
     // @todo: Try initializing just a few required fields, like the GBMN and
     // see if that's sufficient for accepting the set datetime.
@@ -441,6 +441,13 @@ void simulate_steps(SimData* sim, int n_steps, AudioBuffer* audio_buffer = nullp
             }
         }
 
+        //static bool once = false;
+        //if(sim->minx->rootp->minx__DOT__cpu__DOT__extended_opcode == 0x1AE)
+        //{
+        //    if(!once) printf("timestamp: %llu\n", sim->timestamp);
+        //    once = true;
+        //}
+
         //if(sim->minx->rootp->minx__DOT__sound__DOT__reg_sound_volume == 3)
         //    printf("%llu\n", sim->timestamp);
 
@@ -452,11 +459,11 @@ void simulate_steps(SimData* sim, int n_steps, AudioBuffer* audio_buffer = nullp
         //    if(!sim->tfp)
         //        sim_dump_start(sim, "temp.vcd");
         //}
-        //if(sim->timestamp == 5033010 - 1000000)
-        //    sim_dump_start(sim, "temp.vcd");
+        if(sim->timestamp == 34089512 - 10000)
+            sim_dump_start(sim, "sim.vcd");
 
-        //if(sim->timestamp == 5033010 + 1000000)
-        //    sim_dump_stop(sim);
+        if(sim->timestamp == 34089512 + 200000)
+            sim_dump_stop(sim);
 
         if(sim->timestamp >= 8)
             sim->minx->reset = 0;
@@ -572,7 +579,8 @@ int main(int argc, char** argv)
     //const char* rom_filepath = "data/6shades.min";
     //const char* rom_filepath = "data/pichu_bros_mini_j.min";
     // @todo: Problem with sound not playing and contrast not getting back to
-    // full after intro.
+    // full after intro. This is probably due to the code using the halt
+    // instruction.
     const char* rom_filepath = "data/pokemon_anime_card_daisakusen_j.min";
     //const char* rom_filepath = "data/snorlaxs_lunch_time_j.min";
     //const char* rom_filepath = "data/pokemon_shock_tetris_j.min";

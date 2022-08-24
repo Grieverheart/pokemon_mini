@@ -219,10 +219,11 @@ module s1c88
 
 
     localparam [2:0]
-        STATE_IDLE          = 3'd0,
-        STATE_OPEXT_READ    = 3'd1,
-        STATE_EXECUTE       = 3'd2,
-        STATE_EXC_PROCESS   = 3'd3;
+        STATE_IDLE         = 3'd0,
+        STATE_OPEXT_READ   = 3'd1,
+        STATE_EXECUTE      = 3'd2,
+        STATE_EXC_PROCESS  = 3'd3,
+        STATE_HALT         = 3'd4;
 
     localparam [2:0]
         EXCEPTION_TYPE_NONE    = 3'd0,
@@ -648,7 +649,10 @@ module s1c88
             (iack                             ? STATE_EXC_PROCESS:
             (need_opext                       ? STATE_OPEXT_READ:
                                                 STATE_EXECUTE)):
-                                                STATE_EXECUTE;
+        (state == STATE_OPEXT_READ) ?
+            (opext == 8'hAE ?                   STATE_HALT:
+                                                STATE_EXECUTE):
+                                                STATE_EXC_PROCESS;
 
     reg [15:0] PC = 16'hFACE;
     reg [15:0] top_address;
@@ -975,6 +979,7 @@ module s1c88
 
     reg not_implemented_addressing_error;
     reg not_implemented_alu_pack_ops_error;
+    reg halt_counter;
     always_ff @ (negedge clk)
     begin
         if(clk_ce)
@@ -1040,8 +1045,8 @@ module s1c88
                     end
                     else if(pk == 0)
                     begin
-                        address_out <= {1'd0, (PC[15]? CB: 8'd0), PC[14:0]};
-                        bus_status <= BUS_COMMAND_MEM_READ;
+                        address_out  <= {1'd0, (PC[15]? CB: 8'd0), PC[14:0]};
+                        bus_status   <= BUS_COMMAND_MEM_READ;
                         fetch_opcode <= 0;
                         //bus_status <= BUS_COMMAND_IRQ_READ;
 
@@ -1075,6 +1080,9 @@ module s1c88
                                 exception_process_step <= 0;
                             end
                         end
+
+                        if(next_state == STATE_HALT)
+                            halt_counter <= 0;
                     end
 
 
@@ -1156,6 +1164,27 @@ module s1c88
                         begin
                             opext <= data_in;
                             PC <= PC + 16'd1;
+                        end
+                    end
+                    else if(state == STATE_HALT)
+                    begin
+                        if(!iack)
+                        begin
+                            state      <= STATE_HALT;
+                            bus_status <= BUS_COMMAND_IDLE;
+                            halt_counter <= halt_counter + 1;
+                            if(halt_counter)
+                            begin
+                                if(exception_factor != 0 && exception != EXCEPTION_TYPE_RESET)
+                                begin
+                                    // @hack
+                                    opext <= 0;
+
+                                    exception              <= exception_factor;
+                                    iack                   <= 1;
+                                    exception_process_step <= 0;
+                                end
+                            end
                         end
                     end
                     else if(state == STATE_EXECUTE)
@@ -1396,7 +1425,7 @@ module s1c88
             begin
                 bus_ack_posedge <= bus_request;
 
-                if(!bus_ack)
+                if(!bus_ack && state != STATE_HALT)
                 begin
                     pk <= ~pk;
                     read <= 0;

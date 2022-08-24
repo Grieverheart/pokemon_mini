@@ -36,7 +36,7 @@ reg [15:0] reg_control;
 reg [15:0] reg_compare;
 reg [15:0] reg_preset;
 reg [7:0]  reg_scale;
-reg [7:0]  reg_osc_control;
+reg [1:0]  reg_osc_control;
 reg [15:0] timer;
 
 wire reset_l   = reg_control[1];
@@ -46,9 +46,6 @@ wire reset_h   = reg_control[9];
 wire enabled_h = reg_control[10];
 wire [2:0] prescale_l = reg_scale[2:0];
 wire [2:0] prescale_h = reg_scale[6:4];
-
-wire osc1_enabled = reg_osc_control[5];
-wire osc2_enabled = reg_osc_control[4];
 
 wire osc_l = reg_osc_control[0];
 wire osc_h = reg_osc_control[1];
@@ -127,7 +124,7 @@ begin
                 TMR_SCALE:
                     reg_scale         <= bus_data_in;
                 TMR_OSC:
-                    reg_osc_control   <= bus_data_in;
+                    reg_osc_control   <= bus_data_in[1:0];
                 TMR_CTRL_L:
                     reg_control[7:0]  <= bus_data_in;
                 TMR_CTRL_H:
@@ -163,7 +160,7 @@ begin
         TMR_SCALE:
             bus_data_out = reg_scale;
         TMR_OSC:
-            bus_data_out = reg_osc_control;
+            bus_data_out = {6'd0, reg_osc_control};
         TMR_CTRL_L:
             bus_data_out = reg_control[7:0];
         TMR_CTRL_H:
