@@ -108,7 +108,6 @@ module s1c88
     // @todo:
     //
     // * Bus wait states.
-    // * Implement HALT.
     // * Implement EXCEPTION_TYPE_DIVZERO.
     // * Implement alu unpack operations
 
@@ -1168,22 +1167,21 @@ module s1c88
                     end
                     else if(state == STATE_HALT)
                     begin
-                        if(!iack)
+                        state      <= STATE_HALT;
+                        bus_status <= BUS_COMMAND_IDLE;
+                        halt_counter <= halt_counter + 1;
+                        if(halt_counter)
                         begin
-                            state      <= STATE_HALT;
-                            bus_status <= BUS_COMMAND_IDLE;
-                            halt_counter <= halt_counter + 1;
-                            if(halt_counter)
+                            if(exception_factor != 0 && exception != EXCEPTION_TYPE_RESET)
                             begin
-                                if(exception_factor != 0 && exception != EXCEPTION_TYPE_RESET)
-                                begin
-                                    // @hack
-                                    opext <= 0;
+                                // @hack
+                                opext <= 0;
 
-                                    exception              <= exception_factor;
-                                    iack                   <= 1;
-                                    exception_process_step <= 0;
-                                end
+                                bus_status             <= BUS_COMMAND_MEM_READ;
+                                state                  <= STATE_IDLE;
+                                exception              <= exception_factor;
+                                iack                   <= 1;
+                                exception_process_step <= 0;
                             end
                         end
                     end
@@ -1431,6 +1429,15 @@ module s1c88
                     read <= 0;
                     read_interrupt_vector <= 0;
                     not_implemented_data_out_error <= 0;
+
+                    // @todo: Remove all code that sets read <= 1 and replace
+                    // with below code.
+                    //if(pk == 0 && bus_status == BUS_COMMAND_MEM_READ)
+                    //    read <= 1;
+
+                    // @temp solution
+                    if(state == STATE_IDLE && exception != EXCEPTION_TYPE_NONE && pk == 0)
+                        read <= 1;
 
                     if(fetch_opcode)
                     begin

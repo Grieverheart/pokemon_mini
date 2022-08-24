@@ -404,6 +404,7 @@ void simulate_steps(SimData* sim, int n_steps, AudioBuffer* audio_buffer = nullp
                         if(num_cycles != num_cycles_actual_branch || num_cycles_actual_branch == 0)
                             PRINTE(" ** Discrepancy found in number of cycles of instruction 0x%x: %d, %d, timestamp: %llu** \n", extended_opcode, num_cycles, num_cycles_actual, sim->timestamp);
 
+                    //printf("^ 0x%x\n", sim->minx->address_out);
                     //if(!sim->instructions_executed[extended_opcode])
                     //    printf("Instruction 0x%x executed for the first time, at 0x%x, timestamp: %llu.\n", extended_opcode, sim->minx->rootp->minx__DOT__cpu__DOT__top_address, sim->timestamp);
                     sim->instructions_executed[extended_opcode] = 1;
@@ -459,16 +460,16 @@ void simulate_steps(SimData* sim, int n_steps, AudioBuffer* audio_buffer = nullp
         //    if(!sim->tfp)
         //        sim_dump_start(sim, "temp.vcd");
         //}
-        if(sim->timestamp == 34089512 - 10000)
-            sim_dump_start(sim, "sim.vcd");
+        //if(sim->timestamp == 34089512 - 10000)
+        //    sim_dump_start(sim, "sim.vcd");
 
-        if(sim->timestamp == 34089512 + 200000)
-            sim_dump_stop(sim);
+        //if(sim->timestamp == 34089512 + 200000)
+        //    sim_dump_stop(sim);
 
         if(sim->timestamp >= 8)
             sim->minx->reset = 0;
 
-        if(sim->timestamp > 258 && sim->minx->iack == 1 && sim->minx->pl == 0 && sim->minx->sync)
+        if(sim->timestamp > 258 && sim->minx->iack == 1 && sim->minx->pl == 0)// && sim->minx->sync)
         {
             irq_processing = true;
         }

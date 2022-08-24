@@ -171,7 +171,6 @@ module emu
 );
 
 // TODO list:
-// * halt instruction (some code uses the halt instruction)
 // * color palette
 // * convert s1c88 from using posedge/negedge to just using posedge?
 // * savestates?
