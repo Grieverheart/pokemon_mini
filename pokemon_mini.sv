@@ -171,6 +171,8 @@ module emu
 );
 
 // TODO list:
+// * implement loading of bios from file, and handle alternative bios setting
+//   of RTC.
 // * color palette
 // * convert s1c88 from using posedge/negedge to just using posedge?
 // * savestates?
