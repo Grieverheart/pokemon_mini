@@ -382,6 +382,16 @@ void simulate_steps(SimData* sim, int n_steps, AudioBuffer* audio_buffer = nullp
                 }
             }
 
+            //if(
+            //    (sim->minx->sync == 1) &&
+            //    (sim->minx->pk == 0) &&
+            //    sim->minx->iack == 0 &&
+            //    sim->minx->rootp->minx__DOT__clk_ce &&
+            //    !sim->minx->bus_ack)
+            //{
+            //    printf("^ 0x%x\n", sim->minx->address_out);
+            //}
+
             if(
                 (sim->minx->sync == 1) &&
                 (sim->minx->pl == 0) &&
@@ -404,7 +414,9 @@ void simulate_steps(SimData* sim, int n_steps, AudioBuffer* audio_buffer = nullp
                         if(num_cycles != num_cycles_actual_branch || num_cycles_actual_branch == 0)
                             PRINTE(" ** Discrepancy found in number of cycles of instruction 0x%x: %d, %d, timestamp: %llu** \n", extended_opcode, num_cycles, num_cycles_actual, sim->timestamp);
 
-                    //printf("^ 0x%x\n", sim->minx->address_out);
+                    //if(sim->minx->address_out == 0x4C5C)
+                    //    printf("^ address: 0x%x, A: 0x%x\n", 0x4C5C, sim->minx->rootp->minx__DOT__cpu__DOT__BA & 0xFF);
+
                     //if(!sim->instructions_executed[extended_opcode])
                     //    printf("Instruction 0x%x executed for the first time, at 0x%x, timestamp: %llu.\n", extended_opcode, sim->minx->rootp->minx__DOT__cpu__DOT__top_address, sim->timestamp);
                     sim->instructions_executed[extended_opcode] = 1;
@@ -460,14 +472,18 @@ void simulate_steps(SimData* sim, int n_steps, AudioBuffer* audio_buffer = nullp
         //    if(!sim->tfp)
         //        sim_dump_start(sim, "temp.vcd");
         //}
-        //if(sim->timestamp == 34089512 - 10000)
+        //if(sim->timestamp == 53369744 - 10000000)
         //    sim_dump_start(sim, "sim.vcd");
 
-        //if(sim->timestamp == 34089512 + 200000)
+        //if(sim->timestamp == 53369744 + 1000000)
         //    sim_dump_stop(sim);
 
         if(sim->timestamp >= 8)
             sim->minx->reset = 0;
+        //if(sim->minx->address_out == 0x1479 && sim->minx->bus_status == BUS_MEM_WRITE && sim->minx->write)
+        //{
+        //    printf("%llu, 0x%x, 0x%x\n", sim->timestamp, sim->minx->rootp->minx__DOT__cpu__DOT__top_address, sim->minx->data_out);
+        //}
 
         if(sim->timestamp > 258 && sim->minx->iack == 1 && sim->minx->pl == 0)// && sim->minx->sync)
         {
@@ -579,9 +595,6 @@ int main(int argc, char** argv)
     // without Start.
     //const char* rom_filepath = "data/6shades.min";
     //const char* rom_filepath = "data/pichu_bros_mini_j.min";
-    // @todo: Problem with sound not playing and contrast not getting back to
-    // full after intro. This is probably due to the code using the halt
-    // instruction.
     const char* rom_filepath = "data/pokemon_anime_card_daisakusen_j.min";
     //const char* rom_filepath = "data/snorlaxs_lunch_time_j.min";
     //const char* rom_filepath = "data/pokemon_shock_tetris_j.min";

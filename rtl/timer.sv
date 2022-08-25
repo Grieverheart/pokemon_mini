@@ -241,7 +241,7 @@ begin
                 begin
                     if(~osc_l || rt_clk_edge)
                     begin
-                        if(timer == 0)
+                        if(timer[7:0] == 0)
                         begin
                             tout <= 1;
                             irqs[0] <= 1;
@@ -265,13 +265,12 @@ begin
                 begin
                     if(~osc_h || rt_clk_edge)
                     begin
-                        if(timer == 0)
+                        if(timer[15:8] == 0)
                         begin
                             irqs[1] <= 1;
                             timer[15:8] <= reg_preset[15:8];
                         end
                         else
-                            irqs[2] <= 1;
                             timer[15:8] <= timer[15:8] - 1;
                     end
                 end
