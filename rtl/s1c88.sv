@@ -1167,6 +1167,9 @@ module s1c88
                     end
                     else if(state == STATE_HALT)
                     begin
+                        // @hack: because I'm checking for opext == hAE for
+                        // next state.
+                        opext      <= 0;
                         state      <= STATE_HALT;
                         bus_status <= BUS_COMMAND_IDLE;
                         halt_counter <= halt_counter + 1;
@@ -1174,9 +1177,6 @@ module s1c88
                         begin
                             if(exception_factor != 0 && exception != EXCEPTION_TYPE_RESET)
                             begin
-                                // @hack
-                                opext <= 0;
-
                                 bus_status             <= BUS_COMMAND_MEM_READ;
                                 state                  <= STATE_IDLE;
                                 exception              <= exception_factor;

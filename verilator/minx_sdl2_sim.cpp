@@ -45,6 +45,7 @@ bool data_sent = false;
 bool irq_processing = false;
 int irq_copy_complete_old = 0;
 int num_cycles_since_sync = 0;
+int reset_counter = 0;
 
 bool gl_renderer_init(int buffer_width, int buffer_height)
 {
@@ -478,8 +479,14 @@ void simulate_steps(SimData* sim, int n_steps, AudioBuffer* audio_buffer = nullp
         //if(sim->timestamp == 53369744 + 1000000)
         //    sim_dump_stop(sim);
 
-        if(sim->timestamp >= 8)
+        if(sim->minx->reset == 1 && reset_counter < 8)
+            ++reset_counter;
+        else if(reset_counter >= 8)
+        {
             sim->minx->reset = 0;
+            reset_counter = 0;
+        }
+
         //if(sim->minx->address_out == 0x1479 && sim->minx->bus_status == BUS_MEM_WRITE && sim->minx->write)
         //{
         //    printf("%llu, 0x%x, 0x%x\n", sim->timestamp, sim->minx->rootp->minx__DOT__cpu__DOT__top_address, sim->minx->data_out);
@@ -754,6 +761,9 @@ int main(int argc, char** argv)
                         break;
                     case SDLK_z: // B
                         sim.minx->keys_active |= 0x02;
+                        break;
+                    case SDLK_r: // reset
+                        sim.minx->reset = 1;
                         break;
                     case SDLK_s:
                     case SDLK_c:
