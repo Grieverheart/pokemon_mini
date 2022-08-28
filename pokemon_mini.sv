@@ -171,8 +171,6 @@ module emu
 );
 
 // TODO list:
-// * implement loading of bios from file, and handle alternative bios setting
-//   of RTC.
 // * color palette
 // * convert s1c88 from using posedge/negedge to just using posedge?
 // * savestates?
@@ -335,7 +333,7 @@ end
 //reg sdram_read = 0;
 //always_ff @ (posedge clk_sys) sdram_read <= ~sdram_read;
 
-wire reset = RESET | status[0] | buttons[1] | cart_download | bk_loading;
+wire reset = RESET | status[0] | buttons[1] | cart_download | bios_download | bk_loading;
 reg [3:0] reset_counter;
 always_ff @ (posedge clk_sys)
 begin
@@ -581,15 +579,17 @@ assign AUDIO_R = sound_out;
 
 wire [7:0] bios_data_out;
 spram #(
-    .init_file("verilator/data/bios.hex"),
+    .init_file("verilator/data/freebios.hex"),
     .widthad_a(12),
     .width_a(8)
 ) bios
 (
-    .clock(clk_sys),
-    .address(minx_address_out[11:0]),
-    .wren(1'b0),
-    .q(bios_data_out)
+    .clock   (clk_sys),
+    .address (bios_download? ioctl_addr[11:0]: minx_address_out[11:0]),
+    .q       (bios_data_out),
+
+    .wren    (bios_download & ioctl_wr),
+    .data    (ioctl_dout)
 );
 
 wire [7:0] ram_data_out;
@@ -830,7 +830,8 @@ end
 
 
 // @check: Correct filetype?
-wire cart_download = ioctl_download;// && (filetype[5:0] == 6'h01 || filetype[7:6] == 0);
+wire cart_download = ioctl_download && filetype == 8'h01;
+wire bios_download = ioctl_download && filetype == 8'h00;
 wire [7:0] cartridge_data;
 sdram cartridge_rom
 (

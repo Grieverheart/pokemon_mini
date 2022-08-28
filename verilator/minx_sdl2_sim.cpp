@@ -299,14 +299,14 @@ void sim_load_eeprom(SimData* sim, const char* filepath)
 {
     uint8_t* eeprom = sim->minx->rootp->minx__DOT__eeprom__DOT__rom.m_storage;
     {
-        //strncpy((char*)eeprom, "GBMN", 4);
-        //eeprom[0x1FF2] = 0x01;
-        //eeprom[0x1FF3] = 0x03;
-        //eeprom[0x1FF4] = 0x01;
-        //eeprom[0x1FF5] = 0x1F;
-        FILE* fp = fopen(filepath, "rb");
-        fread(eeprom, 1, 8192, fp);
-        fclose(fp);
+        strncpy((char*)eeprom, "GBMN", 4);
+        eeprom[0x1FF2] = 0x01;
+        eeprom[0x1FF3] = 0x03;
+        eeprom[0x1FF4] = 0x01;
+        eeprom[0x1FF5] = 0x1F;
+        //FILE* fp = fopen(filepath, "rb");
+        //fread(eeprom, 1, 8192, fp);
+        //fclose(fp);
     }
     // @todo: Try initializing just a few required fields, like the GBMN and
     // see if that's sufficient for accepting the set datetime.
