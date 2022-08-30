@@ -514,7 +514,7 @@ begin
 
     pixel_value_red   <= ({8'h0, 8'hFF - pixel_intensity} * OFF_COLOR[0] + {8'h0, pixel_intensity} * ON_COLOR[0]) / 255;
     pixel_value_green <= ({8'h0, 8'hFF - pixel_intensity} * OFF_COLOR[1] + {8'h0, pixel_intensity} * ON_COLOR[1]) / 255;
-    pixel_value_blue  <= ({8'h0, pixel_intensity} * OFF_COLOR[2] + {8'h0, 8'hFF - pixel_intensity} * ON_COLOR[2]) / 255;
+    pixel_value_blue  <= ({8'h0, 8'hFF - pixel_intensity} * OFF_COLOR[2] + {8'h0, pixel_intensity} * ON_COLOR[2]) / 255;
 end
 
 
