@@ -41,7 +41,6 @@ module minx
     output [7:0] eeprom_read_data
 );
 
-    // @todo: Perhaps use irq_render_done instead?
     assign frame_complete = irq_render_done;
 
     // @todo: Design question: Move this logic to inside the eeprom module?

@@ -214,9 +214,9 @@ localparam CONF_STR = {
     "d0R[10],Save Backup RAM;",
     "d0O[11],Autosave,Off,On;",
     "-;",
+    "O[99:98],Frame Blend,off,2 frames,4 frames;",
     "O[122:121],Aspect ratio,Original,Full Screen,[ARC1],[ARC2];",
     "O23,Scandoubler Fx,None,HQ2x,CRT 25%,CRT 50%;",
-    "OAB,Scale,Normal,V-Integer,Narrower HV-Integer,Wider HV-Integer;",
     "-;",
     "T[0],Reset;",
     "R[0],Reset and close OSD;",
@@ -364,12 +364,14 @@ reg frame_complete_latch;
 (* ramstyle = "no_rw_check" *) reg [7:0] fb2[768];
 (* ramstyle = "no_rw_check" *) reg [7:0] fb3[768];
 reg [1:0] fb_write_index = 0;
+reg [1:0] fb_read_index = 0;
 wire [9:0] fb_read_address  = {1'b0, LCD_XSIZE} * {5'b0, ypos[6:3]} + {1'b0, xpos};
 wire [9:0] fb_write_address = {1'b0, LCD_XSIZE} * {5'b0, lcd_read_ypos} + {1'b0, lcd_read_xpos};
 reg [7:0] fb0_read;
 reg [7:0] fb1_read;
 reg [7:0] fb2_read;
 reg [7:0] fb3_read;
+wire [7:0] fb_read[0:3] = '{fb0_read, fb1_read, fb2_read, fb3_read};
 // Try putting them in same always block as lcd read block, below.
 // @todo: 6shades doesn't work because we are copying at copy complete instead
 // of render complete, and 6shades does not issue copy complete; it writes
@@ -381,7 +383,8 @@ always @ (posedge clk_sys)
 begin
     if(reset)
     begin
-        fb_write_index <= 0;
+        fb_read_index <= 0;
+        fb_write_index <= 1;
         frame_complete_latch <= 0;
         lcd_read_xpos <= 0;
         lcd_read_ypos <= 0;
@@ -413,6 +416,7 @@ begin
                 if(lcd_read_ypos == LCD_COLS - 1)
                 begin
                     fb_write_index <= fb_write_index + 1;
+                    fb_read_index <= fb_write_index;
                     frame_complete_latch <= 0;
                     lcd_read_ypos <= 0;
                 end
@@ -427,20 +431,41 @@ begin
 end
 
 reg [8:0] hpos,vpos;
-reg [7:0] pixel_value;
+reg [7:0] pixel_value_red;
+reg [7:0] pixel_value_green;
+reg [7:0] pixel_value_blue;
 // @todo: Latch lcd_contrast for each fb0-3?
 wire [7:0] pixel_on = (lcd_contrast >= 6'h20)? 8'd255: {lcd_contrast[4:0], 3'd0};
 
-// @todo: Change the color.
-wire [7:0] red   = pixel_value;
-wire [7:0] green = pixel_value;
-wire [7:0] blue  = pixel_value;
-wire [9:0] pixel_sum = (
-    {2'b0, pixel_on} * {9'b0, ~fb0_read[ypos[2:0]]} +
-    {2'b0, pixel_on} * {9'b0, ~fb1_read[ypos[2:0]]} +
-    {2'b0, pixel_on} * {9'b0, ~fb2_read[ypos[2:0]]} +
-    {2'b0, pixel_on} * {9'b0, ~fb3_read[ypos[2:0]]}
-);
+wire [7:0] red   = pixel_value_red;
+wire [7:0] green = pixel_value_green;
+wire [7:0] blue  = pixel_value_blue;
+
+wire [1:0] blend_mode = status[99:98];
+
+localparam bit[7:0] OFF_COLOR[0:2] = '{8'hB7, 8'hCA, 8'hB7};
+localparam bit[7:0] ON_COLOR[0:2]  = '{8'h04, 8'h16, 8'h04};
+
+// 3-shades
+wire [8:0] pixel_2frame_blend = 
+    ({1'd0, pixel_on} * {8'b0, fb_read[fb_read_index-0][ypos[2:0]]}) +
+    ({1'd0, pixel_on} * {8'b0, fb_read[fb_read_index-1][ypos[2:0]]});
+
+// 5-shades
+wire [9:0] pixel_4frame_blend = 
+    ({2'd0, pixel_on} * {9'b0, fb_read[fb_read_index-0][ypos[2:0]]}) +
+    ({2'd0, pixel_on} * {9'b0, fb_read[fb_read_index-1][ypos[2:0]]}) +
+    ({2'd0, pixel_on} * {9'b0, fb_read[fb_read_index-2][ypos[2:0]]}) +
+    ({2'd0, pixel_on} * {9'b0, fb_read[fb_read_index-3][ypos[2:0]]});
+
+// @todo: Perhaps make intensity go to 256 instead of 255. Then we can just
+// shift the final color result instead of dividing by 256.
+wire [7:0] pixel_intensity =
+    (blend_mode == 0)?
+        pixel_on * {7'b0, fb_read[fb_read_index][ypos[2:0]]}:
+    ((blend_mode == 1)?
+        pixel_2frame_blend[8:1]:
+        pixel_4frame_blend[9:2]);
 
 reg [7:0] xpos, ypos;
 always @ (posedge CLK_VIDEO)
@@ -487,7 +512,9 @@ begin
 
     end
 
-    pixel_value <= pixel_sum[9:2];
+    pixel_value_red   <= ({8'h0, 8'hFF - pixel_intensity} * OFF_COLOR[0] + {8'h0, pixel_intensity} * ON_COLOR[0]) / 255;
+    pixel_value_green <= ({8'h0, 8'hFF - pixel_intensity} * OFF_COLOR[1] + {8'h0, pixel_intensity} * ON_COLOR[1]) / 255;
+    pixel_value_blue  <= ({8'h0, pixel_intensity} * OFF_COLOR[2] + {8'h0, 8'hFF - pixel_intensity} * ON_COLOR[2]) / 255;
 end
 
 

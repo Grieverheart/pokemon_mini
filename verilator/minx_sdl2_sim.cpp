@@ -5,7 +5,6 @@
 #include <cstdio>
 #include <cstring>
 #include <cstdint>
-#include <cstring>
 
 #include "instruction_cycles.h"
 
@@ -192,6 +191,9 @@ struct SimData
     uint8_t* bios_touched;
     uint8_t* cartridge_touched;
     uint8_t* instructions_executed;
+
+    uint8_t fb_write_index;
+    uint8_t framebuffers[768*8];
 };
 
 struct AudioBuffer
@@ -228,6 +230,9 @@ void sim_init(SimData* sim, const char* cartridge_path)
 
     sim->cartridge_touched = (uint8_t*) calloc(1, sim->cartridge_file_size);
     sim->instructions_executed = (uint8_t*) calloc(1, 0x300);
+
+    sim->fb_write_index = 0;
+    memset(sim->framebuffers, 0x0, 8*768);
 
     sim->minx = new Vminx;
     sim->minx->clk = 0;
@@ -323,6 +328,7 @@ void sim_load_eeprom(SimData* sim, const char* filepath)
 
 void simulate_steps(SimData* sim, int n_steps, AudioBuffer* audio_buffer = nullptr)
 {
+    uint8_t frame_complete_latch = sim->minx->frame_complete;
     for(int i = 0; i < n_steps && !Verilated::gotFinish(); ++i)
     {
         sim->minx->clk = 1;
@@ -360,6 +366,20 @@ void simulate_steps(SimData* sim, int n_steps, AudioBuffer* audio_buffer = nullp
             audio_buffer->data[i] = (2 * sound_pulse - 1) * multiplier;
             //if(audio_buffer->data[i] < 0) --audio_buffer->data[i];
         }
+
+        if(sim->minx->frame_complete && !frame_complete_latch)
+        {
+            for (int yC=0; yC<8; yC++)
+            {
+                for (int xC=0; xC<96; xC++)
+                {
+                    uint8_t data = sim->minx->rootp->minx__DOT__lcd__DOT__lcd_data[yC * 132 + xC];
+                    sim->framebuffers[768 * sim->fb_write_index + yC * 96 + xC] = data;
+                }
+            }
+            sim->fb_write_index = (sim->fb_write_index + 1) % 8;
+        }
+        frame_complete_latch = sim->minx->frame_complete;
 
         if(sim->minx->rootp->minx__DOT__irq_copy_complete && irq_copy_complete_old == 0)
         {
@@ -577,6 +597,69 @@ uint8_t* get_lcd_image(const SimData* sim)
     return image_data;
 }
 
+uint8_t* render_framebuffers(const SimData* sim)
+{
+    uint8_t contrast = sim->minx->rootp->minx__DOT__lcd__DOT__contrast;
+    if(contrast > 0x20) contrast = 0x20;
+
+    uint8_t* image_data = new uint8_t[96*64];
+
+    //static uint8_t levels_covered[16] = {};
+
+    for (int yC=0; yC<8; yC++)
+    {
+        for (int xC=0; xC<96; xC++)
+        {
+            uint8_t fb_idx = (sim->fb_write_index + 7) % 8;
+            uint8_t d0 = sim->framebuffers[768 * fb_idx + yC * 96 + xC];
+            fb_idx = (sim->fb_write_index + 6) % 8;
+            uint8_t d1 = sim->framebuffers[768 * fb_idx + yC * 96 + xC];
+            fb_idx = (sim->fb_write_index + 5) % 8;
+            uint8_t d2 = sim->framebuffers[768 * fb_idx + yC * 96 + xC];
+            fb_idx = (sim->fb_write_index + 4) % 8;
+            uint8_t d3 = sim->framebuffers[768 * fb_idx + yC * 96 + xC];
+            fb_idx = (sim->fb_write_index + 3) % 8;
+            uint8_t d4 = sim->framebuffers[768 * fb_idx + yC * 96 + xC];
+            fb_idx = (sim->fb_write_index + 2) % 8;
+            uint8_t d5 = sim->framebuffers[768 * fb_idx + yC * 96 + xC];
+            fb_idx = (sim->fb_write_index + 1) % 8;
+            uint8_t d6 = sim->framebuffers[768 * fb_idx + yC * 96 + xC];
+            for(int i = 0; i < 8; ++i)
+            {
+                //uint8_t sum_pixel = 0
+                //    | ((d0 >> i) & 1) << 3
+                //    | ((d1 >> i) & 1) << 2
+                //    | ((d2 >> i) & 1) << 1
+                //    | ((d3 >> i) & 1) << 0;
+                //levels_covered[sum_pixel] = 1;
+
+                //uint8_t pixel_map[16] = {1, 1, 1, 2, 3, 3, 3, 4, 4, 4, 4, 4, 5, 5, 5, 5};
+                //uint8_t level = pixel_map[sum_pixel];
+
+                int idx = 96 * (63 - 8 * yC - i) + xC;
+                //float output = 255.0 * (6 - level);
+                float output = 0.0;
+                output += 1.0 * (((~d0 >> i) & 1)? 255.0: 255.0 * (1.0 - (float)contrast / 0x20));
+                output += 1.0 * (((~d1 >> i) & 1)? 255.0: 255.0 * (1.0 - (float)contrast / 0x20));
+                //output += 1.0 * (((~d2 >> i) & 1)? 255.0: 255.0 * (1.0 - (float)contrast / 0x20));
+                //output += 1.0 * (((~d3 >> i) & 1)? 255.0: 255.0 * (1.0 - (float)contrast / 0x20));
+                //output += 1.0 * (((~d4 >> i) & 1)? 255.0: 255.0 * (1.0 - (float)contrast / 0x20));
+                //output += 1.0 * (((~d5 >> i) & 1)? 255.0: 255.0 * (1.0 - (float)contrast / 0x20));
+                //output += 1.0 * (((~d6 >> i) & 1)? 255.0: 255.0 * (1.0 - (float)contrast / 0x20));
+                image_data[idx] = output / 2.0;
+            }
+        }
+    }
+
+    //printf("%d%d%d%d\n", frames01_same, frames12_same, frames23_same, frames34_same);
+
+    //for(int i = 0; i < 16; ++i)
+    //    printf("%d", levels_covered[i]);
+    //printf("\n");
+
+    return image_data;
+}
+
 void audio_callback(void* userdata, uint8_t* stream, int len)
 {
     memset(stream, 0, len);
@@ -588,6 +671,7 @@ void audio_callback(void* userdata, uint8_t* stream, int len)
 }
 
 // @todo: Create a call stack for keeping track call/return problems.
+// @todo: Interpolate frames like in MiSTer module and experiment.
 int main(int argc, char** argv)
 {
     size_t num_sim_steps = 150000;
@@ -601,8 +685,9 @@ int main(int argc, char** argv)
     // which is initialized to 0 if Start was not issued. 6shades calls End
     // without Start.
     //const char* rom_filepath = "data/6shades.min";
+    const char* rom_filepath = "data/pokemon_zany_cards_u.min";
     //const char* rom_filepath = "data/pichu_bros_mini_j.min";
-    const char* rom_filepath = "data/pokemon_anime_card_daisakusen_j.min";
+    //const char* rom_filepath = "data/pokemon_anime_card_daisakusen_j.min";
     //const char* rom_filepath = "data/snorlaxs_lunch_time_j.min";
     //const char* rom_filepath = "data/pokemon_shock_tetris_j.min";
     //const char* rom_filepath = "data/togepi_no_daibouken_j.min";
@@ -828,7 +913,8 @@ int main(int argc, char** argv)
 
         if(sim_is_running)
             simulate_steps(&sim, min(num_sim_steps, (int)4000000 * frame_sec), &sim_audio_buffer);
-        uint8_t* lcd_image = get_lcd_image(&sim);
+        uint8_t* lcd_image = render_framebuffers(&sim);
+        //uint8_t* lcd_image = get_lcd_image(&sim);
         gl_renderer_draw(96, 64, lcd_image);
         delete[] lcd_image;
 
