@@ -171,7 +171,9 @@ module emu
 );
 
 // TODO list:
+// * shock sensor
 // * color palette
+// * rumble
 // * convert s1c88 from using posedge/negedge to just using posedge?
 // * savestates?
 
