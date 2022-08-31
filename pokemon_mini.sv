@@ -171,7 +171,7 @@ module emu
 );
 
 // TODO list:
-// * shock sensor
+// * lcd invert mode
 // * color palette
 // * rumble
 // * convert s1c88 from using posedge/negedge to just using posedge?
@@ -222,8 +222,8 @@ localparam CONF_STR = {
     "-;",
     "T[0],Reset;",
     "R[0],Reset and close OSD;",
-    // A, B, C, Power
-    "J0,A,B,R;",//,select;",
+    // A, B, C, Shock, Power
+    "J0,A,B,R,L;",//,select;",
     "V,v",`BUILD_DATE
 };
 
@@ -522,16 +522,17 @@ end
 
 // in:  {select, R, b, a, up, down, left, right}
 // out: {power, right, left, down, up, c, b, a}
-wire [7:0] keys_active =
+wire [8:0] keys_active =
 {
-    1'b0,//joystick_0[7], // (select) power
+    joystick_0[7], //      (L) Shock
+    1'b0,          // (select) Power //@todo?
     joystick_0[0], //  (right) right
     joystick_0[1], //   (left) left
     joystick_0[2], //   (down) down
     joystick_0[3], //     (up) up
-    joystick_0[6], //      (R) c
-    joystick_0[5], //      (b) b
-    joystick_0[4]  //      (a) a
+    joystick_0[6], //      (R) C
+    joystick_0[5], //      (B) B
+    joystick_0[4]  //      (A) A
 };
 
 wire [5:0] lcd_contrast;

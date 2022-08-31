@@ -685,10 +685,10 @@ int main(int argc, char** argv)
     // without Start.
     //const char* rom_filepath = "data/6shades.min";
     //const char* rom_filepath = "data/party_j.min";
-    //const char* rom_filepath = "data/pokemon_party_mini_u.min";
+    const char* rom_filepath = "data/pokemon_party_mini_u.min";
     // @todo: In-game contrast setting no doing anything below half.
     //const char* rom_filepath = "data/pokemon_pinball_mini_u.min";
-    const char* rom_filepath = "data/pokemon_puzzle_collection_u.min";
+    //const char* rom_filepath = "data/pokemon_puzzle_collection_u.min";
     //const char* rom_filepath = "data/pokemon_zany_cards_u.min";
     //const char* rom_filepath = "data/pichu_bros_mini_j.min";
     //const char* rom_filepath = "data/pokemon_anime_card_daisakusen_j.min";
@@ -854,9 +854,16 @@ int main(int argc, char** argv)
                     case SDLK_r: // reset
                         sim.minx->reset = 1;
                         break;
-                    case SDLK_s:
+                    case SDLK_s: // C
                     case SDLK_c:
                         sim.minx->keys_active |= 0x04;
+                        break;
+                    case SDLK_t: // Shock
+                    case SDLK_j:
+                        sim.minx->keys_active |= 0x100;
+                        break;
+                    case SDLK_b: // Power
+                        sim.minx->keys_active |= 0x80;
                         break;
                     default:
                         break;
@@ -884,9 +891,16 @@ int main(int argc, char** argv)
                 case SDLK_z: // B
                     sim.minx->keys_active &= ~0x02;
                     break;
-                case SDLK_s:
+                case SDLK_s: // C
                 case SDLK_c:
                     sim.minx->keys_active &= ~0x04;
+                    break;
+                case SDLK_t: // Shock
+                case SDLK_j:
+                    sim.minx->keys_active &= ~0x100;
+                    break;
+                case SDLK_b: // Power
+                    sim.minx->keys_active &= ~0x80;
                     break;
                 default:
                     break;
