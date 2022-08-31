@@ -276,8 +276,10 @@ end
 
 reg [6:0] reg_counter_old;
 reg [31:0] cycle_count;
+wire [7:0] column_write_data = (tile_data >> map_y[2:0]) | (bus_data_in << (8 - map_y[2:0]));
 always_ff @ (negedge clk)
 begin
+
     cycle_count <= cycle_count + 1;
     if(clk_ce_cpu)
     begin
@@ -425,7 +427,7 @@ begin
                             end
                             else
                             begin
-                                data_out <= (tile_data >> map_y[2:0]) | (bus_data_in << (8 - map_y[2:0]));
+                                data_out <= reg_mode[0]? ~column_write_data: column_write_data;
                                 bus_address_out <= 24'h1000 + yC * 96 + {16'h0, xC};
 
                                 xC <= xC + 1;
