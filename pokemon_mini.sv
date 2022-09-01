@@ -171,10 +171,11 @@ module emu
 );
 
 // TODO list:
-// * rumble
-// * color palette
-// * convert s1c88 from using posedge/negedge to just using posedge?
-// * savestates?
+// * CRT
+// * Double base clock (clk_sys) to 32kHz
+// * Color palette
+// * Convert s1c88 from using posedge/negedge to just using posedge?
+// * Savestates?
 
 ///////// Default values for ports not used in this core /////////
 
@@ -299,6 +300,7 @@ hps_io
 
     .ps2_key(ps2_key),
     .joystick_0(joystick_0),
+    .joystick_0_rumble(minx_rumble? 16'h00FF: 16'h0000),
 
     .RTC(rtc_timestamp)
 );
@@ -622,6 +624,7 @@ wire eeprom_internal_we;
 wire eeprom_we = eeprom_we_rtc | bk_wr;
 wire [12:0] eeprom_address   = eeprom_we_rtc ? eeprom_write_address_rtc: bk_addr;
 wire [7:0] eeprom_write_data = eeprom_we_rtc ? eeprom_write_data_rtc: bk_data;
+wire minx_rumble;
 minx minx
 (
     .clk                   (clk_sys),
@@ -651,6 +654,7 @@ minx minx
 
     .sound_pulse           (sound_pulse),
     .sound_volume          (sound_volume),
+    .rumble                (minx_rumble),
 
     .validate_rtc          (validate_rtc),
     .eeprom_internal_we    (eeprom_internal_we),

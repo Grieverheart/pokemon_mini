@@ -31,6 +31,7 @@ module minx
 
     output sound_pulse,
     output [1:0] sound_volume,
+    output rumble,
 
     input validate_rtc,
 
@@ -60,6 +61,7 @@ module minx
                 reg_io_data <= cpu_data_out;
         end
     end
+    assign rumble = reg_io_dir[4] ? reg_io_data[4]: 0;
 
     wire clk_ce = cpu_clk_prescale & clk_ce_4mhz;
     reg cpu_clk_prescale = 0;
