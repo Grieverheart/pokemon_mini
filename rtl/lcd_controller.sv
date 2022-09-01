@@ -13,7 +13,7 @@ module lcd_controller
     input [3:0] read_y,
     output [7:0] read_column
 );
-assign lcd_contrast = contrast;
+assign lcd_contrast = max_contrast_enabled ? 6'h3F: contrast;
 
 reg [5:0] contrast;
 reg contrast_set;
@@ -42,7 +42,13 @@ wire [10:0] pixel_address = page * 11'd132 + (
 reg [7:0] lcd_read;
 
 // @note: Where are these used? Can we test?
-assign read_column = all_pixels_on_enabled? 8'hF: (invert_pixels_enabled? ~column_latch: column_latch);
+assign read_column = display_enabled ?
+    (all_pixels_on_enabled ?
+        8'hFF:
+        (invert_pixels_enabled ? ~column_latch: column_latch)
+    ):
+    8'h0;
+
 reg [7:0] column_latch;
 always_ff @ (posedge clk)
 begin

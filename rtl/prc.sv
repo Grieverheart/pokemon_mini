@@ -108,6 +108,8 @@ reg [23:0] reg_sprite_base;
 reg [6:0] reg_scroll_x;
 reg [6:0] reg_scroll_y;
 reg [6:0] reg_counter;
+reg [6:0] map_scroll_x;
+reg [6:0] map_scroll_y;
 
 reg [1:0] state;
 wire [1:0] next_state =
@@ -252,8 +254,8 @@ wire [7:0] sprite_color_masked_and_shifted = (top_or_bottom == 0)?
     (sprite_color & ~sprite_mask) << sprite_abs_y[2:0]:
     (sprite_color & ~sprite_mask) >> (4'd8 - {1'b0, sprite_abs_y[2:0]});
 
-wire [7:0] map_x = {1'd0, xC} + {1'd0, reg_scroll_x};
-wire [7:0] map_y = {1'd0, yC, 3'd0} + {1'd0, reg_scroll_y};
+wire [7:0] map_x = {1'd0, xC} + {1'd0, map_scroll_x};
+wire [7:0] map_y = {1'd0, yC, 3'd0} + {1'd0, map_scroll_y};
 
 always_ff @ (negedge clk)
 begin
@@ -297,6 +299,8 @@ begin
             reg_sprite_base   <= 24'h0;
             reg_scroll_x      <= 7'd0;
             reg_scroll_y      <= 7'd0;
+            map_scroll_x      <= 7'd0;
+            map_scroll_y      <= 7'd0;
             state             <= PRC_STATE_IDLE;
             yC                <= 0;
             xC                <= 0;
@@ -330,11 +334,19 @@ begin
 
                     // @todo: These should be set regardless!
                     24'h2085: // PRC Map Vertical Scroll
+                    begin
+                        //if(bus_data_in[6:0] > 0)
+                        //    $display("%d, %d", bus_data_in[6:0], map_height*8-64);
+                        reg_scroll_y <= bus_data_in[6:0];
                         if(bus_data_in[6:0] <= (map_height*8-64))
-                            reg_scroll_y <= bus_data_in[6:0];
+                            map_scroll_y <= bus_data_in[6:0];
+                    end
                     24'h2086: // PRC Map Horizontal Scroll
+                    begin
+                        reg_scroll_x <= bus_data_in[6:0];
                         if(bus_data_in[6:0] <= (map_width*8-96))
-                            reg_scroll_x <= bus_data_in[6:0];
+                            map_scroll_x <= bus_data_in[6:0];
+                    end
 
                     24'h2087: // PRC Sprite Tile Base Low
                         reg_sprite_base[7:6] <= bus_data_in[7:6];

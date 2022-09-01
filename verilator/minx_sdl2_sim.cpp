@@ -370,14 +370,22 @@ void simulate_steps(SimData* sim, int n_steps, AudioBuffer* audio_buffer = nullp
 
         if(sim->minx->frame_complete && !frame_complete_latch)
         {
-            for (int yC=0; yC<8; yC++)
+            if(sim->minx->rootp->minx__DOT__lcd__DOT__display_enabled)
             {
-                for (int xC=0; xC<96; xC++)
+                for (int yC=0; yC<8; yC++)
                 {
-                    uint8_t data = sim->minx->rootp->minx__DOT__lcd__DOT__lcd_data[yC * 132 + xC];
-                    sim->framebuffers[768 * sim->fb_write_index + yC * 96 + xC] = data;
+                    for (int xC=0; xC<96; xC++)
+                    {
+                        uint8_t data = sim->minx->rootp->minx__DOT__lcd__DOT__all_pixels_on_enabled ?
+                            0xFF:
+                            sim->minx->rootp->minx__DOT__lcd__DOT__invert_pixels_enabled?
+                                sim->minx->rootp->minx__DOT__lcd__DOT__lcd_data[yC * 132 + xC] ^ 0xFF:
+                                sim->minx->rootp->minx__DOT__lcd__DOT__lcd_data[yC * 132 + xC];
+                        sim->framebuffers[768 * sim->fb_write_index + yC * 96 + xC] = data;
+                    }
                 }
             }
+            else memset(sim->framebuffers + 768 * sim->fb_write_index, 0, 96*8);
             sim->fb_write_index = (sim->fb_write_index + 1) % 8;
         }
         frame_complete_latch = sim->minx->frame_complete;
@@ -494,10 +502,10 @@ void simulate_steps(SimData* sim, int n_steps, AudioBuffer* audio_buffer = nullp
         //    if(!sim->tfp)
         //        sim_dump_start(sim, "temp.vcd");
         //}
-        //if(sim->timestamp == 53369744 - 10000000)
+        //if(sim->timestamp == 82824492 - 10000000)
         //    sim_dump_start(sim, "sim.vcd");
 
-        //if(sim->timestamp == 53369744 + 1000000)
+        //if(sim->timestamp == 82824492 + 1000000)
         //    sim_dump_stop(sim);
 
         if(sim->minx->reset == 1 && reset_counter < 8)
@@ -544,8 +552,8 @@ void simulate_steps(SimData* sim, int n_steps, AudioBuffer* audio_buffer = nullp
         }
         else if(sim->minx->bus_status == BUS_MEM_WRITE && sim->minx->write)
         {
-            if(sim->minx->address_out == 0x2000)
-                printf("0x%x: 0x%x\n", sim->minx->rootp->minx__DOT__cpu__DOT__top_address, sim->minx->data_out);
+            //if(sim->minx->address_out == 0x2085 && sim->minx->data_out > 0)
+            //    printf("0x%x: 0x%x, timestamp: %d\n", sim->minx->rootp->minx__DOT__cpu__DOT__top_address, sim->minx->data_out, sim->timestamp);
 
             // memory write
             if(sim->minx->address_out < 0x1000)
@@ -743,7 +751,7 @@ int main(int argc, char** argv)
     //const char* rom_filepath = "data/6shades.min";
     //const char* rom_filepath = "data/party_j.min";
     //const char* rom_filepath = "data/pokemon_party_mini_u.min";
-    const char* rom_filepath = "data/pokemon_pinball_mini_u.min";
+    //const char* rom_filepath = "data/pokemon_pinball_mini_u.min";
     //const char* rom_filepath = "data/pokemon_puzzle_collection_u.min";
     //const char* rom_filepath = "data/pokemon_zany_cards_u.min";
     //const char* rom_filepath = "data/pichu_bros_mini_j.min";
@@ -752,7 +760,7 @@ int main(int argc, char** argv)
     //const char* rom_filepath = "data/pokemon_shock_tetris_j.min";
     //@todo:  It's showing random tiles between cutscene cards, when the card is
     // coming from the top.
-    //const char* rom_filepath = "data/togepi_no_daibouken_j.min";
+    const char* rom_filepath = "data/togepi_no_daibouken_j.min";
     //const char* rom_filepath = "data/pokemon_race_mini_j.min";
     //const char* rom_filepath = "data/pokemon_sodateyasan_mini_j.min";
     //const char* rom_filepath = "data/pokemon_puzzle_collection_j.min";
