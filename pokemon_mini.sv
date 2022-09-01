@@ -171,9 +171,8 @@ module emu
 );
 
 // TODO list:
-// * lcd invert mode
-// * color palette
 // * rumble
+// * color palette
 // * convert s1c88 from using posedge/negedge to just using posedge?
 // * savestates?
 
@@ -216,7 +215,7 @@ localparam CONF_STR = {
     "d0R[10],Save Backup RAM;",
     "d0O[11],Autosave,Off,On;",
     "-;",
-    "O[99:98],Frame Blend,off,2 frames,4 frames;",
+    "O[98],Frame Blend,off,on;",
     "O[122:121],Aspect ratio,Original,Full Screen,[ARC1],[ARC2];",
     "O23,Scandoubler Fx,None,HQ2x,CRT 25%,CRT 50%;",
     "-;",
@@ -373,7 +372,8 @@ reg [7:0] fb0_read;
 reg [7:0] fb1_read;
 reg [7:0] fb2_read;
 reg [7:0] fb3_read;
-wire [7:0] fb_read[0:3] = '{fb0_read, fb1_read, fb2_read, fb3_read};
+wire [7:0] fb_read[0:3];
+assign fb_read = '{fb0_read, fb1_read, fb2_read, fb3_read};
 // Try putting them in same always block as lcd read block, below.
 // @todo: 6shades doesn't work because we are copying at copy complete instead
 // of render complete, and 6shades does not issue copy complete; it writes
@@ -437,37 +437,104 @@ reg [7:0] pixel_value_red;
 reg [7:0] pixel_value_green;
 reg [7:0] pixel_value_blue;
 // @todo: Latch lcd_contrast for each fb0-3?
-wire [7:0] pixel_on = (lcd_contrast >= 6'h20)? 8'd255: {lcd_contrast[4:0], 3'd0};
+//wire [7:0] pixel_on = (lcd_contrast >= 6'h20)? 8'd255: {lcd_contrast[4:0], 3'd0};
 
 wire [7:0] red   = pixel_value_red;
 wire [7:0] green = pixel_value_green;
 wire [7:0] blue  = pixel_value_blue;
 
-wire [1:0] blend_mode = status[99:98];
+wire blend_mode = status[98];
 
 localparam bit[7:0] OFF_COLOR[0:2] = '{8'hB7, 8'hCA, 8'hB7};
 localparam bit[7:0] ON_COLOR[0:2]  = '{8'h04, 8'h16, 8'h04};
 
-// 3-shades
-wire [8:0] pixel_2frame_blend = 
-    ({1'd0, pixel_on} * {8'b0, fb_read[fb_read_index-0][ypos[2:0]]}) +
-    ({1'd0, pixel_on} * {8'b0, fb_read[fb_read_index-1][ypos[2:0]]});
+// Contrast level on light and dark pixel
+localparam bit[7:0] contrast_level_map[128] = '{
+     8'd0,   8'd4,   //  0 (0x00)
+     8'd0,   8'd4,   //  1 (0x01)
+     8'd0,   8'd4,   //  2 (0x02)
+     8'd0,   8'd4,   //  3 (0x03)
+     8'd0,   8'd6,   //  4 (0x04)
+     8'd0,  8'd11,   //  5 (0x05)
+     8'd0,  8'd17,   //  6 (0x06)
+     8'd0,  8'd24,   //  7 (0x07)
+     8'd0,  8'd31,   //  8 (0x08)
+     8'd0,  8'd40,   //  9 (0x09)
+     8'd0,  8'd48,   // 10 (0x0A)
+     8'd0,  8'd57,   // 11 (0x0B)
+     8'd0,  8'd67,   // 12 (0x0C)
+     8'd0,  8'd77,   // 13 (0x0D)
+     8'd0,  8'd88,   // 14 (0x0E)
+     8'd0,  8'd99,   // 15 (0x0F)
+     8'd0, 8'd110,   // 16 (0x10)
+     8'd0, 8'd122,   // 17 (0x11)
+     8'd0, 8'd133,   // 18 (0x12)
+     8'd0, 8'd146,   // 19 (0x13)
+     8'd0, 8'd158,   // 20 (0x14)
+     8'd0, 8'd171,   // 21 (0x15)
+     8'd0, 8'd184,   // 22 (0x16)
+     8'd0, 8'd198,   // 23 (0x17)
+     8'd0, 8'd212,   // 24 (0x18)
+     8'd0, 8'd226,   // 25 (0x19)
+     8'd0, 8'd240,   // 26 (0x1A)
+     8'd0, 8'd255,   // 27 (0x1B)
+     8'd2, 8'd255,   // 28 (0x1C)
+     8'd5, 8'd255,   // 29 (0x1D)
+    8'd10, 8'd255,   // 30 (0x1E)
+    8'd15, 8'd255,   // 31 (0x1F)
+    8'd21, 8'd255,   // 32 (0x20)
+    8'd27, 8'd255,   // 33 (0x21)
+    8'd34, 8'd255,   // 34 (0x22)
+    8'd41, 8'd255,   // 35 (0x23)
+    8'd48, 8'd255,   // 36 (0x24)
+    8'd56, 8'd255,   // 37 (0x25)
+    8'd64, 8'd255,   // 38 (0x26)
+    8'd73, 8'd255,   // 39 (0x27)
+    8'd81, 8'd255,   // 40 (0x28)
+    8'd90, 8'd255,   // 41 (0x29)
+   8'd100, 8'd255,   // 42 (0x2A)
+   8'd109, 8'd255,   // 43 (0x2B)
+   8'd119, 8'd255,   // 44 (0x2C)
+   8'd129, 8'd255,   // 45 (0x2D)
+   8'd139, 8'd255,   // 46 (0x2E)
+   8'd149, 8'd255,   // 47 (0x2F)
+   8'd160, 8'd255,   // 48 (0x30)
+   8'd171, 8'd255,   // 49 (0x31)
+   8'd182, 8'd255,   // 50 (0x32)
+   8'd193, 8'd255,   // 51 (0x33)
+   8'd204, 8'd255,   // 52 (0x34)
+   8'd216, 8'd255,   // 53 (0x35)
+   8'd228, 8'd255,   // 54 (0x36)
+   8'd240, 8'd255,   // 55 (0x37)
+   8'd240, 8'd255,   // 56 (0x38)
+   8'd240, 8'd255,   // 57 (0x39)
+   8'd240, 8'd255,   // 58 (0x3A)
+   8'd240, 8'd255,   // 59 (0x3B)
+   8'd240, 8'd255,   // 60 (0x3C)
+   8'd240, 8'd255,   // 61 (0x3D)
+   8'd240, 8'd255,   // 62 (0x3E)
+   8'd240, 8'd255    // 63 (0x3F)
+};
+
+function [7:0] get_pixel_intensity(input px);
+    get_pixel_intensity = px?
+        contrast_level_map[{lcd_contrast,1'b1}]:
+        contrast_level_map[{lcd_contrast,1'b0}];
+endfunction
 
 // 5-shades
 wire [9:0] pixel_4frame_blend = 
-    ({2'd0, pixel_on} * {9'b0, fb_read[fb_read_index-0][ypos[2:0]]}) +
-    ({2'd0, pixel_on} * {9'b0, fb_read[fb_read_index-1][ypos[2:0]]}) +
-    ({2'd0, pixel_on} * {9'b0, fb_read[fb_read_index-2][ypos[2:0]]}) +
-    ({2'd0, pixel_on} * {9'b0, fb_read[fb_read_index-3][ypos[2:0]]});
+    {2'b0, get_pixel_intensity(fb_read[fb_read_index-0][ypos[2:0]])} +
+    {2'b0, get_pixel_intensity(fb_read[fb_read_index-1][ypos[2:0]])} +
+    {2'b0, get_pixel_intensity(fb_read[fb_read_index-2][ypos[2:0]])} +
+    {2'b0, get_pixel_intensity(fb_read[fb_read_index-3][ypos[2:0]])};
 
 // @todo: Perhaps make intensity go to 256 instead of 255. Then we can just
 // shift the final color result instead of dividing by 256.
 wire [7:0] pixel_intensity =
     (blend_mode == 0)?
-        pixel_on * {7'b0, fb_read[fb_read_index][ypos[2:0]]}:
-    ((blend_mode == 1)?
-        pixel_2frame_blend[8:1]:
-        pixel_4frame_blend[9:2]);
+        get_pixel_intensity(fb_read[fb_read_index][ypos[2:0]]):
+        pixel_4frame_blend[9:2];
 
 reg [7:0] xpos, ypos;
 always @ (posedge CLK_VIDEO)
@@ -514,9 +581,9 @@ begin
 
     end
 
-    pixel_value_red   <= ({8'h0, 8'hFF - pixel_intensity} * OFF_COLOR[0] + {8'h0, pixel_intensity} * ON_COLOR[0]) / 255;
-    pixel_value_green <= ({8'h0, 8'hFF - pixel_intensity} * OFF_COLOR[1] + {8'h0, pixel_intensity} * ON_COLOR[1]) / 255;
-    pixel_value_blue  <= ({8'h0, 8'hFF - pixel_intensity} * OFF_COLOR[2] + {8'h0, pixel_intensity} * ON_COLOR[2]) / 255;
+    pixel_value_red   <= ({8'h0, 8'hFF - pixel_intensity} * OFF_COLOR[0] + {8'h0, pixel_intensity} * ON_COLOR[0]) / 16'd255;
+    pixel_value_green <= ({8'h0, 8'hFF - pixel_intensity} * OFF_COLOR[1] + {8'h0, pixel_intensity} * ON_COLOR[1]) / 16'd255;
+    pixel_value_blue  <= ({8'h0, 8'hFF - pixel_intensity} * OFF_COLOR[2] + {8'h0, pixel_intensity} * ON_COLOR[2]) / 16'd255;
 end
 
 
@@ -553,8 +620,8 @@ wire sound_pulse;
 wire [1:0] sound_volume;
 wire eeprom_internal_we;
 wire eeprom_we = eeprom_we_rtc | bk_wr;
-wire [12:0] eeprom_address = eeprom_we_rtc? eeprom_write_address_rtc: bk_addr;
-wire [7:0] eeprom_write_data = eeprom_we_rtc? eeprom_write_data_rtc: bk_data;
+wire [12:0] eeprom_address   = eeprom_we_rtc ? eeprom_write_address_rtc: bk_addr;
+wire [7:0] eeprom_write_data = eeprom_we_rtc ? eeprom_write_data_rtc: bk_data;
 minx minx
 (
     .clk                   (clk_sys),
@@ -660,9 +727,17 @@ wire [7:0] rtc_sec   = bcd2bin(rtc_timestamp[7:0]);
 
 wire [7:0] rtc_checksum = rtc_year + rtc_month + rtc_day + rtc_hour + rtc_min + rtc_sec;
 
-reg [3:0] eeprom_write_stage;
-// @todo: Test eeprom datetime setting.
-// @todo: Should we check that this only runs once?
+localparam bit[7:0] eeprom_data_array[0:10] = '{
+    8'h47, 8'h42, 8'h4D, 8'h4E,
+    8'h01, 8'h03, 8'h01, 8'h1F,
+    8'h00, 8'h00, 8'h00
+};
+localparam bit[12:0] eeprom_address_array[0:10] = '{
+    13'h0000, 13'h0001, 13'h0002, 13'h0003,
+    13'h1FF2, 13'h1FF3, 13'h1FF4, 13'h1FF5,
+    13'h1FF6, 13'h1FF7, 13'h1FF8
+};
+reg [4:0] eeprom_write_stage;
 always_ff @ (posedge clk_sys)
 begin
     if(minx_address_out == 24'hAB)
@@ -671,81 +746,55 @@ begin
     if(eeprom_write_stage > 0)
     begin
         eeprom_write_stage <= eeprom_write_stage + 1;
+
+        if(eeprom_write_stage < 5'd12)
+        begin
+            eeprom_write_address_rtc <= eeprom_address_array[eeprom_write_stage[3:0]-4'd1];
+            eeprom_write_data_rtc    <= eeprom_data_array[eeprom_write_stage[3:0]-4'd1];
+        end
+
         case(eeprom_write_stage)
-            1:
+            'd1:
             begin
                 eeprom_we_rtc             <= 1;
                 validate_rtc              <= 1;
-
-                eeprom_write_address_rtc <= 13'h0;
-                eeprom_write_data_rtc    <= 8'h47;
             end
-            2:
-            begin
-                eeprom_write_address_rtc <= 13'h1;
-                eeprom_write_data_rtc    <= 8'h42;
-            end
-            3:
-            begin
-                eeprom_write_address_rtc <= 13'h2;
-                eeprom_write_data_rtc    <= 8'h4D;
-            end
-            4:
-            begin
-                eeprom_write_address_rtc <= 13'h3;
-                eeprom_write_data_rtc    <= 8'h4E;
-            end
-            5:
-            begin
-                eeprom_write_address_rtc <= 13'h1FF6;
-                eeprom_write_data_rtc    <= 0;
-            end
-            6:
-            begin
-                eeprom_write_address_rtc <= 13'h1FF7;
-                eeprom_write_data_rtc    <= 0;
-            end
-            7:
-            begin
-                eeprom_write_address_rtc <= 13'h1FF8;
-                eeprom_write_data_rtc    <= 0;
-            end
-            8:
+            'd12:
             begin
                 eeprom_write_address_rtc <= 13'h1FF9;
                 eeprom_write_data_rtc    <= rtc_year;
             end
-            9:
+            'd13:
             begin
                 eeprom_write_address_rtc <= 13'h1FFA;
                 eeprom_write_data_rtc    <= rtc_month;
             end
-            10:
+            'd14:
             begin
                 eeprom_write_address_rtc <= 13'h1FFB;
                 eeprom_write_data_rtc    <= rtc_day;
             end
-            11:
+            'd15:
             begin
                 eeprom_write_address_rtc <= 13'h1FFC;
                 eeprom_write_data_rtc    <= rtc_hour;
             end
-            12:
+            'd16:
             begin
                 eeprom_write_address_rtc <= 13'h1FFD;
                 eeprom_write_data_rtc    <= rtc_min;
             end
-            13:
+            'd17:
             begin
                 eeprom_write_address_rtc <= 13'h1FFE;
                 eeprom_write_data_rtc    <= rtc_sec;
             end
-            14:
+            'd18:
             begin
                 eeprom_write_address_rtc <= 13'h1FFF;
                 eeprom_write_data_rtc    <= rtc_checksum;
             end
-            15:
+            'd19:
             begin
                 validate_rtc       <= 0;
                 eeprom_we_rtc      <= 0;

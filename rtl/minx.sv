@@ -41,8 +41,6 @@ module minx
     output [7:0] eeprom_read_data
 );
 
-    assign frame_complete = irq_render_done;
-
     // @todo: Design question: Move this logic to inside the eeprom module?
     // The idea of putting this logic here is that eeprom is part of the gpio
     // and gpio, as a module is not implemented (yet).
@@ -352,7 +350,8 @@ module minx
         .bus_request       (bus_request),
         .bus_ack           (bus_ack),
         .irq_copy_complete (irq_copy_complete),
-        .irq_render_done   (irq_render_done)
+        .irq_render_done   (irq_render_done),
+        .frame_complete    (frame_complete)
     );
 
     wire [7:0] sys_batt = (address_out == 24'h2010)? 8'h18: 8'h0;

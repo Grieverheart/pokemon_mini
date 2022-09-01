@@ -95,7 +95,7 @@ bool gl_renderer_init(int buffer_width, int buffer_height)
         "\n"
         "void main(void){\n"
         "    float val = texture(buffer, TexCoord).r;\n"
-        "    outColor = val * vec3(0.611, 0.694, 0.611);\n"
+        "    outColor = (1.0 - val) * vec3(183.0, 202.0, 183.0)/255.0 + val * vec3(4.0, 22.0, 4.0) / 255.0;\n"
         "}\n";
 
     static const char* vertex_shader =
@@ -358,6 +358,7 @@ void simulate_steps(SimData* sim, int n_steps, AudioBuffer* audio_buffer = nullp
         if(sim->minx->address_out == 0xAB)
             sim_load_eeprom(sim, "eeprom000.bin");
 
+
         if(audio_buffer)
         {
             uint8_t volume = sim->minx->sound_volume;
@@ -532,7 +533,7 @@ void simulate_steps(SimData* sim, int n_steps, AudioBuffer* audio_buffer = nullp
                 uint32_t address = sim->minx->address_out & 0xFFF;
                 sim->minx->data_in = *(uint8_t*)(sim->memory + address);
             }
-            else if(sim->minx->address_out >= 0x2100)
+            else
             {
                 // read from cartridge
                 sim->cartridge_touched[(sim->minx->address_out & 0x1FFFFF) & (sim->cartridge_file_size - 1)] = 1;
@@ -543,6 +544,9 @@ void simulate_steps(SimData* sim, int n_steps, AudioBuffer* audio_buffer = nullp
         }
         else if(sim->minx->bus_status == BUS_MEM_WRITE && sim->minx->write)
         {
+            if(sim->minx->address_out == 0x2000)
+                printf("0x%x: 0x%x\n", sim->minx->rootp->minx__DOT__cpu__DOT__top_address, sim->minx->data_out);
+
             // memory write
             if(sim->minx->address_out < 0x1000)
             {
@@ -554,7 +558,7 @@ void simulate_steps(SimData* sim, int n_steps, AudioBuffer* audio_buffer = nullp
                 uint32_t address = sim->minx->address_out & 0xFFF;
                 *(uint8_t*)(sim->memory + address) = sim->minx->data_out;
             }
-            else if(sim->minx->address_out >= 0x2100)
+            else
             {
                 PRINTD("Program trying to write to cartridge at 0x%x, timestamp: %llu\n", sim->minx->address_out, sim->timestamp);
             }
@@ -572,12 +576,77 @@ void simulate_steps(SimData* sim, int n_steps, AudioBuffer* audio_buffer = nullp
         }
     }
 }
+// Contrast level on light and dark pixel
+const uint8_t contrast_level_map[64*2] = {
+      0,   4,   //  0 (0x00)
+      0,   4,   //  1 (0x01)
+      0,   4,   //  2 (0x02)
+      0,   4,   //  3 (0x03)
+      0,   6,   //  4 (0x04)
+      0,  11,   //  5 (0x05)
+      0,  17,   //  6 (0x06)
+      0,  24,   //  7 (0x07)
+      0,  31,   //  8 (0x08)
+      0,  40,   //  9 (0x09)
+      0,  48,   // 10 (0x0A)
+      0,  57,   // 11 (0x0B)
+      0,  67,   // 12 (0x0C)
+      0,  77,   // 13 (0x0D)
+      0,  88,   // 14 (0x0E)
+      0,  99,   // 15 (0x0F)
+      0, 110,   // 16 (0x10)
+      0, 122,   // 17 (0x11)
+      0, 133,   // 18 (0x12)
+      0, 146,   // 19 (0x13)
+      0, 158,   // 20 (0x14)
+      0, 171,   // 21 (0x15)
+      0, 184,   // 22 (0x16)
+      0, 198,   // 23 (0x17)
+      0, 212,   // 24 (0x18)
+      0, 226,   // 25 (0x19)
+      0, 240,   // 26 (0x1A)
+      0, 255,   // 27 (0x1B)
+      2, 255,   // 28 (0x1C)
+      5, 255,   // 29 (0x1D)
+     10, 255,   // 30 (0x1E)
+     15, 255,   // 31 (0x1F)
+     21, 255,   // 32 (0x20)
+     27, 255,   // 33 (0x21)
+     34, 255,   // 34 (0x22)
+     41, 255,   // 35 (0x23)
+     48, 255,   // 36 (0x24)
+     56, 255,   // 37 (0x25)
+     64, 255,   // 38 (0x26)
+     73, 255,   // 39 (0x27)
+     81, 255,   // 40 (0x28)
+     90, 255,   // 41 (0x29)
+    100, 255,   // 42 (0x2A)
+    109, 255,   // 43 (0x2B)
+    119, 255,   // 44 (0x2C)
+    129, 255,   // 45 (0x2D)
+    139, 255,   // 46 (0x2E)
+    149, 255,   // 47 (0x2F)
+    160, 255,   // 48 (0x30)
+    171, 255,   // 49 (0x31)
+    182, 255,   // 50 (0x32)
+    193, 255,   // 51 (0x33)
+    204, 255,   // 52 (0x34)
+    216, 255,   // 53 (0x35)
+    228, 255,   // 54 (0x36)
+    240, 255,   // 55 (0x37)
+    240, 255,   // 56 (0x38)
+    240, 255,   // 57 (0x39)
+    240, 255,   // 58 (0x3A)
+    240, 255,   // 59 (0x3B)
+    240, 255,   // 60 (0x3C)
+    240, 255,   // 61 (0x3D)
+    240, 255,   // 62 (0x3E)
+    240, 255,   // 63 (0x3F)
+};
 
 uint8_t* get_lcd_image(const SimData* sim)
 {
     uint8_t contrast = sim->minx->rootp->minx__DOT__lcd__DOT__contrast;
-    if(contrast > 0x20) contrast = 0x20;
-
     uint8_t* image_data = new uint8_t[96*64];
 
     for (int yC=0; yC<8; yC++)
@@ -589,7 +658,7 @@ uint8_t* get_lcd_image(const SimData* sim)
             for(int i = 0; i < 8; ++i)
             {
                 int idx = 96 * (63 - 8 * yC - i) + xC;
-                image_data[idx] = ((~data >> i) & 1)? 255.0: 255.0 * (1.0 - (float)contrast / 0x20);
+                image_data[idx] = ((~data >> i) & 1)? contrast_level_map[2*contrast]: contrast_level_map[2*contrast + 1];
             }
         }
     }
@@ -600,7 +669,6 @@ uint8_t* get_lcd_image(const SimData* sim)
 uint8_t* render_framebuffers(const SimData* sim)
 {
     uint8_t contrast = sim->minx->rootp->minx__DOT__lcd__DOT__contrast;
-    if(contrast > 0x20) contrast = 0x20;
 
     uint8_t* image_data = new uint8_t[96*64];
 
@@ -626,27 +694,16 @@ uint8_t* render_framebuffers(const SimData* sim)
             uint8_t d6 = sim->framebuffers[768 * fb_idx + yC * 96 + xC];
             for(int i = 0; i < 8; ++i)
             {
-                //uint8_t sum_pixel = 0
-                //    | ((d0 >> i) & 1) << 3
-                //    | ((d1 >> i) & 1) << 2
-                //    | ((d2 >> i) & 1) << 1
-                //    | ((d3 >> i) & 1) << 0;
-                //levels_covered[sum_pixel] = 1;
-
-                //uint8_t pixel_map[16] = {1, 1, 1, 2, 3, 3, 3, 4, 4, 4, 4, 4, 5, 5, 5, 5};
-                //uint8_t level = pixel_map[sum_pixel];
-
                 int idx = 96 * (63 - 8 * yC - i) + xC;
-                //float output = 255.0 * (6 - level);
                 float output = 0.0;
-                output += 1.0 * (((~d0 >> i) & 1)? 255.0: 255.0 * (1.0 - (float)contrast / 0x20));
-                output += 1.0 * (((~d1 >> i) & 1)? 255.0: 255.0 * (1.0 - (float)contrast / 0x20));
-                //output += 1.0 * (((~d2 >> i) & 1)? 255.0: 255.0 * (1.0 - (float)contrast / 0x20));
-                //output += 1.0 * (((~d3 >> i) & 1)? 255.0: 255.0 * (1.0 - (float)contrast / 0x20));
-                //output += 1.0 * (((~d4 >> i) & 1)? 255.0: 255.0 * (1.0 - (float)contrast / 0x20));
-                //output += 1.0 * (((~d5 >> i) & 1)? 255.0: 255.0 * (1.0 - (float)contrast / 0x20));
+                output += ((d0 >> i) & 1)? contrast_level_map[2*contrast+1]: contrast_level_map[2*contrast];
+                output += ((d1 >> i) & 1)? contrast_level_map[2*contrast+1]: contrast_level_map[2*contrast];
+                output += ((d2 >> i) & 1)? contrast_level_map[2*contrast+1]: contrast_level_map[2*contrast];
+                output += ((d3 >> i) & 1)? contrast_level_map[2*contrast+1]: contrast_level_map[2*contrast];
+                //output += ((d4 >> i) & 1)? contrast_level_map[2*contrast+1]: contrast_level_map[2*contrast];
+                //output += ((d5 >> i) & 1)? contrast_level_map[2*contrast+1]: contrast_level_map[2*contrast];
                 //output += 1.0 * (((~d6 >> i) & 1)? 255.0: 255.0 * (1.0 - (float)contrast / 0x20));
-                image_data[idx] = output / 2.0;
+                image_data[idx] = output / 4.0;
             }
         }
     }
@@ -685,15 +742,16 @@ int main(int argc, char** argv)
     // without Start.
     //const char* rom_filepath = "data/6shades.min";
     //const char* rom_filepath = "data/party_j.min";
-    const char* rom_filepath = "data/pokemon_party_mini_u.min";
-    // @todo: In-game contrast setting no doing anything below half.
-    //const char* rom_filepath = "data/pokemon_pinball_mini_u.min";
+    //const char* rom_filepath = "data/pokemon_party_mini_u.min";
+    const char* rom_filepath = "data/pokemon_pinball_mini_u.min";
     //const char* rom_filepath = "data/pokemon_puzzle_collection_u.min";
     //const char* rom_filepath = "data/pokemon_zany_cards_u.min";
     //const char* rom_filepath = "data/pichu_bros_mini_j.min";
     //const char* rom_filepath = "data/pokemon_anime_card_daisakusen_j.min";
     //const char* rom_filepath = "data/snorlaxs_lunch_time_j.min";
     //const char* rom_filepath = "data/pokemon_shock_tetris_j.min";
+    //@todo:  It's showing random tiles between cutscene cards, when the card is
+    // coming from the top.
     //const char* rom_filepath = "data/togepi_no_daibouken_j.min";
     //const char* rom_filepath = "data/pokemon_race_mini_j.min";
     //const char* rom_filepath = "data/pokemon_sodateyasan_mini_j.min";

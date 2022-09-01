@@ -42,7 +42,7 @@ wire [10:0] pixel_address = page * 11'd132 + (
 reg [7:0] lcd_read;
 
 // @note: Where are these used? Can we test?
-assign read_column = all_pixels_on_enabled? 1: (invert_pixels_enabled? ~column_latch: column_latch);
+assign read_column = all_pixels_on_enabled? 8'hF: (invert_pixels_enabled? ~column_latch: column_latch);
 reg [7:0] column_latch;
 always_ff @ (posedge clk)
 begin

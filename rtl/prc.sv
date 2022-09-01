@@ -16,7 +16,8 @@ module prc
     output logic bus_request,
     input bus_ack,
     output logic irq_copy_complete,
-    output logic irq_render_done
+    output logic irq_render_done,
+    output logic frame_complete
 );
 
 // @todo: Thinking about taking FR (32.768kHz clock divided by 7?) as input.
@@ -269,7 +270,10 @@ begin
         begin
             prc_osc_counter <= 10'd0;
             reg_counter <= reg_counter + 1;
-            if(reg_counter == 7'h41) reg_counter <= 7'h1;
+            if(reg_counter == 7'h41)
+            begin
+                reg_counter <= 7'h1;
+            end
         end
     end
 end
@@ -347,10 +351,13 @@ begin
 
             irq_copy_complete  <= 0;
             irq_render_done <= 0;
+            frame_complete <= 0;
 
             reg_counter_old <= reg_counter;
             if(reg_counter != reg_counter_old)
             begin
+                if(reg_counter == 7'h41)
+                    frame_complete <= 1;
 
                 if(reg_rate[7:4] == rate_match)
                 begin
