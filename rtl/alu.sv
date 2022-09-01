@@ -284,7 +284,7 @@ module alu
 
             ALUOP_SRA:
             begin
-                R = {9'b0, A[7:1]};
+                R = {8'b0, A[7], A[7:1]};
                 flags[ALU_FLAG_C] = A[0];
                 flags[ALU_FLAG_Z] = (size == 1)? (R == 0): (R[7:0] == 0);
                 flags[ALU_FLAG_S] = R[msb];
