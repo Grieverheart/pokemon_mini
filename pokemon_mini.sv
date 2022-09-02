@@ -171,10 +171,9 @@ module emu
 );
 
 // TODO list:
-// * CRT
-// * Double base clock (clk_sys) to 32kHz
-// * Color palette
+// * Loadable color palettes.
 // * Convert s1c88 from using posedge/negedge to just using posedge?
+// * Can we do something about sound pops?
 // * Savestates?
 
 ///////// Default values for ports not used in this core /////////
@@ -216,9 +215,11 @@ localparam CONF_STR = {
     "d0R[10],Save Backup RAM;",
     "d0O[11],Autosave,Off,On;",
     "-;",
-    "O[98],Frame Blend,off,on;",
+    "O[98],Frame Blend,Off,On;",
     "O[122:121],Aspect ratio,Original,Full Screen,[ARC1],[ARC2];",
-    "O23,Scandoubler Fx,None,HQ2x,CRT 25%,CRT 50%;",
+    "O[3:2],Scandoubler Fx,None,HQ2x,CRT 25%,CRT 50%;",
+    "O[30],Zoom,On,Off;",
+    "d1O[29],Zoom Mode,3x,2x;",
     "-;",
     "T[0],Reset;",
     "R[0],Reset and close OSD;",
@@ -296,7 +297,7 @@ hps_io
 
     .buttons(buttons),
     .status(status),
-    .status_menumask(cart_ready),
+    .status_menumask({zoom_enable, cart_ready}),
 
     .ps2_key(ps2_key),
     .joystick_0(joystick_0),
@@ -318,18 +319,20 @@ pll pll
     .rst      (0),
     .outclk_0 (clk_ram), // 40 MHz
     .outclk_1 (clk_rt),  // 4.194756 MHz
-    .outclk_2 (clk_sys), // 16 MHz
+    .outclk_2 (clk_sys), // 32 MHz
     .locked   (pll_locked)
 );
 
 reg [6:0] clk_rt_prescale = 0;
 always_ff @ (posedge clk_rt) clk_rt_prescale <= clk_rt_prescale + 1;
 
-reg [1:0] clk_prescale = 0;
-reg [1:0] minx_clk_prescale = 0;
+reg [3:0] clk_prescale = 0;
+reg [2:0] minx_clk_prescale = 0;
 always_ff @ (posedge clk_sys)
 begin
     clk_prescale <= clk_prescale + 1;
+    if(clk_prescale == 3'd4)
+        clk_prescale <= 0;
     minx_clk_prescale  <= minx_clk_prescale + 1;
 end
 
@@ -346,7 +349,7 @@ end
 
 //////////////////////////////////////////////////////////////////
 
-wire ce_pix = &clk_prescale;
+wire ce_pix = (clk_prescale == 3'd4);
 wire [7:0] video;
 
 assign CLK_VIDEO = clk_sys;
@@ -355,11 +358,25 @@ assign LED_USER  = ioctl_download | sav_pending;
 
 reg hs, vs, hbl, vbl;
 
-localparam H_WIDTH   = 9'd280;
-localparam V_HEIGHT  = 9'd238;
+localparam H_WIDTH   = 9'd407;
+localparam V_HEIGHT  = 9'd262;
 localparam LCD_XSIZE = 9'd96;
 localparam LCD_YSIZE = 9'd64;
 localparam LCD_COLS  = LCD_YSIZE >> 3;
+
+localparam HS_WIDTH  = 9'd24;
+localparam HS_START  = H_WIDTH - 9'd24;
+localparam HS_END    = H_WIDTH + HS_WIDTH - 9'd1 - 9'd24;
+
+// @todo: With zoom enabled, always set the active resolution to the highest,
+// and draw black borders outside the actual resolution.
+wire [8:0] ACTIVE_XSIZE = !zoom_enable ? 9'd96: (zoom_mode == 1 ? 9'd288: 9'd192);
+wire [8:0] ACTIVE_YSIZE = !zoom_enable ? 9'd64: (zoom_mode == 1 ? 9'd192: 9'd128);
+wire [8:0] H_START      = (H_WIDTH  - ACTIVE_XSIZE) >> 1;
+wire [8:0] V_START      = (V_HEIGHT - ACTIVE_YSIZE) >> 1;
+
+// 401 x 258
+// 224 x 144
 
 reg frame_complete_latch;
 (* ramstyle = "no_rw_check" *) reg [7:0] fb0[768];
@@ -380,6 +397,14 @@ assign fb_read = '{fb0_read, fb1_read, fb2_read, fb3_read};
 // @todo: 6shades doesn't work because we are copying at copy complete instead
 // of render complete, and 6shades does not issue copy complete; it writes
 // straight to the lcd.
+
+// Find x, y, d st:
+// x*y <  (F / d + 1) / 60
+// x*y >  (F / d - 1) / 60
+// x > a
+// y >= 240
+//
+// We could calculate for each d a solution.
 
 reg [7:0] lcd_read_xpos;
 reg [3:0] lcd_read_ypos;
@@ -538,24 +563,29 @@ wire [7:0] pixel_intensity =
         get_pixel_intensity(fb_read[fb_read_index][ypos[2:0]]):
         pixel_4frame_blend[9:2];
 
+wire zoom_enable = !status[30];
+wire zoom_mode   = !status[29];
 reg [7:0] xpos, ypos;
+// 3x integer scaling
+reg [1:0] subpixel_x;
+reg [1:0] subpixel_y;
 always @ (posedge CLK_VIDEO)
 begin
     if(ce_pix)
     begin
-        if(hpos == LCD_XSIZE + 16) hbl <= 1;
-        if(hpos == 16)             hbl <= 0;
-        if(vpos >= 32+LCD_YSIZE)   vbl <= 1;
-        if(vpos == 32)             vbl <= 0;
+        if(hpos == H_START + ACTIVE_XSIZE) hbl <= 1;
+        if(hpos == H_START)                hbl <= 0;
+        if(vpos >= V_START + ACTIVE_YSIZE) vbl <= 1;
+        if(vpos == V_START)                vbl <= 0;
 
-        if(hpos == 120)
+        if(hpos == HS_START)
         begin
             hs <= 1;
             if(vpos == 1) vs <= 1;
             if(vpos == 4) vs <= 0;
         end
 
-        if(hpos == 120+16) hs <= 0;
+        if(hpos == HS_END) hs <= 0;
 
         hpos <= hpos + 1;
         if(hpos == H_WIDTH - 1'd1)
@@ -568,16 +598,54 @@ begin
 
         if(vbl)
         begin
-            ypos <= 0;
-            xpos <= 0;
+            ypos       <= 0;
+            xpos       <= 0;
+            subpixel_x <= 0;
+            subpixel_y <= 0;
         end
         else if(!hbl)
         begin
-            xpos <= xpos + 1;
-            if(xpos == LCD_XSIZE - 1)
+            // Active area
+            if(zoom_enable)
             begin
-                xpos <= 0;
-                ypos <= ypos + 1;
+                subpixel_x <= subpixel_x + 1;
+                if(
+                    (zoom_mode == 1 && subpixel_x == 2'd2) ||
+                    (zoom_mode == 0 && subpixel_x == 2'd1)
+                )
+                begin
+                    subpixel_x <= 0;
+                    xpos <= xpos + 1;
+
+                    // @todo: Change this to ACTIVE_XSIZE.
+                    // Add a start_x, start_y, end_x, end_y for drawing black
+                    // borders.
+                    if(xpos == LCD_XSIZE - 1)
+                    begin
+                        xpos       <= 0;
+                        subpixel_y <= subpixel_y + 1;
+
+                        if(
+                            (zoom_mode == 1 && subpixel_y == 2'd2) ||
+                            (zoom_mode == 0 && subpixel_y == 2'd1)
+                        )
+                        begin
+                            subpixel_y <= 0;
+                            ypos       <= ypos + 1;
+                        end
+
+                    end
+                end
+            end
+            else
+            begin
+                xpos <= xpos + 1;
+
+                if(xpos == LCD_XSIZE - 1)
+                begin
+                    xpos <= 0;
+                    ypos <= ypos + 1;
+                end
             end
         end
 
@@ -946,7 +1014,7 @@ assign minx_data_in =
     ((minx_address_out < 24'h2000)? ram_data_out:
                                     cartridge_data);
 
-video_mixer #(640, 0) mixer
+video_mixer #(320, 0) mixer
 (
     .*,
     .CE_PIXEL       (CE_PIXEL),
