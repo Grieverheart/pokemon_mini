@@ -401,7 +401,7 @@ reg [7:0] fb2_read;
 reg [7:0] fb3_read;
 wire [7:0] fb_read[0:3];
 assign fb_read = '{fb0_read, fb1_read, fb2_read, fb3_read};
-// @todo: Latch lcd_contrast for each fb0-3?
+reg [5:0] lcd_contrast_latch[0:3];
 
 reg [7:0] lcd_read_xpos;
 reg [3:0] lcd_read_ypos;
@@ -423,6 +423,7 @@ begin
         // Need to wait 2 clocks for data from lcd?
         if(frame_complete_latch && &minx_clk_prescale)
         begin
+            lcd_contrast_latch[fb_write_index] <= lcd_contrast;
             case(fb_write_index)
                 0:
                     fb0[fb_write_address] <= lcd_read_column;
@@ -538,24 +539,22 @@ localparam bit[7:0] contrast_level_map[128] = '{
    8'd240, 8'd255    // 63 (0x3F)
 };
 
-function [7:0] get_pixel_intensity(input px);
+function [7:0] get_pixel_intensity(input px, input [5:0] contrast);
     get_pixel_intensity = px?
-        contrast_level_map[{lcd_contrast,1'b1}]:
-        contrast_level_map[{lcd_contrast,1'b0}];
+        contrast_level_map[{contrast,1'b1}]:
+        contrast_level_map[{contrast,1'b0}];
 endfunction
 
 // 5-shades
 wire [9:0] pixel_4frame_blend = 
-    {2'b0, get_pixel_intensity(fb_read[fb_read_index-0][img_ypos[2:0]])} +
-    {2'b0, get_pixel_intensity(fb_read[fb_read_index-1][img_ypos[2:0]])} +
-    {2'b0, get_pixel_intensity(fb_read[fb_read_index-2][img_ypos[2:0]])} +
-    {2'b0, get_pixel_intensity(fb_read[fb_read_index-3][img_ypos[2:0]])};
+    {2'b0, get_pixel_intensity(fb_read[fb_read_index-0][img_ypos[2:0]], lcd_contrast_latch[fb_read_index-0])} +
+    {2'b0, get_pixel_intensity(fb_read[fb_read_index-1][img_ypos[2:0]], lcd_contrast_latch[fb_read_index-1])} +
+    {2'b0, get_pixel_intensity(fb_read[fb_read_index-2][img_ypos[2:0]], lcd_contrast_latch[fb_read_index-2])} +
+    {2'b0, get_pixel_intensity(fb_read[fb_read_index-3][img_ypos[2:0]], lcd_contrast_latch[fb_read_index-3])};
 
-// @todo: Perhaps make intensity go to 256 instead of 255. Then we can just
-// shift the final color result instead of dividing by 256.
 wire [7:0] pixel_intensity =
     (blend_mode == 0)?
-        get_pixel_intensity(fb_read[fb_read_index][img_ypos[2:0]]):
+        get_pixel_intensity(fb_read[fb_read_index][img_ypos[2:0]], lcd_contrast_latch[fb_read_index]):
         pixel_4frame_blend[9:2];
 
 wire zoom_enable = !status[30];
@@ -637,6 +636,8 @@ begin
 
     end
 
+    // @todo: Perhaps make intensity go to 256 instead of 255. Then we can just
+    // shift the final color result instead of dividing by 255.
     if(xpos >= img_start_x && ypos >= img_start_y && xpos < img_start_x + LCD_XSIZE && ypos < img_start_y + LCD_YSIZE)
     begin
         pixel_value_red   <= ({8'h0, 8'hFF - pixel_intensity} * OFF_COLOR[0] + {8'h0, pixel_intensity} * ON_COLOR[0]) / 16'd255;
