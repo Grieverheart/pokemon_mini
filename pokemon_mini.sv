@@ -219,7 +219,7 @@ localparam CONF_STR = {
     "O[122:121],Aspect ratio,Original,Full Screen,[ARC1],[ARC2];",
     "O[3:2],Scandoubler Fx,None,HQ2x,CRT 25%,CRT 50%;",
     "O[30],Zoom,On,Off;",
-    "d1O[29],Zoom Mode,3x,2x;",
+    "d1O[29:28],Zoom Mode,3x,2x,1x;",
     "-;",
     "T[0],Reset;",
     "R[0],Reset and close OSD;",
@@ -368,12 +368,20 @@ localparam HS_WIDTH  = 9'd24;
 localparam HS_START  = H_WIDTH - 9'd24;
 localparam HS_END    = H_WIDTH + HS_WIDTH - 9'd1 - 9'd24;
 
-// @todo: With zoom enabled, always set the active resolution to the highest,
-// and draw black borders outside the actual resolution.
-wire [8:0] ACTIVE_XSIZE = !zoom_enable ? 9'd96: (zoom_mode == 1 ? 9'd288: 9'd192);
-wire [8:0] ACTIVE_YSIZE = !zoom_enable ? 9'd64: (zoom_mode == 1 ? 9'd192: 9'd128);
-wire [8:0] H_START      = (H_WIDTH  - ACTIVE_XSIZE) >> 1;
-wire [8:0] V_START      = (V_HEIGHT - ACTIVE_YSIZE) >> 1;
+wire [8:0] active_xsize = !zoom_enable ? 9'd96: 9'd288;
+wire [8:0] active_ysize = !zoom_enable ? 9'd64: 9'd192;
+wire [8:0] h_start      = (H_WIDTH  - active_xsize) >> 1;
+wire [8:0] v_start      = (V_HEIGHT - active_ysize) >> 1;
+
+// These are in the original img (lcd screen) coordinates.
+wire [8:0] img_start_x = (!zoom_enable || zoom_mode == 2)? 9'd0: (zoom_mode == 0 ? 9'd96: 9'd24);
+wire [8:0] img_start_y = (!zoom_enable || zoom_mode == 2)? 9'd0: (zoom_mode == 0 ? 9'd64: 9'd16);
+wire [8:0] img_xpos = xpos - img_start_x;
+wire [8:0] img_ypos = ypos - img_start_y;
+wire [8:0] img_active_xsize =
+    (zoom_mode == 0)? 9'd288:
+    (zoom_mode == 1)? 9'd144:
+                      9'd96;
 
 // 401 x 258
 // 224 x 144
@@ -385,7 +393,7 @@ reg frame_complete_latch;
 (* ramstyle = "no_rw_check" *) reg [7:0] fb3[768];
 reg [1:0] fb_write_index = 0;
 reg [1:0] fb_read_index = 0;
-wire [9:0] fb_read_address  = {1'b0, LCD_XSIZE} * {5'b0, ypos[6:3]} + {1'b0, xpos};
+wire [9:0] fb_read_address  = {1'b0, LCD_XSIZE} * {5'b0, img_ypos[6:3]} + img_xpos;
 wire [9:0] fb_write_address = {1'b0, LCD_XSIZE} * {5'b0, lcd_read_ypos} + {1'b0, lcd_read_xpos};
 reg [7:0] fb0_read;
 reg [7:0] fb1_read;
@@ -393,18 +401,7 @@ reg [7:0] fb2_read;
 reg [7:0] fb3_read;
 wire [7:0] fb_read[0:3];
 assign fb_read = '{fb0_read, fb1_read, fb2_read, fb3_read};
-// Try putting them in same always block as lcd read block, below.
-// @todo: 6shades doesn't work because we are copying at copy complete instead
-// of render complete, and 6shades does not issue copy complete; it writes
-// straight to the lcd.
-
-// Find x, y, d st:
-// x*y <  (F / d + 1) / 60
-// x*y >  (F / d - 1) / 60
-// x > a
-// y >= 240
-//
-// We could calculate for each d a solution.
+// @todo: Latch lcd_contrast for each fb0-3?
 
 reg [7:0] lcd_read_xpos;
 reg [3:0] lcd_read_ypos;
@@ -463,8 +460,6 @@ reg [8:0] hpos,vpos;
 reg [7:0] pixel_value_red;
 reg [7:0] pixel_value_green;
 reg [7:0] pixel_value_blue;
-// @todo: Latch lcd_contrast for each fb0-3?
-//wire [7:0] pixel_on = (lcd_contrast >= 6'h20)? 8'd255: {lcd_contrast[4:0], 3'd0};
 
 wire [7:0] red   = pixel_value_red;
 wire [7:0] green = pixel_value_green;
@@ -551,21 +546,21 @@ endfunction
 
 // 5-shades
 wire [9:0] pixel_4frame_blend = 
-    {2'b0, get_pixel_intensity(fb_read[fb_read_index-0][ypos[2:0]])} +
-    {2'b0, get_pixel_intensity(fb_read[fb_read_index-1][ypos[2:0]])} +
-    {2'b0, get_pixel_intensity(fb_read[fb_read_index-2][ypos[2:0]])} +
-    {2'b0, get_pixel_intensity(fb_read[fb_read_index-3][ypos[2:0]])};
+    {2'b0, get_pixel_intensity(fb_read[fb_read_index-0][img_ypos[2:0]])} +
+    {2'b0, get_pixel_intensity(fb_read[fb_read_index-1][img_ypos[2:0]])} +
+    {2'b0, get_pixel_intensity(fb_read[fb_read_index-2][img_ypos[2:0]])} +
+    {2'b0, get_pixel_intensity(fb_read[fb_read_index-3][img_ypos[2:0]])};
 
 // @todo: Perhaps make intensity go to 256 instead of 255. Then we can just
 // shift the final color result instead of dividing by 256.
 wire [7:0] pixel_intensity =
     (blend_mode == 0)?
-        get_pixel_intensity(fb_read[fb_read_index][ypos[2:0]]):
+        get_pixel_intensity(fb_read[fb_read_index][img_ypos[2:0]]):
         pixel_4frame_blend[9:2];
 
 wire zoom_enable = !status[30];
-wire zoom_mode   = !status[29];
-reg [7:0] xpos, ypos;
+wire [1:0] zoom_mode = 2'd2 - status[29:28];
+reg [8:0] xpos, ypos;
 // 3x integer scaling
 reg [1:0] subpixel_x;
 reg [1:0] subpixel_y;
@@ -573,10 +568,10 @@ always @ (posedge CLK_VIDEO)
 begin
     if(ce_pix)
     begin
-        if(hpos == H_START + ACTIVE_XSIZE) hbl <= 1;
-        if(hpos == H_START)                hbl <= 0;
-        if(vpos >= V_START + ACTIVE_YSIZE) vbl <= 1;
-        if(vpos == V_START)                vbl <= 0;
+        if(hpos == h_start + active_xsize) hbl <= 1;
+        if(hpos == h_start)                hbl <= 0;
+        if(vpos >= v_start + active_ysize) vbl <= 1;
+        if(vpos == v_start)                vbl <= 0;
 
         if(hpos == HS_START)
         begin
@@ -609,26 +604,17 @@ begin
             if(zoom_enable)
             begin
                 subpixel_x <= subpixel_x + 1;
-                if(
-                    (zoom_mode == 1 && subpixel_x == 2'd2) ||
-                    (zoom_mode == 0 && subpixel_x == 2'd1)
-                )
+                if(subpixel_x == zoom_mode)
                 begin
                     subpixel_x <= 0;
                     xpos <= xpos + 1;
 
-                    // @todo: Change this to ACTIVE_XSIZE.
-                    // Add a start_x, start_y, end_x, end_y for drawing black
-                    // borders.
-                    if(xpos == LCD_XSIZE - 1)
+                    if(xpos == img_active_xsize - 1)
                     begin
                         xpos       <= 0;
                         subpixel_y <= subpixel_y + 1;
 
-                        if(
-                            (zoom_mode == 1 && subpixel_y == 2'd2) ||
-                            (zoom_mode == 0 && subpixel_y == 2'd1)
-                        )
+                        if(subpixel_y == zoom_mode)
                         begin
                             subpixel_y <= 0;
                             ypos       <= ypos + 1;
@@ -651,9 +637,18 @@ begin
 
     end
 
-    pixel_value_red   <= ({8'h0, 8'hFF - pixel_intensity} * OFF_COLOR[0] + {8'h0, pixel_intensity} * ON_COLOR[0]) / 16'd255;
-    pixel_value_green <= ({8'h0, 8'hFF - pixel_intensity} * OFF_COLOR[1] + {8'h0, pixel_intensity} * ON_COLOR[1]) / 16'd255;
-    pixel_value_blue  <= ({8'h0, 8'hFF - pixel_intensity} * OFF_COLOR[2] + {8'h0, pixel_intensity} * ON_COLOR[2]) / 16'd255;
+    if(xpos >= img_start_x && ypos >= img_start_y && xpos < img_start_x + LCD_XSIZE && ypos < img_start_y + LCD_YSIZE)
+    begin
+        pixel_value_red   <= ({8'h0, 8'hFF - pixel_intensity} * OFF_COLOR[0] + {8'h0, pixel_intensity} * ON_COLOR[0]) / 16'd255;
+        pixel_value_green <= ({8'h0, 8'hFF - pixel_intensity} * OFF_COLOR[1] + {8'h0, pixel_intensity} * ON_COLOR[1]) / 16'd255;
+        pixel_value_blue  <= ({8'h0, 8'hFF - pixel_intensity} * OFF_COLOR[2] + {8'h0, pixel_intensity} * ON_COLOR[2]) / 16'd255;
+    end
+    else
+    begin
+        pixel_value_red   <= 8'd0;
+        pixel_value_green <= 8'd0;
+        pixel_value_blue  <= 8'd0;
+    end
 end
 
 
