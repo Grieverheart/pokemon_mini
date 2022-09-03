@@ -149,7 +149,7 @@ module irq
         cpu_irq      = 4'd0;
 
         if(next_priority > 0)
-            cpu_irq[next_priority] = 1;
+            cpu_irq[next_priority-1] = 1;
 
         if(cpu_iack)
             bus_data_out = {2'd0, next_irq_latch, 1'd0};

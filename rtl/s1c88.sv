@@ -901,7 +901,7 @@ module s1c88
     endtask
 
     wire [2:0] exception_factor =
-         (irq[3])?                    3'd4:
+         (irq[3])?                    3'd4: // NMI
         ((irq[2] && SC[7:6] < 2'd3)?  3'd3:
         ((irq[1] && SC[7:6] < 2'd2)?  3'd2:
          (irq[0] && SC[7:6] == 2'd0)? 3'd1:
@@ -1093,7 +1093,10 @@ module s1c88
                         begin
                             if(exception_process_step == 0)
                             begin
-                                irq_vector_address <= data_in;
+                                irq_vector_address <=
+                                    (exception == EXCEPTION_TYPE_NMI)?     8'h4:
+                                    (exception == EXCEPTION_TYPE_DIVZERO)? 8'h2:
+                                                                           data_in;
                             end
                             else if(exception_process_step == 5)
                             begin
